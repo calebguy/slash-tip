@@ -1,12 +1,12 @@
 export function parseTipCommandArgs(input: string) {
-	const namePattern = /\|([\w\d]+)>/
+	const idPattern = /\|([\w\d]+)>/
 	const numberPattern = /(\d+)$/
 
-	const nameMatch = input.match(namePattern)
-	const numberMatch = input.match(numberPattern)
+	const _id = input.match(idPattern)
+	const _amount = input.match(numberPattern)
 
-	const name = nameMatch ? nameMatch[1] : null // Extracts the name if found
-	const amount = numberMatch ? numberMatch[0] : null // Extracts the number if found
+	const id = _id ? _id[1] : null
+	const amount = _amount ? _amount[0] : null
 
-	return { name, amount }
+	return { id, amount }
 }

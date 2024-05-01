@@ -20,8 +20,8 @@ app.post("/slash", async (c) => {
 		})
 	}
 
-	const { name, amount: _amount } = parseTipCommandArgs(text)
-	if (!name) {
+	const { id, amount: _amount } = parseTipCommandArgs(text)
+	if (!id) {
 		return c.json({
 			response_type: "ephemeral",
 			text: "Could not parse tipee",
