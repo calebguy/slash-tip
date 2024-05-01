@@ -4,25 +4,46 @@ import { parseTipCommandArgs } from "./utils"
 
 const app = new Hono()
 
-console.log("running...")
+const maxAmount = 100
 
 app.get("/", (c) => {
 	return c.text("Hello Hono!")
 })
 
-app.post("/tip", async (c) => {
+app.post("/slash", async (c) => {
+	// https://api.slack.com/interactivity/slash-commands
 	const { command, text } = await c.req.parseBody<SlackSlashCommandPayload>()
-	console.log("got command", command, text)
 	if (command !== Commands.Tip) {
 		return c.json({
 			response_type: "ephemeral",
-			text: `You can only ${Commands.Tip} sorry ⚛️`,
+			text: `You can only ${Commands.Tip}`,
 		})
 	}
 
-	const { name, amount } = parseTipCommandArgs(text)
-	const tippies = Array.from({ length: Number(amount) }, () => "✺").join("")
-	// https://api.slack.com/interactivity/slash-commands
+	const { name, amount: _amount } = parseTipCommandArgs(text)
+	if (!name) {
+		return c.json({
+			response_type: "ephemeral",
+			text: "Could not parse tipee",
+		})
+	}
+
+	if (!_amount) {
+		return c.json({
+			response_type: "ephemeral",
+			text: "Could not parse amount",
+		})
+	}
+
+	const amount = Number(_amount)
+	if (Number.isNaN(amount) || amount < 1 || amount > maxAmount) {
+		return c.json({
+			response_type: "ephemeral",
+			text: `Amount must between 1 and ${maxAmount}`,
+		})
+	}
+
+	const tips = Array.from({ length: Number(amount) }, () => "✺").join("")
 	return c.json({
 		response_type: "in_channel",
 		blocks: [
@@ -30,7 +51,7 @@ app.post("/tip", async (c) => {
 				type: "section",
 				text: {
 					type: "mrkdwn",
-					text: `${name} +${tippies}`,
+					text: `${name} +${tips}`,
 				},
 			},
 		],
