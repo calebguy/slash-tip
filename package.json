@@ -1,13 +1,14 @@
 {
-  "scripts": {
-    "dev": "bun run --hot src/index.ts",
-    "start": "bun run src/index.ts"
-  },
-  "dependencies": {
-    "hono": "^4.2.9"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "1.7.2",
-    "@types/bun": "latest"
-  }
+	"scripts": {
+		"dev": "bun run --hot src/index.ts",
+		"start": "bun run src/index.ts",
+		"format": "bunx @biomejs/biome format . --write"
+	},
+	"dependencies": {
+		"hono": "^4.2.9"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "1.7.2",
+		"@types/bun": "latest"
+	}
 }
