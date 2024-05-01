@@ -1,12 +1,13 @@
-To install dependencies:
+# /tip
+
+Install deps:
 ```sh
 bun install
 ```
 
-To run:
+Run:
 ```sh
 bun run dev
 ```
 
 open http://localhost:3000
-# slash-tip
