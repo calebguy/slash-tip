@@ -3,5 +3,5 @@ services:
     name: bun
     env: docker
     repo: https://github.com/calebguy/slash-tip
-    plan: starter
+    plan: free
     autoDeploy: false
