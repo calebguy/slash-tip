@@ -9,7 +9,7 @@ app.get('/', (c) => {
 })
 
 app.post('/tip', async (c) => {
-  const body = await c.req.json();
+  const body = await c.req.parseBody();
   console.log('got body', body)
   return c.json({ message: 'tipped' })
 })
