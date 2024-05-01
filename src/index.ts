@@ -51,7 +51,7 @@ app.post("/slash", async (c) => {
 				type: "section",
 				text: {
 					type: "mrkdwn",
-					text: `${name} +${tips}`,
+					text: `<${id}> +${tips}`,
 				},
 			},
 		],
