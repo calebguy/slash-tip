@@ -1,4 +1,5 @@
 import { Hono } from "hono"
+import { Index } from "./components/Index"
 import { Commands, type SlackSlashCommandPayload } from "./types"
 import { parseTipCommandArgs } from "./utils"
 
@@ -7,16 +8,31 @@ const app = new Hono()
 const maxAmount = 100
 
 app.get("/", (c) => {
-	return c.text("Hello Hono!")
+	return c.html(<Index />)
 })
 
-app.post("/slash", async (c) => {
-	// https://api.slack.com/interactivity/slash-commands
+// https://api.slack.com/interactivity/slash-commands
+app.post(Commands.Balance, async (c) => {
+	const { command } = await c.req.parseBody<SlackSlashCommandPayload>()
+	if (command !== Commands.Balance) {
+		return c.json({
+			response_type: "ephemeral",
+			text: `Invalid command: ${command} -- should be: ${Commands.Balance}`,
+		})
+	}
+
+	return c.json({
+		response_type: "ephemeral",
+		text: "Your balance is 0",
+	})
+})
+
+app.post(Commands.Tip, async (c) => {
 	const { command, text } = await c.req.parseBody<SlackSlashCommandPayload>()
 	if (command !== Commands.Tip) {
 		return c.json({
 			response_type: "ephemeral",
-			text: `You can only ${Commands.Tip}`,
+			text: `Invalid command: ${command} -- should be: ${Commands.Tip}`,
 		})
 	}
 
