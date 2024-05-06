@@ -1,0 +1,6 @@
+[submodule "chain/lib/openzeppelin-contracts"]
+	path = chain/lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+[submodule "chain/lib/solmate"]
+	path = chain/lib/solmate
+	url = https://github.com/transmissions11/solmate
