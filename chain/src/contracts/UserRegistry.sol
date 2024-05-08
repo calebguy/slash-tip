@@ -20,6 +20,7 @@ contract UserRegistry is AccessControl {
       users[_id] = _address;
     }
 
+    // @note revert if user does not exist
     function removeUser(string memory _id) public onlyRole(USER_REGISTRY_MANAGER) {
       delete users[_id];
     }

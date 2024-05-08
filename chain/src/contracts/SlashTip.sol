@@ -22,14 +22,14 @@ contract SlashTip is AccessControl {
       description = _description;
     }
 
-    function tip(string memory userId, uint256 amount) public onlyRole(SLASH_TIP_MANAGER) {
-      address user = userRegistry.getUser(userId);
+    function tip(string memory _userId, uint256 _tokenId, uint256 _amount) public onlyRole(SLASH_TIP_MANAGER) {
+      address user = userRegistry.getUser(_userId);
       require(user != address(0), "User not found");
 
-      uint256 allowance = userRegistry.getUserAllowance(userId);
-      require(allowance >= amount, "Insufficient allowance");
+      uint256 allowance = userRegistry.getUserAllowance(_userId);
+      require(allowance >= _amount, "Insufficient allowance");
 
-      tipToken.mint(user, 0, amount, "");
+      tipToken.mint(user, _tokenId, _amount, "");
     }
 
     function setUserRegistry(address _userRegistry) public onlyRole(SLASH_TIP_MANAGER) {
@@ -38,5 +38,10 @@ contract SlashTip is AccessControl {
 
     function setTipToken(address _tipToken) public onlyRole(SLASH_TIP_MANAGER) {
       tipToken = ITip(_tipToken);
+    }
+
+    function userBalance(string memory _userId, uint256 _tokenId) public view returns (uint256) {
+      address userAddress = userRegistry.getUser(_userId);
+      return tipToken.balanceOf(userAddress, _tokenId);
     }
 }
