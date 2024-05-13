@@ -1,4 +1,5 @@
-lib/
-out
-cache
 .env
+lib
+cache
+out
+notes.md
