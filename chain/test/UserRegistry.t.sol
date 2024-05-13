@@ -26,7 +26,7 @@ contract UserRegistryTest is Test {
 
     function test_userNotExistsGetUser() public view {
         string memory userId = "user1";
-        address user = registry.getUser(userId);
+        address user = registry.getUserAddress(userId);
         assertEq(user, address(0));
     }
     
@@ -34,7 +34,7 @@ contract UserRegistryTest is Test {
         string memory userId = "user1";
         address user = address(0x1);
         registry.addUser(userId, user);
-        assertEq(registry.getUser(userId), user);
+        assertEq(registry.getUserAddress(userId), user);
     }
 
     function test_removeUser() public {
@@ -42,7 +42,7 @@ contract UserRegistryTest is Test {
         address user = address(0x1);
         registry.addUser(userId, user);
         registry.removeUser(userId);
-        assertEq(registry.getUser(userId), address(0));
+        assertEq(registry.getUserAddress(userId), address(0));
     }
 
     function test_userAllowance() public {

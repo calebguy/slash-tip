@@ -25,24 +25,24 @@ contract UserRegistry is AccessControl {
       delete users[_id];
     }
 
-    function getUser(string memory _id) public view returns (address) {
+    function getUserAddress(string memory _id) public view returns (address) {
       return users[_id];
     }
 
     function setUserAllowance(string memory _id, uint256 _allowance) public onlyRole(USER_REGISTRY_MANAGER) {
-      allowance[getUser(_id)] = _allowance;
+      allowance[getUserAddress(_id)] = _allowance;
     }
 
     function addUserAllowance(string memory _id, uint256 _plusAllowance) public onlyRole(USER_REGISTRY_MANAGER) {
-      allowance[getUser(_id)] += _plusAllowance;
+      allowance[getUserAddress(_id)] += _plusAllowance;
     }
 
     function subUserAllowance(string memory _id, uint256 _subAllowance) public onlyRole(USER_REGISTRY_MANAGER) {
-      allowance[getUser(_id)] -= _subAllowance;
+      allowance[getUserAddress(_id)] -= _subAllowance;
     }
 
     function getUserAllowance(string memory _id) public view returns (uint256) {
-      return allowance[getUser(_id)];
+      return allowance[getUserAddress(_id)];
     }
 
     function supportsInterface(bytes4 interfaceId) public view override returns (bool) {
