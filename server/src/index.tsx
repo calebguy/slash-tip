@@ -37,6 +37,7 @@ app.post(Commands.Tip, async (c) => {
 	}
 
 	const { id, amount: _amount } = parseTipCommandArgs(text)
+	console.log(`tipping to ${{ id, amount: _amount }}`)
 	if (!id) {
 		return c.json({
 			response_type: "ephemeral",
