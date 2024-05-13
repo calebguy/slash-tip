@@ -1,7 +1,8 @@
 import { Hono } from "hono"
 import { Index } from "./components/Index"
 import { Commands, type SlackSlashCommandPayload } from "./types"
-import { parseTipCommandArgs } from "./utils"
+import { parseTipCommandArgs, parseUserFromText } from "./utils"
+import { getBalance } from "./viem"
 
 const app = new Hono()
 
@@ -13,7 +14,7 @@ app.get("/", (c) => {
 
 // https://api.slack.com/interactivity/slash-commands
 app.post(Commands.Balance, async (c) => {
-	const { command } = await c.req.parseBody<SlackSlashCommandPayload>()
+	const { command, text } = await c.req.parseBody<SlackSlashCommandPayload>()
 	if (command !== Commands.Balance) {
 		return c.json({
 			response_type: "ephemeral",
@@ -21,9 +22,17 @@ app.post(Commands.Balance, async (c) => {
 		})
 	}
 
+	const id = parseUserFromText(text)
+	if (!id) {
+		return c.json({
+			response_type: "ephemeral",
+			text: "Could not parse tipee",
+		})
+	}
+	const balance = await getBalance(id)
 	return c.json({
 		response_type: "ephemeral",
-		text: "Your balance is 0",
+		text: balance.toString(),
 	})
 })
 
