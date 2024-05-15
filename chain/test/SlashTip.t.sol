@@ -13,27 +13,32 @@ contract SlashTipTest is Test {
     Tip public tip;
     SlashTip public slash;
 
-    uint256 public allowance;
-    string public userId;
-    address public userAddress;
+    string public fromUserId = "user1";
+    string public toUserId = "user2";
+    uint256 tokenId = 1;
+
+    UserRegistry.User public fromUser = UserRegistry.User({
+        nickname: "from user",
+        account: 0x18F33CEf45817C428d98C4E188A770191fDD4B79,
+        allowance: 10
+    });
+
+    UserRegistry.User public toUser = UserRegistry.User({
+        nickname: "to user",
+        account: 0x9a37E57d177c5Ff8817B55da36F2A2b3532CDE3F,
+        allowance: 10
+    });
 
     function setUp() public {
-        allowance = 10;
-        userId = "user1";
-        userAddress = 0x18F33CEf45817C428d98C4E188A770191fDD4B79;
-
         registry = new UserRegistry(address(this), "/users");
         tip = new Tip(address(this), baseURI);
         slash = new SlashTip(address(this), address(registry), address(tip), "/tip");
     
         // slash-tip needs tip manager role in order to mint
-        bytes32 tipManagerRole = keccak256("TIP_MANAGER");
-        tip.grantRole(tipManagerRole, address(slash));
-    }
+        tip.grantRole(keccak256("TIP_MANAGER"), address(slash));
 
-    function addUser(string memory _userId, address _userAddress, uint256 _allownace) public {
-        registry.addUser(_userId, _userAddress);
-        registry.setUserAllowance(_userId, _allownace);
+        // slash-tip needs user registry manager role in order to add users
+        registry.grantRole(keccak256("USER_REGISTRY_MANAGER"), address(slash));
     }
 
     function test_description() public view {
@@ -54,33 +59,48 @@ contract SlashTipTest is Test {
     }
 
     function test_addUser() public {
-        addUser(userId, userAddress, allowance);
-        assertEq(registry.getUserAddress(userId), userAddress);
-        assertEq(registry.getUserAllowance(userId), allowance);
+        registry.addUser(fromUserId, fromUser);
+        assertEq(registry.getUserAddress(fromUserId), fromUser.account);
+        assertEq(registry.getUserAllowance(fromUserId), fromUser.allowance);
     }
 
     function test_setUserAllownace() public {
-        addUser(userId, userAddress, allowance);
-        registry.setUserAllowance(userId, allowance);
-        assertEq(registry.getUserAllowance(userId), allowance);
+        registry.addUser(fromUserId, fromUser);
+        uint256 newAllowance = 10;
+        registry.setUserAllowance(fromUserId, newAllowance);
+        assertEq(registry.getUserAllowance(fromUserId), newAllowance);
     }
 
     function test_tip() public {
-        addUser(userId, userAddress, allowance);
+        registry.addUser(fromUserId, fromUser);
+        registry.addUser(toUserId, toUser);
 
-        uint256 tokenId = 1;
-        uint256 amountToMint = allowance - 5;
-        slash.tip(userId, tokenId, amountToMint);
-        assertEq(tip.balanceOf(userAddress, tokenId), amountToMint);
-        assertEq(slash.balanceOf(userId, tokenId), amountToMint);
+        assertEq(registry.getUserAllowance(fromUserId), fromUser.allowance);
+        assertEq(registry.getUserAllowance(toUserId), toUser.allowance);
+
+        uint256 amountToMint = 1;
+        slash.tip(fromUserId, toUserId, tokenId, amountToMint);
+        assertEq(tip.balanceOf(toUser.account, tokenId), amountToMint);
+        assertEq(slash.balanceOf(toUserId, tokenId), amountToMint);
+        assertEq(slash.allowanceOf(fromUserId), fromUser.allowance - amountToMint);
+        assertEq(registry.getUserAllowance(fromUserId), fromUser.allowance - amountToMint);
     }
 
     function test_tipOverAllowanceRevert() public {
-        registry.addUser(userId, userAddress);
+        uint256 allowance = 3;
 
-        allowance = 5;
-        registry.setUserAllowance(userId, allowance);
-        vm.expectRevert(bytes("Insufficient allowance"));
-        slash.tip(userId, 1, allowance + 1);
+        registry.addUser(fromUserId, UserRegistry.User({
+            nickname: "a test user",
+            account: 0x18F33CEf45817C428d98C4E188A770191fDD4B79,
+            allowance: allowance
+        }));
+        registry.addUser(toUserId, UserRegistry.User({
+            nickname: "another test user",
+            account: 0x9a37E57d177c5Ff8817B55da36F2A2b3532CDE3F,
+            allowance: 0
+        }));
+
+        vm.expectRevert(bytes("Insufficient allowance to mint"));
+        slash.tip(fromUserId, toUserId, tokenId, allowance + 1);
     }
 }

@@ -12,9 +12,9 @@ contract Tip is ERC1155, AccessControl {
   bytes32 TIP_MANAGER = keccak256("TIP_MANAGER");
   string public baseURI;
 
-  constructor(address admin, string memory _baseURI) {
-    _grantRole(DEFAULT_ADMIN_ROLE, admin);
-    _grantRole(TIP_MANAGER, admin);
+  constructor(address _admin, string memory _baseURI) {
+    _grantRole(DEFAULT_ADMIN_ROLE, _admin);
+    _grantRole(TIP_MANAGER, _admin);
     baseURI = _baseURI;
   }
 
@@ -29,8 +29,8 @@ contract Tip is ERC1155, AccessControl {
     emit URI(baseURI, 0);
   }
 
-  function mint(address account, uint256 id, uint256 amount, bytes memory data) public onlyRole(TIP_MANAGER) {
-    _mint(account, id, amount, data);
+  function mint(address _account, uint256 _id, uint256 _amount, bytes memory _data) public onlyRole(TIP_MANAGER) {
+    _mint(_account, _id, _amount, _data);
   }
 
   function supportsInterface(bytes4 interfaceId) public view override(ERC1155, AccessControl) returns (bool) {

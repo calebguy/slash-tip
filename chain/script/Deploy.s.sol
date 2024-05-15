@@ -23,6 +23,9 @@ contract DeployScript is Script {
         // slash-tip needs tip manager role in order to mint
         tip.grantRole(keccak256("TIP_MANAGER"), address(slash));
 
+        // slash-tip needs user registry manager role in order to update allowance
+        registry.grantRole(keccak256("USER_REGISTRY_MANAGER"), address(slash));
+
         vm.stopBroadcast();
     }
 }

@@ -10,6 +10,13 @@ contract UserRegistryTest is Test {
     UserRegistry public registry;
     string description = "User registry";
 
+    string public userId = "user1";
+    UserRegistry.User public user = UserRegistry.User({
+        nickname: "a test user",
+        account: 0x18F33CEf45817C428d98C4E188A770191fDD4B79,
+        allowance: 10
+    });
+
     function setUp() public {
         registry = new UserRegistry(address(this), description);
     }
@@ -18,44 +25,48 @@ contract UserRegistryTest is Test {
        assertEq(registry.description(), description);
     }
 
-    function test_userNotExistsAllowanceZero() public view {
-        string memory userId = "user1";
-        uint256 allowance = registry.getUserAllowance(userId);
-        assertEq(allowance, 0);
+    function test_getUserDoesNotExist() public {
+        vm.expectRevert(bytes("User does not exist"));
+        registry.getUser(userId);
     }
 
-    function test_userNotExistsGetUser() public view {
-        string memory userId = "user1";
-        address user = registry.getUserAddress(userId);
-        assertEq(user, address(0));
+    function test_getUserAllowanceDoesNotExist() public {
+        vm.expectRevert(bytes("User does not exist"));
+        registry.getUserAllowance(userId);
+    }
+
+    function test_getUserAddressDoesNotExist() public {
+        vm.expectRevert(bytes("User does not exist"));
+        registry.getUserAddress(userId);
     }
     
     function test_addUser() public {
-        string memory userId = "user1";
-        address user = address(0x1);
         registry.addUser(userId, user);
-        assertEq(registry.getUserAddress(userId), user);
+        UserRegistry.User memory _user = registry.getUser(userId);
+        assertEq(_user.account, user.account);
+        assertEq(_user.allowance, user.allowance);
+        assertEq(_user.nickname, user.nickname);
     }
 
     function test_removeUser() public {
-        string memory userId = "user1";
-        address user = address(0x1);
         registry.addUser(userId, user);
         registry.removeUser(userId);
-        assertEq(registry.getUserAddress(userId), address(0));
+
+        vm.expectRevert(bytes("User does not exist"));
+        registry.getUser(userId);
     }
 
-    function test_userAllowance() public {
-        string memory userId = "user1";
-        address user = address(0x1);
+    function test_userSetAllowance() public {
         registry.addUser(userId, user);
-        registry.setUserAllowance(userId, 100);
-        assertEq(registry.getUserAllowance(userId), 100);
+        uint256 allowance = 100;
+        registry.setUserAllowance(userId, allowance);
+        assertEq(registry.getUserAllowance(userId), allowance);
+
+        UserRegistry.User memory _user = registry.getUser(userId);
+        assertEq(_user.allowance, allowance);
     }
 
     function test_userAddAllowance() public {
-        string memory userId = "user1";
-        address user = address(0x1);
         registry.addUser(userId, user);
         registry.setUserAllowance(userId, 100);
         registry.addUserAllowance(userId, 50);
@@ -63,12 +74,10 @@ contract UserRegistryTest is Test {
     }
 
     function test_userSubAllowance() public {
-        string memory userId = "user1";
-        address user = address(0x1);
         registry.addUser(userId, user);
         registry.setUserAllowance(userId, 100);
-        registry.subUserAllowance(userId, 50);
-        assertEq(registry.getUserAllowance(userId), 50);
+        registry.subUserAllowance(userId, 30);
+        assertEq(registry.getUserAllowance(userId), 70);
     }
 
     function test_hasUserRegistryManagerRole() public view {

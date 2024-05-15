@@ -2,46 +2,56 @@
 pragma solidity ^0.8.13;
 
 import { AccessControl } from "openzeppelin/access/AccessControl.sol";
-import { IUserRegistry } from "../interfaces/IUserRegistry.sol";
-import { ITip } from "../interfaces/ITip.sol";
+import { UserRegistry } from "../contracts/UserRegistry.sol";
+import { Tip } from "../contracts/Tip.sol";
 
 contract SlashTip is AccessControl {
     bytes32 SLASH_TIP_MANAGER = keccak256("SLASH_TIP_MANAGER");
     string public description;
     
-    IUserRegistry public userRegistry;
-    ITip public tipToken;
+    UserRegistry public userRegistry;
+    Tip public tipToken;
 
     constructor(address _admin, address _userRegistry, address _tipToken, string memory _description) {
       _grantRole(DEFAULT_ADMIN_ROLE, _admin);
       _grantRole(SLASH_TIP_MANAGER, _admin);
       
-      userRegistry = IUserRegistry(_userRegistry);
-      tipToken = ITip(_tipToken);
+      userRegistry = UserRegistry(_userRegistry);
+      tipToken = Tip(_tipToken);
 
       description = _description;
     }
 
-    function tip(string memory _userId, uint256 _tokenId, uint256 _amount) public onlyRole(SLASH_TIP_MANAGER) {
-      address userAddress = userRegistry.getUserAddress(_userId);
-      require(userAddress != address(0), "User not found");
-
-      uint256 allowance = userRegistry.getUserAllowance(_userId);
-      require(allowance >= _amount, "Insufficient allowance");
-
-      tipToken.mint(userAddress, _tokenId, _amount, "");
-    }
-
     function setUserRegistry(address _userRegistry) public onlyRole(SLASH_TIP_MANAGER) {
-      userRegistry = IUserRegistry(_userRegistry);
+      userRegistry = UserRegistry(_userRegistry);
     }
 
     function setTipToken(address _tipToken) public onlyRole(SLASH_TIP_MANAGER) {
-      tipToken = ITip(_tipToken);
+      tipToken = Tip(_tipToken);
+    }
+
+    function tip(string memory _fromId, string memory _toId, uint256 _tokenId, uint256 _amount) public onlyRole(SLASH_TIP_MANAGER) {
+      // from user must be registered
+      UserRegistry.User memory fromUser = userRegistry.getUser(_fromId);
+
+      // sender must have enough balance
+      require(fromUser.allowance >= _amount, "Insufficient allowance to mint");
+
+      // deduct allowance
+      userRegistry.subUserAllowance(_fromId, _amount);
+
+      // to user must be registered
+      UserRegistry.User memory toUser = userRegistry.getUser(_toId);
+
+      // mint tip token to recipient
+      tipToken.mint(toUser.account, _tokenId, _amount, "");
     }
 
     function balanceOf(string memory _userId, uint256 _tokenId) public view returns (uint256) {
-      address userAddress = userRegistry.getUserAddress(_userId);
-      return tipToken.balanceOf(userAddress, _tokenId);
+      return tipToken.balanceOf(userRegistry.getUser(_userId).account, _tokenId);
+    }
+
+    function allowanceOf(string memory _userId) public view returns (uint256) {
+      return userRegistry.getUser(_userId).allowance;
     }
 }
