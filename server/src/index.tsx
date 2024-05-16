@@ -14,7 +14,8 @@ app.get("/", (c) => {
 
 // https://api.slack.com/interactivity/slash-commands
 app.post(Commands.Balance, async (c) => {
-	const { command, text } = await c.req.parseBody<SlackSlashCommandPayload>()
+	const { command, text, ...rest } = await c.req.parseBody<SlackSlashCommandPayload>()
+	console.log({ command, text, ...rest })
 	if (command !== Commands.Balance) {
 		return c.json({
 			response_type: "ephemeral",
