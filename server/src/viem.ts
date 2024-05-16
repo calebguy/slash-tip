@@ -17,7 +17,7 @@ export async function getBalance(userId: string): Promise<bigint> {
   return publicClient.readContract({
     address: SLASH_TIP_ADDRESS,
     abi: slashTipAbi,
-    functionName: 'balanceOf(string)',
-    args: [userId]
+    functionName: 'balanceOf(string,uint256)',
+    args: [userId, 0]
   }) as Promise<bigint>
 }
