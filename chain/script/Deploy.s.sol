@@ -20,6 +20,9 @@ contract DeployScript is Script {
         Tip tip = new Tip(admin, baseURI);
         SlashTip slash = new SlashTip(admin, address(registry), address(tip), "/tip");
     
+        string memory tipAddress = string(abi.encodePacked(address(tip)));
+        tip.setBaseURI(string.concat("https://metadata.syndicate.io/8453/", tipAddress, "/"));
+
         // slash-tip needs tip manager role in order to mint
         tip.grantRole(keccak256("TIP_MANAGER"), address(slash));
 

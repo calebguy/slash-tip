@@ -22,10 +22,7 @@ contract UserRegistry is AccessControl {
     }
 
     function getUser(string memory _id) public view returns (User memory) {
-      User memory user = idToUser[_id];
-      require(user.account != address(0), "User does not exist");
-  
-      return user;
+      return _getUser(_id);
     }
 
     function _getUser(string memory _id) internal view returns (User storage) {

@@ -1,23 +1,23 @@
-import { Hex, createPublicClient, http } from "viem"
+import { createPublicClient, http } from "viem"
 import { base } from "viem/chains"
 
-import userRegistryAbi from "./abi/UserRegistry.json"
+import slashTipAbi from "./abi/SlashTip.json"
 
-const USER_REGISTRY_ADDRESS = "0xb3029a3c2e70900F334c449D1691D4219cC71953"
-const TIP_ADDRESS = "0x06f0C031e9AC472ffac5D72434CF9eBC66f788F7"
-const SLASH_TIP_ADDRESS = "0xBd124A7D405c41fa2281603F39531d7E5D67C103"
+
+const USER_REGISTRY_ADDRESS = "0x5F7aBf7063e1e78A32f144F5796715d7B66c521E"
+const TIP_ADDRESS = "0xA19e91f5c794BBe0632cC14bB51Db434573246e2"
+const SLASH_TIP_ADDRESS = "0x0aa9c1137b3ff552Eb5e0fF1e18A1F59D854df81"
 
 const publicClient = createPublicClient({ 
   chain: base,
   transport: http()
 })
 
-export async function getBalance(userId: string) {
-  const address = await publicClient.readContract({
-    address: USER_REGISTRY_ADDRESS,
-    abi: userRegistryAbi,
-    functionName: 'getUserAddress',
+export async function getBalance(userId: string): Promise<bigint> {
+  return publicClient.readContract({
+    address: SLASH_TIP_ADDRESS,
+    abi: slashTipAbi,
+    functionName: 'balanceOf(string)',
     args: [userId]
-  })
-  return publicClient.getBalance({ address: address as Hex })
+  }) as Promise<bigint>
 }

@@ -1,7 +1,7 @@
 {
   "transactions": [
     {
-      "hash": null,
+      "hash": "0x1b76859a52e3527aa0593e87921e4818e7e6c68446542ff31a15aa8c7109a4e7",
       "transactionType": "CREATE",
       "contractName": "UserRegistry",
       "contractAddress": "0x5F7aBf7063e1e78A32f144F5796715d7B66c521E",
@@ -23,7 +23,7 @@
       "isFixedGasLimit": false
     },
     {
-      "hash": null,
+      "hash": "0x42244e4a3ed11a3289344d33c1643111ef1dc6e5eb1ae717ac0010d20ce03e0b",
       "transactionType": "CREATE",
       "contractName": "Tip",
       "contractAddress": "0xA19e91f5c794BBe0632cC14bB51Db434573246e2",
@@ -45,7 +45,7 @@
       "isFixedGasLimit": false
     },
     {
-      "hash": null,
+      "hash": "0xef8ef5c1595bb7432e826626881b437ba574037b4365bdf56664a300e11771a4",
       "transactionType": "CREATE",
       "contractName": "SlashTip",
       "contractAddress": "0x0aa9c1137b3ff552Eb5e0fF1e18A1F59D854df81",
@@ -69,7 +69,7 @@
       "isFixedGasLimit": false
     },
     {
-      "hash": null,
+      "hash": "0x8b152af471c74c5840e0acc5469ed20aa7381d74c461d6d7eb7a935029061ae9",
       "transactionType": "CALL",
       "contractName": "src/contracts/Tip.sol:Tip",
       "contractAddress": "0xA19e91f5c794BBe0632cC14bB51Db434573246e2",
@@ -91,7 +91,7 @@
       "isFixedGasLimit": false
     },
     {
-      "hash": null,
+      "hash": "0x947a8b932ae825696ce26f8334af699f70439f5953db2c181160925320aaa113",
       "transactionType": "CALL",
       "contractName": "src/contracts/Tip.sol:Tip",
       "contractAddress": "0xA19e91f5c794BBe0632cC14bB51Db434573246e2",
@@ -114,7 +114,7 @@
       "isFixedGasLimit": false
     },
     {
-      "hash": null,
+      "hash": "0x74ac796da182f17e148e8441842aadb9998098286b4c9981c5de6e5a7e247b1c",
       "transactionType": "CALL",
       "contractName": "src/contracts/UserRegistry.sol:UserRegistry",
       "contractAddress": "0x5F7aBf7063e1e78A32f144F5796715d7B66c521E",
@@ -139,9 +139,16 @@
   ],
   "receipts": [],
   "libraries": [],
-  "pending": [],
+  "pending": [
+    "0x1b76859a52e3527aa0593e87921e4818e7e6c68446542ff31a15aa8c7109a4e7",
+    "0x42244e4a3ed11a3289344d33c1643111ef1dc6e5eb1ae717ac0010d20ce03e0b",
+    "0xef8ef5c1595bb7432e826626881b437ba574037b4365bdf56664a300e11771a4",
+    "0x8b152af471c74c5840e0acc5469ed20aa7381d74c461d6d7eb7a935029061ae9",
+    "0x947a8b932ae825696ce26f8334af699f70439f5953db2c181160925320aaa113",
+    "0x74ac796da182f17e148e8441842aadb9998098286b4c9981c5de6e5a7e247b1c"
+  ],
   "returns": {},
-  "timestamp": 1715811052,
+  "timestamp": 1715811108,
   "chain": 8453,
   "multi": false,
   "commit": "b5a5ac6"
