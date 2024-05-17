@@ -29,13 +29,13 @@ export function registerUser({id, nickname, address}: {id: string, nickname: str
     chainId,
     projectId,
     contractAddress: USER_REGISTRY_ADDRESS,
-    functionSignature: "addUser(string id, (string nickname, address account, uint256 allowance) user)",
+    functionSignature: "addUser(string, (string, address, uint256))",
     args: {
-      id,
-      user: {
-        nickname,
-        address,
-        allowance: 5
+      0: id,
+      1: {
+        0: nickname,
+        1: address,
+        2: 5
       }
     }
   })
