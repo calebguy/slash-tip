@@ -1,7 +1,7 @@
 import { Hono } from "hono"
 import { Index } from "./components/Index"
 import { Commands, type SlackSlashCommandPayload } from "./types"
-import { parseTipCommandArgs, parseUserFromText } from "./utils"
+import { parseTipCommandArgs } from "./utils"
 import { getBalance } from "./viem"
 
 const app = new Hono()
@@ -14,24 +14,11 @@ app.get("/", (c) => {
 
 // https://api.slack.com/interactivity/slash-commands
 app.post(Commands.Balance, async (c) => {
-	const { command, text, ...rest } =
+	const { command, user_id, ...rest } =
 		await c.req.parseBody<SlackSlashCommandPayload>()
-	console.log({ command, text, ...rest })
-	if (command !== Commands.Balance) {
-		return c.json({
-			response_type: "ephemeral",
-			text: `Invalid command: ${command} -- should be: ${Commands.Balance}`,
-		})
-	}
+	console.log({ command, user_id, ...rest })
 
-	const id = parseUserFromText(text)
-	if (!id) {
-		return c.json({
-			response_type: "ephemeral",
-			text: "Could not parse tipee",
-		})
-	}
-	const balance = await getBalance(id)
+	const balance = await getBalance(user_id)
 	return c.json({
 		response_type: "ephemeral",
 		text: balance.toString(),
@@ -39,13 +26,7 @@ app.post(Commands.Balance, async (c) => {
 })
 
 app.post(Commands.Tip, async (c) => {
-	const { command, text } = await c.req.parseBody<SlackSlashCommandPayload>()
-	if (command !== Commands.Tip) {
-		return c.json({
-			response_type: "ephemeral",
-			text: `Invalid command: ${command} -- should be: ${Commands.Tip}`,
-		})
-	}
+	const { text } = await c.req.parseBody<SlackSlashCommandPayload>()
 
 	const { id, amount: _amount } = parseTipCommandArgs(text)
 	console.log(`tipping ${_amount} to ${id}`)
