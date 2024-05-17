@@ -34,6 +34,10 @@ const tip = getContract({
 
 const tokenId = 0
 
-export async function getBalance(userId: string): Promise<bigint> {
+export function getBalance(userId: string): Promise<bigint> {
 	return slashTip.read.balanceOf([userId, BigInt(tokenId)])
+}
+
+export function getAllowance(userId: string) {
+  return slashTip.read.allowanceOf([userId])
 }
