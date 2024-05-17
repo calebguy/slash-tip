@@ -23,7 +23,7 @@ app.post(Commands.Balance, async (c) => {
 				type: "section",
 				text: {
 					type: "mrkdwn",
-					text: `<@${user_id}> balance: ${balance.toString()}`,
+					text: `<@${user_id}> ${balance.toString()}✺`,
 				},
 			},
 		],
@@ -40,7 +40,7 @@ app.post(Commands.Address, async (c) => {
 				type: "section",
 				text: {
 					type: "mrkdwn",
-					text: `<@${user_id}> address: ${address}`,
+					text: `<@${user_id}> ${address}`,
 				},
 			},
 		],
