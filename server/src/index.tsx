@@ -24,7 +24,7 @@ app.post(Commands.Balance, async (c) => {
 	console.log('got balance', balance.toString())
 	return c.json({
 		response_type: "ephemeral",
-		text: balance.toString(),
+		text: `balance: ${balance.toString()}`,
 	})
 })
 
