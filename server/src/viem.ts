@@ -41,3 +41,7 @@ export function getBalance(userId: string): Promise<bigint> {
 export function getAllowance(userId: string) {
   return slashTip.read.allowanceOf([userId])
 }
+
+export function getUserAddress(userId: string) {
+  return userRegistry.read.getUserAddress([userId])
+}

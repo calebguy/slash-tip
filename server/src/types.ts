@@ -17,4 +17,5 @@ export type SlackSlashCommandPayload = {
 export enum Commands {
 	Tip = "/tip",
 	Balance = "/balance",
+	Address = "/address"
 }

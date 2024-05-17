@@ -3,11 +3,9 @@ import { Index } from "./components/Index"
 import { mint } from "./syndicate"
 import { Commands, type SlackSlashCommandPayload } from "./types"
 import { parseTipCommandArgs } from "./utils"
-import { getAllowance, getBalance } from "./viem"
+import { getAllowance, getBalance, getUserAddress } from "./viem"
 
 const app = new Hono()
-
-const maxAmount = 100
 
 app.get("/", (c) => {
 	return c.html(<Index />)
@@ -15,7 +13,7 @@ app.get("/", (c) => {
 
 // https://api.slack.com/interactivity/slash-commands
 app.post(Commands.Balance, async (c) => {
-	const { command, user_id, ...rest } =
+	const { user_id } =
 	await c.req.parseBody<SlackSlashCommandPayload>()
 	const balance = await getBalance(user_id)
 	return c.json({
@@ -25,7 +23,24 @@ app.post(Commands.Balance, async (c) => {
 				type: "section",
 				text: {
 					type: "mrkdwn",
-					text: balance.toString(),
+					text: `<@${user_id}> balance: ${balance.toString()}`,
+				},
+			},
+		],
+	})
+})
+
+app.post(Commands.Address, async (c) => {
+	const { user_id, } = await c.req.parseBody<SlackSlashCommandPayload>()
+	const address = await getUserAddress(user_id)
+	return c.json({
+		response_type: "in_channel",
+		blocks: [
+			{
+				type: "section",
+				text: {
+					type: "mrkdwn",
+					text: `<@${user_id}> address: ${address}`,
 				},
 			},
 		],
@@ -52,13 +67,6 @@ app.post(Commands.Tip, async (c) => {
 	}
 
 	const amount = Number(_amount)
-	if (Number.isNaN(amount) || amount < 1 || amount > maxAmount) {
-		return c.json({
-			response_type: "ephemeral",
-			text: `Amount must between 1 and ${maxAmount}`,
-		})
-	}
-
 	const allowance = await getAllowance(user_id)
 	if (allowance < BigInt(amount)) {
 		return c.json({
@@ -74,7 +82,7 @@ app.post(Commands.Tip, async (c) => {
 	})
 	console.log(`minted ${amount} to ${id} from ${user_id} with transactionId ${transactionId}`)
 
-	const tips = Array.from({ length: Number(amount) }, () => "✺").join("")
+	const tips = Array.from({ length: amount }, () => "✺").join("")
 	return c.json({
 		response_type: "in_channel",
 		blocks: [
