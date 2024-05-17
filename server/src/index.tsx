@@ -40,7 +40,7 @@ app.post(Commands.Address, async (c) => {
 				type: "section",
 				text: {
 					type: "mrkdwn",
-					text: `<@${user_id}> ${address}`,
+					text: `<@${user_id}> <https://basescan.org/address/${address}|${address}>`,
 				},
 			},
 		],
