@@ -1,8 +1,8 @@
 import { Hono } from "hono"
 import { Index } from "./components/Index"
-import { mint } from "./syndicate"
+import { mint, registerUser } from "./syndicate"
 import { Commands, type SlackSlashCommandPayload } from "./types"
-import { parseTipCommandArgs } from "./utils"
+import { extractEthereumAddresses, parseTipCommandArgs } from "./utils"
 import { getAllowance, getBalance, getUserAddress } from "./viem"
 
 const app = new Hono()
@@ -16,6 +16,31 @@ app.post(Commands.Balance, async (c) => {
 	const { user_id } =
 	await c.req.parseBody<SlackSlashCommandPayload>()
 	const balance = await getBalance(user_id)
+	return c.json({
+		response_type: "in_channel",
+		blocks: [
+			{
+				type: "section",
+				text: {
+					type: "mrkdwn",
+					text: `<@${user_id}> ${balance.toString()}✺`,
+				},
+			},
+		],
+	})
+})
+
+app.post(Commands.Register, async (c) => {
+	const { user_id, user_name, text } =
+	await c.req.parseBody<SlackSlashCommandPayload>()
+	const address = extractEthereumAddresses(text)[0]
+	if (!address) {
+		return c.json({
+			response_type: "ephemeral",
+			text: "Could not parse address, please prompt like /register 0x123...",
+		})
+	}
+	const balance = await registerUser({id: user_id, nickname: user_name, address})
 	return c.json({
 		response_type: "in_channel",
 		blocks: [

@@ -4,10 +4,7 @@ import { base } from "viem/chains"
 import slashTipABI from "./abi/slashTip"
 import tipABI from "./abi/tip"
 import userRegistryABI from "./abi/userRegistry"
-
-const USER_REGISTRY_ADDRESS = "0x5F7aBf7063e1e78A32f144F5796715d7B66c521E"
-const TIP_ADDRESS = "0xA19e91f5c794BBe0632cC14bB51Db434573246e2"
-const SLASH_TIP_ADDRESS = "0x0aa9c1137b3ff552Eb5e0fF1e18A1F59D854df81"
+import { SLASH_TIP_ADDRESS, TIP_ADDRESS, USER_REGISTRY_ADDRESS } from "./constants"
 
 const client = createPublicClient({
 	chain: base,

@@ -14,3 +14,11 @@ export function parseTipCommandArgs(input: string) {
 
 	return { id: parseUserFromText(input), amount }
 }
+
+export function extractEthereumAddresses(text: string) {
+    // Ethereum address regex pattern
+    const ethAddressPattern = /\b0x[a-fA-F0-9]{40}\b/g;
+    // Find all matches in the text
+    const addresses = text.match(ethAddressPattern);
+    return addresses || [];
+}
