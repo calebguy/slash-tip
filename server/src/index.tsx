@@ -23,8 +23,16 @@ app.post(Commands.Balance, async (c) => {
 	const balance = await getBalance(user_id)
 	console.log('got balance', balance.toString())
 	return c.json({
-		response_type: "ephemeral",
-		text: `balance: ${balance.toString()}`,
+		response_type: "in_channel",
+		blocks: [
+			{
+				type: "section",
+				text: {
+					type: "mrkdwn",
+					text: `balance ${balance.toString()}`,
+				},
+			},
+		],
 	})
 })
 
