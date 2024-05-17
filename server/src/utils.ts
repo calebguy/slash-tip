@@ -1,6 +1,5 @@
 const slackIDPattern = /<@(\w+)\|/
 
-
 export function parseUserFromText(input: string) {
 	const id = input.match(slackIDPattern)
 	return id ? id[1] : null
