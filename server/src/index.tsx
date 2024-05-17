@@ -40,6 +40,7 @@ app.post(Commands.Register, async (c) => {
 			text: "Could not parse address, please prompt like /register 0x123...",
 		})
 	}
+	console.log(`registring ${user_id} with address ${address} and nickname ${user_name}`)
 	const balance = await registerUser({id: user_id, nickname: user_name, address})
 	return c.json({
 		response_type: "in_channel",
