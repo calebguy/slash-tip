@@ -18,7 +18,10 @@ app.post(Commands.Balance, async (c) => {
 		await c.req.parseBody<SlackSlashCommandPayload>()
 	console.log({ command, user_id, ...rest })
 
+	console.log('querying balance for', user_id)
+
 	const balance = await getBalance(user_id)
+	console.log('got balance', balance.toString())
 	return c.json({
 		response_type: "ephemeral",
 		text: balance.toString(),
