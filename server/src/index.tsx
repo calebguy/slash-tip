@@ -29,7 +29,7 @@ app.post(Commands.Balance, async (c) => {
 				type: "section",
 				text: {
 					type: "mrkdwn",
-					text: `balance ${balance.toString()}`,
+					text: balance.toString(),
 				},
 			},
 		],
