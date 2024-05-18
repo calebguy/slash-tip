@@ -1,9 +1,9 @@
 import { Hono } from "hono"
 import { Index } from "./components/Index"
-import { mint, registerUser } from "./syndicate"
+import { getAllowance, getBalance, getUserAddress, mint, registerUser } from "./slash-tip"
 import { Commands, type SlackSlashCommandPayload } from "./types"
 import { extractEthereumAddresses, parseTipCommandArgs } from "./utils"
-import { getAllowance, getBalance, getUserAddress } from "./viem"
+import { Hex } from "viem"
 
 const app = new Hono()
 
@@ -33,7 +33,7 @@ app.post(Commands.Balance, async (c) => {
 app.post(Commands.Register, async (c) => {
 	const { user_id, user_name, text } =
 	await c.req.parseBody<SlackSlashCommandPayload>()
-	const address = extractEthereumAddresses(text)[0]
+	const address = extractEthereumAddresses(text)[0] as Hex
 	if (!address) {
 		return c.json({
 			response_type: "ephemeral",
@@ -101,12 +101,12 @@ app.post(Commands.Tip, async (c) => {
 		})
 	}
 
-	const { transactionId } = await mint({
+	const hash = await mint({
 		from: user_id,
 		to: id,
 		amount,
 	})
-	console.log(`minted ${amount} to ${id} from ${user_id} with transactionId ${transactionId}`)
+	console.log(`minted ${amount} to ${id} from ${user_id} with hash ${hash}`)
 
 	const tips = Array.from({ length: amount }, () => "✺").join("")
 	return c.json({

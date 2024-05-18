@@ -1,6 +1,8 @@
 import { SyndicateClient } from "@syndicateio/syndicate-node";
 import { SLASH_TIP_ADDRESS, USER_REGISTRY_ADDRESS } from "./constants";
 import { env } from "./env";
+import { slashTipContract, userRegistryContract } from "./viem";
+import { Hex } from "viem";
 
 const syndicate = new SyndicateClient({
   token: env.SYNDICATE_API_KEY,
@@ -10,6 +12,28 @@ const chainId = 8453
 const projectId = "570119ce-a49c-4245-8851-11c9d1ad74c7"
 
 export function mint({from, to, amount}: {from: string, to: string, amount: number}) {
+  return slashTipContract.write.tip([from, to, BigInt(0), BigInt(amount)])
+}
+
+export function registerUser({id, nickname, address}: {id: string, nickname: string, address: Hex}) {
+  return userRegistryContract.write.addUser(
+    [id, {nickname, account: address, allowance: BigInt(5)}]
+  )
+}
+
+export function getBalance(userId: string): Promise<bigint> {
+	return slashTipContract.read.balanceOf([userId, BigInt(0)])
+}
+
+export function getAllowance(userId: string) {
+  return slashTipContract.read.allowanceOf([userId])
+}
+
+export function getUserAddress(userId: string) {
+  return userRegistryContract.read.getUserAddress([userId])
+}
+
+export function syndicateMint({from, to, amount}: {from: string, to: string, amount: number}) {
   return syndicate.transact.sendTransaction({
     chainId,
     projectId,
@@ -24,7 +48,7 @@ export function mint({from, to, amount}: {from: string, to: string, amount: numb
   })
 }
 
-export function registerUser({id, nickname, address}: {id: string, nickname: string, address: string}) {
+export function syndicateRegisterUser({id, nickname, address}: {id: string, nickname: string, address: string}) {
   return syndicate.transact.sendTransaction({
     chainId,
     projectId,
@@ -40,4 +64,3 @@ export function registerUser({id, nickname, address}: {id: string, nickname: str
     }
   })
 }
-
