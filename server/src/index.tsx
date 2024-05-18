@@ -30,6 +30,24 @@ app.post(Commands.Balance, async (c) => {
 	})
 })
 
+app.post(Commands.Allowance, async (c) => {
+	const { user_id } =
+	await c.req.parseBody<SlackSlashCommandPayload>()
+	const allowance = await getAllowance(user_id)
+	return c.json({
+		response_type: "in_channel",
+		blocks: [
+			{
+				type: "section",
+				text: {
+					type: "mrkdwn",
+					text: `<@${user_id}> ${allowance.toString()}✺`,
+				},
+			},
+		],
+	})
+})
+
 app.post(Commands.Register, async (c) => {
 	const { user_id, user_name, text } =
 	await c.req.parseBody<SlackSlashCommandPayload>()
@@ -41,7 +59,7 @@ app.post(Commands.Register, async (c) => {
 		})
 	}
 	console.log(`registring ${user_id} with address ${address} and nickname ${user_name}`)
-	const balance = await registerUser({id: user_id, nickname: user_name, address})
+	await registerUser({id: user_id, nickname: user_name, address})
 	return c.json({
 		response_type: "in_channel",
 		blocks: [
@@ -49,7 +67,7 @@ app.post(Commands.Register, async (c) => {
 				type: "section",
 				text: {
 					type: "mrkdwn",
-					text: `<@${user_id}> ${balance.toString()}✺`,
+					text: `<@${user_id}> registered: ${address}`,
 				},
 			},
 		],

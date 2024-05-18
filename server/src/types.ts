@@ -19,4 +19,5 @@ export enum Commands {
 	Balance = "/balance",
 	Address = "/address",
 	Register = "/register",
+	Allowance = "/allowance",
 }
