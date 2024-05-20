@@ -16,9 +16,9 @@ export function parseTipCommandArgs(input: string) {
 }
 
 export function extractEthereumAddresses(text: string) {
-    // Ethereum address regex pattern
-    const ethAddressPattern = /\b0x[a-fA-F0-9]{40}\b/g;
-    // Find all matches in the text
-    const addresses = text.match(ethAddressPattern);
-    return addresses || [];
+	// Ethereum address regex pattern
+	const ethAddressPattern = /\b0x[a-fA-F0-9]{40}\b/g
+	// Find all matches in the text
+	const addresses = text.match(ethAddressPattern)
+	return addresses || []
 }
