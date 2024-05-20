@@ -58,6 +58,15 @@ app.post(Commands.Register, async (c) => {
 			text: "Could not parse address, please prompt like /register 0x123...",
 		})
 	}
+
+	const registeredAddress = await getUserAddress(user_id).catch(() => null);
+	if (registeredAddress) {
+		return c.json({
+			response_type: "ephemeral",
+			text: `You are already registered with address: ${registeredAddress}`,
+		})
+	}
+
 	console.log(`registring ${user_id} with address ${address} and nickname ${user_name}`)
 	await registerUser({id: user_id, nickname: user_name, address})
 	return c.json({
