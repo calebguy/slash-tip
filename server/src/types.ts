@@ -1,3 +1,5 @@
+import { InferResponseType } from "hono"
+
 export type SlackSlashCommandPayload = {
 	token: string
 	team_id: string
