@@ -3,6 +3,7 @@ import type { Hex } from "viem";
 import {
 	getAllowance,
 	getBalance,
+	getLeaderBoard,
 	getUserAddress,
 	mint,
 	registerUser,
@@ -144,6 +145,19 @@ const app = new Hono()
 				},
 			],
 		});
-	});
+	})
+	.post(Commands.Leaderboard, async (c) => {
+		const leaderboard = await getLeaderBoard();
+		return c.json({
+			response_type: "in_channel",
+			blocks: leaderboard.map((user) => ({
+				type: "section",
+				text: {
+					type: "mrkdwn",
+					text: `<@${user.nickname}> ${user.balance.toString()}✺`,
+				},
+			})),
+		});
+	})
 
 export default app;

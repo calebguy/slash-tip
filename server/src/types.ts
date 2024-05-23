@@ -1,4 +1,3 @@
-import { InferResponseType } from "hono"
 
 export type SlackSlashCommandPayload = {
 	token: string
@@ -22,4 +21,5 @@ export enum Commands {
 	Address = "/address",
 	Register = "/register",
 	Allowance = "/allowance",
+	Leaderboard = "/leaderboard"
 }
