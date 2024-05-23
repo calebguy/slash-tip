@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query"
 import { hc, type InferResponseType } from "hono/client"
 import type { ApiType } from "../../src/index"
 import "./App.css"
-import logo from "./assets/black-gif.gif"
 import { abbreviate } from "./utils"
 
 const client = hc<ApiType>("/")
@@ -72,7 +71,7 @@ function App() {
 				</button>
 			</div>
 			<div className="flex justify-center">
-				<img src={logo} alt="✺" width={35} height={35} />
+				<img src={"/black-gif.gif"} alt="✺" width={35} height={35} />
 			</div>
 		</div>
 	)
