@@ -12,7 +12,7 @@ const chainId = 8453
 const projectId = "570119ce-a49c-4245-8851-11c9d1ad74c7"
 const tokenId = 0
 
-const userIds = ["U05LE52HUJW", "U04SXK2ADK3", "U06LPBU6A02"]
+const userIds = ["U05LE52HUJW", "U04SXK2ADK3", "U06LPBU6A02", "U04T5FRG264"]
 
 interface UserWithBalance {
 	nickname: string
