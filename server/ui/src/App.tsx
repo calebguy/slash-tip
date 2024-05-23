@@ -68,7 +68,7 @@ function App() {
 			<div className="flex flex-col justify-end items-center gap-y-8 py-8 md:py-12">
 				<button
 					type="button"
-					className="text-4xl md:text-6xl p-2 bg-[#02d100] text-[#03ff00] cursor-not-allowed active:translate-x-px active:translate-y-px"
+					className="rounded-3xl px-4 text-4xl md:text-6xl p-2 bg-[#02d100] text-[#03ff00] cursor-not-allowed active:translate-x-px active:translate-y-px"
 				>
 					redeem
 				</button>

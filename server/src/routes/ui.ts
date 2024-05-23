@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { getLeaderBoard } from "../slash-tip";
+import { getLeaderBoard } from "../chain";
 
 const app = new Hono()
 	.get("/wow", (c) => {

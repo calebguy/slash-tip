@@ -1,5 +1,4 @@
 import { Hono } from "hono";
-import type { Hex } from "viem";
 import {
 	getAllowance,
 	getBalance,
@@ -7,9 +6,9 @@ import {
 	getUserAddress,
 	mint,
 	registerUser,
-} from "../slash-tip";
+} from "../chain";
 import { Commands, type SlackSlashCommandPayload } from "../types";
-import { extractEthereumAddresses, parseTipCommandArgs } from "../utils";
+import { extractEthereumAddresses, parseTipCommandArgs, toStar } from "../utils";
 
 // https://api.slack.com/interactivity/slash-commands
 const app = new Hono()
@@ -23,7 +22,7 @@ const app = new Hono()
 					type: "section",
 					text: {
 						type: "mrkdwn",
-						text: `<@${user_id}> ${balance.toString()}✺`,
+						text: `<@${user_id}> ${toStar(balance)}`,
 					},
 				},
 			],
@@ -39,7 +38,7 @@ const app = new Hono()
 					type: "section",
 					text: {
 						type: "mrkdwn",
-						text: `<@${user_id}> ${allowance.toString()}✺`,
+						text: `<@${user_id}> ${toStar(allowance)}`,
 					},
 				},
 			],
@@ -48,7 +47,7 @@ const app = new Hono()
 	.post(Commands.Register, async (c) => {
 		const { user_id, user_name, text } =
 			await c.req.parseBody<SlackSlashCommandPayload>();
-		const address = extractEthereumAddresses(text)[0] as Hex;
+		const address = extractEthereumAddresses(text);
 		if (!address) {
 			return c.json({
 				response_type: "ephemeral",
@@ -102,6 +101,9 @@ const app = new Hono()
 
 		const { id, amount: _amount } = parseTipCommandArgs(text);
 		console.log(`tipping ${_amount} to ${id}`);
+
+		// @note TODO need to check if id user exists 
+
 		if (!id) {
 			return c.json({
 				response_type: "ephemeral",
@@ -154,7 +156,7 @@ const app = new Hono()
 				type: "section",
 				text: {
 					type: "mrkdwn",
-					text: `<@${user.nickname}> ${user.balance.toString()}✺`,
+					text: `<@${user.nickname}> ${toStar(user.balance)}✺`,
 				},
 			})),
 		});

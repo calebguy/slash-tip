@@ -1,3 +1,5 @@
+import { Hex } from "viem"
+
 const slackIDPattern = /<@(\w+)\|/
 
 export function parseUserFromText(input: string) {
@@ -20,5 +22,9 @@ export function extractEthereumAddresses(text: string) {
 	const ethAddressPattern = /\b0x[a-fA-F0-9]{40}\b/g
 	// Find all matches in the text
 	const addresses = text.match(ethAddressPattern)
-	return addresses || []
+	return addresses ? addresses[0] as Hex : null
+}
+
+export function toStar(amount: bigint) {
+	return "✺".repeat(Number(amount))
 }
