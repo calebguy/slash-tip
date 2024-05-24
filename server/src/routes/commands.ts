@@ -7,6 +7,7 @@ import {
 	mint,
 	registerUser,
 } from "../chain";
+import { mustBeRegistered } from "../middleware";
 import { Commands, type SlackSlashCommandPayload } from "../types";
 import {
 	extractEthereumAddresses,
@@ -16,50 +17,6 @@ import {
 
 // https://api.slack.com/interactivity/slash-commands
 const app = new Hono()
-	.post(Commands.Balance, async (c) => {
-		const { user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
-		if (!(await getUserAddress(user_id))) {
-			return c.json({
-				response_type: "ephemeral",
-				text: "Register first with '/register <your-eth-address>'",
-			});
-		}
-		const balance = await getBalance(user_id);
-		return c.json({
-			response_type: "in_channel",
-			blocks: [
-				{
-					type: "section",
-					text: {
-						type: "mrkdwn",
-						text: `<@${user_id}> ${toStar(balance)}`,
-					},
-				},
-			],
-		});
-	})
-	.post(Commands.Allowance, async (c) => {
-		const { user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
-		if (!(await getUserAddress(user_id))) {
-			return c.json({
-				response_type: "ephemeral",
-				text: "Register first with '/register <your-eth-address>'",
-			});
-		}
-		const allowance = await getAllowance(user_id);
-		return c.json({
-			response_type: "in_channel",
-			blocks: [
-				{
-					type: "section",
-					text: {
-						type: "mrkdwn",
-						text: `<@${user_id}> ${toStar(allowance)}`,
-					},
-				},
-			],
-		});
-	})
 	.post(Commands.Register, async (c) => {
 		const { user_id, user_name, text } =
 			await c.req.parseBody<SlackSlashCommandPayload>();
@@ -91,28 +48,6 @@ const app = new Hono()
 					text: {
 						type: "mrkdwn",
 						text: `<@${user_id}> registered: ${address}`,
-					},
-				},
-			],
-		});
-	})
-	.post(Commands.Address, async (c) => {
-		const { user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
-		if (!(await getUserAddress(user_id))) {
-			return c.json({
-				response_type: "ephemeral",
-				text: "Register first with '/register <your-eth-address>'",
-			});
-		}
-		const address = await getUserAddress(user_id);
-		return c.json({
-			response_type: "in_channel",
-			blocks: [
-				{
-					type: "section",
-					text: {
-						type: "mrkdwn",
-						text: `<@${user_id}> <https://basescan.org/address/${address}|${address}>`,
 					},
 				},
 			],
@@ -177,6 +112,60 @@ const app = new Hono()
 					text: {
 						type: "mrkdwn",
 						text: `<@${id}> +${toStar(amount)}`,
+					},
+				},
+			],
+		});
+	})
+	.post(Commands.Balance, mustBeRegistered, async (c) => {
+		const { user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
+		const balance = await getBalance(user_id);
+		return c.json({
+			response_type: "in_channel",
+			blocks: [
+				{
+					type: "section",
+					text: {
+						type: "mrkdwn",
+						text: `<@${user_id}> ${toStar(balance)}`,
+					},
+				},
+			],
+		});
+	})
+	.post(Commands.Allowance, mustBeRegistered, async (c) => {
+		const { user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
+		const allowance = await getAllowance(user_id);
+		return c.json({
+			response_type: "in_channel",
+			blocks: [
+				{
+					type: "section",
+					text: {
+						type: "mrkdwn",
+						text: `<@${user_id}> ${toStar(allowance)}`,
+					},
+				},
+			],
+		});
+	})
+	.post(Commands.Address, mustBeRegistered, async (c) => {
+		const { user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
+		if (!(await getUserAddress(user_id))) {
+			return c.json({
+				response_type: "ephemeral",
+				text: "Register first with '/register <your-eth-address>'",
+			});
+		}
+		const address = await getUserAddress(user_id);
+		return c.json({
+			response_type: "in_channel",
+			blocks: [
+				{
+					type: "section",
+					text: {
+						type: "mrkdwn",
+						text: `<@${user_id}> <https://basescan.org/address/${address}|${address}>`,
 					},
 				},
 			],

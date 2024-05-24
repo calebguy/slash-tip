@@ -64,8 +64,12 @@ export async function getLeaderBoard() {
 }
 
 export async function getUserExists(userId: string) {
-	const user = await userRegistryContract.read.getUser([userId]);
-	return user.id === userId;
+	try {
+		const user = await userRegistryContract.read.getUser([userId]);
+		return user.id === userId;
+	} catch (e) {
+		return false;
+	}
 }
 
 export function syndicateMint({
