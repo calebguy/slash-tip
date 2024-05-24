@@ -205,7 +205,9 @@ const app = new Hono()
 				type: "section",
 				text: {
 					type: "mrkdwn",
-					text: `<@${user.id}> ${toStar(balance)}✺`,
+					text: `<@${user.id}> ${
+						balance > BigInt(0) ? `${toStar(balance)}✺` : "-"
+					}`,
 				},
 			})),
 		});
