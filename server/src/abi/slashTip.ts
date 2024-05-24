@@ -2,11 +2,7 @@ const slashTipABI = [
 	{
 		type: "constructor",
 		inputs: [
-			{
-				name: "_admin",
-				type: "address",
-				internalType: "address",
-			},
+			{ name: "_admin", type: "address", internalType: "address" },
 			{ name: "_userRegistry", type: "address", internalType: "address" },
 			{ name: "_tipToken", type: "address", internalType: "address" },
 			{ name: "_description", type: "string", internalType: "string" },
@@ -19,6 +15,13 @@ const slashTipABI = [
 		inputs: [],
 		outputs: [{ name: "", type: "bytes32", internalType: "bytes32" }],
 		stateMutability: "view",
+	},
+	{
+		type: "function",
+		name: "addAllowanceForAllUsers",
+		inputs: [{ name: "_amount", type: "uint256", internalType: "uint256" }],
+		outputs: [],
+		stateMutability: "nonpayable",
 	},
 	{
 		type: "function",
@@ -73,6 +76,33 @@ const slashTipABI = [
 	},
 	{
 		type: "function",
+		name: "leaderboard",
+		inputs: [{ name: "_tokenId", type: "uint256", internalType: "uint256" }],
+		outputs: [
+			{
+				name: "",
+				type: "tuple[]",
+				internalType: "struct SlashTip.UserWithBalance[]",
+				components: [
+					{
+						name: "user",
+						type: "tuple",
+						internalType: "struct UserRegistry.User",
+						components: [
+							{ name: "id", type: "string", internalType: "string" },
+							{ name: "nickname", type: "string", internalType: "string" },
+							{ name: "account", type: "address", internalType: "address" },
+							{ name: "allowance", type: "uint256", internalType: "uint256" },
+						],
+					},
+					{ name: "balance", type: "uint256", internalType: "uint256" },
+				],
+			},
+		],
+		stateMutability: "view",
+	},
+	{
+		type: "function",
 		name: "renounceRole",
 		inputs: [
 			{ name: "role", type: "bytes32", internalType: "bytes32" },
@@ -88,6 +118,13 @@ const slashTipABI = [
 			{ name: "role", type: "bytes32", internalType: "bytes32" },
 			{ name: "account", type: "address", internalType: "address" },
 		],
+		outputs: [],
+		stateMutability: "nonpayable",
+	},
+	{
+		type: "function",
+		name: "setAllowanceForAllUsers",
+		inputs: [{ name: "_amount", type: "uint256", internalType: "uint256" }],
 		outputs: [],
 		stateMutability: "nonpayable",
 	},
@@ -211,6 +248,6 @@ const slashTipABI = [
 			{ name: "neededRole", type: "bytes32", internalType: "bytes32" },
 		],
 	},
-] as const
+] as const;
 
-export default slashTipABI
+export default slashTipABI;

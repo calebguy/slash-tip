@@ -1,24 +1,24 @@
-import { SyndicateClient } from "@syndicateio/syndicate-node"
-import { Hex } from "viem"
-import { SLASH_TIP_ADDRESS, USER_REGISTRY_ADDRESS } from "./constants"
-import { env } from "./env"
-import { slashTipContract, userRegistryContract } from "./viem"
+import { SyndicateClient } from "@syndicateio/syndicate-node";
+import type { Hex } from "viem";
+import { SLASH_TIP_ADDRESS, USER_REGISTRY_ADDRESS } from "./constants";
+import { env } from "./env";
+import { slashTipContract, userRegistryContract } from "./viem";
 
 const syndicate = new SyndicateClient({
 	token: env.SYNDICATE_API_KEY,
-})
+});
 
-const chainId = 8453
-const projectId = "570119ce-a49c-4245-8851-11c9d1ad74c7"
-const tokenId = 0
+const chainId = 8453;
+const projectId = "570119ce-a49c-4245-8851-11c9d1ad74c7";
+const tokenId = 0;
 
-const userIds = ["U05LE52HUJW", "U04SXK2ADK3", "U06LPBU6A02", "U04T5FRG264"]
+const userIds = ["U05LE52HUJW", "U04SXK2ADK3", "U06LPBU6A02", "U04T5FRG264"];
 
 interface UserWithBalance {
-	nickname: string
-	allowance: bigint
-	id: string
-	account: Hex
+	nickname: string;
+	allowance: bigint;
+	id: string;
+	account: Hex;
 }
 
 export function mint({
@@ -26,7 +26,7 @@ export function mint({
 	to,
 	amount,
 }: { from: string; to: string; amount: number }) {
-	return slashTipContract.write.tip([from, to, BigInt(0), BigInt(amount)])
+	return slashTipContract.write.tip([from, to, BigInt(0), BigInt(amount)]);
 }
 
 export function registerUser({
@@ -36,41 +36,36 @@ export function registerUser({
 }: { id: string; nickname: string; address: Hex }) {
 	return userRegistryContract.write.addUser([
 		id,
-		{ nickname, account: address, allowance: BigInt(5) },
-	])
+		{ id, nickname, account: address, allowance: BigInt(5) },
+	]);
 }
 
 export function getBalance(userId: string): Promise<bigint> {
-	return slashTipContract.read.balanceOf([userId, BigInt(tokenId)])
+	return slashTipContract.read.balanceOf([userId, BigInt(tokenId)]);
 }
 
 export function getAllowance(userId: string) {
-	return slashTipContract.read.allowanceOf([userId])
+	return slashTipContract.read.allowanceOf([userId]);
 }
 
 export function getUserAddress(userId: string) {
-	return userRegistryContract.read.getUserAddress([userId])
+	return userRegistryContract.read.getUserAddress([userId]);
 }
 
 export function getUser(userId: string) {
 	return userRegistryContract.read.getUser([userId]).then((user) => ({
 		...user,
 		id: userId,
-	}))
+	}));
 }
 
 export async function getLeaderBoard() {
-	const userResults = await Promise.allSettled(userIds.map((id) => getUser(id)))
-	const users = userResults.filter(
-		(result) => result.status === "fulfilled",
-	) as PromiseFulfilledResult<UserWithBalance>[]
-	const balances = await Promise.all(
-		users.map((result) => getBalance(result.value.id)),
-	)
-	return users.map((user, index) => ({
-		...user.value,
-		balance: balances[index],
-	}))
+	return slashTipContract.read.leaderboard([BigInt(tokenId)]);
+}
+
+export async function getUserExists(userId: string) {
+	const user = await userRegistryContract.read.getUser([userId]);
+	return user.id === userId;
 }
 
 export function syndicateMint({
@@ -90,7 +85,7 @@ export function syndicateMint({
 			to,
 			amount,
 		},
-	})
+	});
 }
 
 export function syndicateRegisterUser({
@@ -112,5 +107,5 @@ export function syndicateRegisterUser({
 				allowance: 5,
 			},
 		},
-	})
+	});
 }

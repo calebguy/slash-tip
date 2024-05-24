@@ -8,12 +8,22 @@ import {
 	registerUser,
 } from "../chain";
 import { Commands, type SlackSlashCommandPayload } from "../types";
-import { extractEthereumAddresses, parseTipCommandArgs, toStar } from "../utils";
+import {
+	extractEthereumAddresses,
+	parseTipCommandArgs,
+	toStar,
+} from "../utils";
 
 // https://api.slack.com/interactivity/slash-commands
 const app = new Hono()
 	.post(Commands.Balance, async (c) => {
 		const { user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
+		if (!(await getUserAddress(user_id))) {
+			return c.json({
+				response_type: "ephemeral",
+				text: "Register first with '/register <your-eth-address>'",
+			});
+		}
 		const balance = await getBalance(user_id);
 		return c.json({
 			response_type: "in_channel",
@@ -30,6 +40,12 @@ const app = new Hono()
 	})
 	.post(Commands.Allowance, async (c) => {
 		const { user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
+		if (!(await getUserAddress(user_id))) {
+			return c.json({
+				response_type: "ephemeral",
+				text: "Register first with '/register <your-eth-address>'",
+			});
+		}
 		const allowance = await getAllowance(user_id);
 		return c.json({
 			response_type: "in_channel",
@@ -59,7 +75,7 @@ const app = new Hono()
 		if (registeredAddress) {
 			return c.json({
 				response_type: "ephemeral",
-				text: `You are already registered with address: ${registeredAddress}`,
+				text: `You are already registered with address: ${registeredAddress}, if you would like to change it please reach out to caleb`,
 			});
 		}
 
@@ -82,6 +98,12 @@ const app = new Hono()
 	})
 	.post(Commands.Address, async (c) => {
 		const { user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
+		if (!(await getUserAddress(user_id))) {
+			return c.json({
+				response_type: "ephemeral",
+				text: "Register first with '/register <your-eth-address>'",
+			});
+		}
 		const address = await getUserAddress(user_id);
 		return c.json({
 			response_type: "in_channel",
@@ -98,16 +120,29 @@ const app = new Hono()
 	})
 	.post(Commands.Tip, async (c) => {
 		const { text, user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
+		if (!(await getUserAddress(user_id))) {
+			return c.json({
+				response_type: "ephemeral",
+				text: "Register first with '/register <your-eth-address>'",
+			});
+		}
 
 		const { id, amount: _amount } = parseTipCommandArgs(text);
 		console.log(`tipping ${_amount} to ${id}`);
 
-		// @note TODO need to check if id user exists 
+		// @note TODO need to check if id user exists
 
 		if (!id) {
 			return c.json({
 				response_type: "ephemeral",
 				text: "Could not parse tipee",
+			});
+		}
+
+		if (!(await getUserAddress(id))) {
+			return c.json({
+				response_type: "ephemeral",
+				text: `<@${id}> must register before accepting a tip! Register with '/register <your-eth-address>'`,
 			});
 		}
 
@@ -134,7 +169,6 @@ const app = new Hono()
 		});
 		console.log(`minted ${amount} to ${id} from ${user_id} with hash ${hash}`);
 
-		const tips = Array.from({ length: amount }, () => "✺").join("");
 		return c.json({
 			response_type: "in_channel",
 			blocks: [
@@ -142,7 +176,7 @@ const app = new Hono()
 					type: "section",
 					text: {
 						type: "mrkdwn",
-						text: `<@${id}> +${tips}`,
+						text: `<@${id}> +${toStar(amount)}`,
 					},
 				},
 			],
@@ -152,14 +186,14 @@ const app = new Hono()
 		const leaderboard = await getLeaderBoard();
 		return c.json({
 			response_type: "in_channel",
-			blocks: leaderboard.map((user) => ({
+			blocks: leaderboard.map(({ user, balance }) => ({
 				type: "section",
 				text: {
 					type: "mrkdwn",
-					text: `<@${user.nickname}> ${toStar(user.balance)}✺`,
+					text: `<@${user.id}> ${toStar(balance)}✺`,
 				},
 			})),
 		});
-	})
+	});
 
 export default app;

@@ -24,6 +24,7 @@ const userRegistryABI = [
 				type: "tuple",
 				internalType: "struct UserRegistry.User",
 				components: [
+					{ name: "id", type: "string", internalType: "string" },
 					{ name: "nickname", type: "string", internalType: "string" },
 					{ name: "account", type: "address", internalType: "address" },
 					{ name: "allowance", type: "uint256", internalType: "uint256" },
@@ -67,6 +68,7 @@ const userRegistryABI = [
 				type: "tuple",
 				internalType: "struct UserRegistry.User",
 				components: [
+					{ name: "id", type: "string", internalType: "string" },
 					{ name: "nickname", type: "string", internalType: "string" },
 					{ name: "account", type: "address", internalType: "address" },
 					{ name: "allowance", type: "uint256", internalType: "uint256" },
@@ -114,9 +116,29 @@ const userRegistryABI = [
 		name: "idToUser",
 		inputs: [{ name: "", type: "string", internalType: "string" }],
 		outputs: [
+			{ name: "id", type: "string", internalType: "string" },
 			{ name: "nickname", type: "string", internalType: "string" },
 			{ name: "account", type: "address", internalType: "address" },
 			{ name: "allowance", type: "uint256", internalType: "uint256" },
+		],
+		stateMutability: "view",
+	},
+	{
+		type: "function",
+		name: "listUsers",
+		inputs: [],
+		outputs: [
+			{
+				name: "",
+				type: "tuple[]",
+				internalType: "struct UserRegistry.User[]",
+				components: [
+					{ name: "id", type: "string", internalType: "string" },
+					{ name: "nickname", type: "string", internalType: "string" },
+					{ name: "account", type: "address", internalType: "address" },
+					{ name: "allowance", type: "uint256", internalType: "uint256" },
+				],
+			},
 		],
 		stateMutability: "view",
 	},
@@ -132,11 +154,7 @@ const userRegistryABI = [
 		name: "renounceRole",
 		inputs: [
 			{ name: "role", type: "bytes32", internalType: "bytes32" },
-			{
-				name: "callerConfirmation",
-				type: "address",
-				internalType: "address",
-			},
+			{ name: "callerConfirmation", type: "address", internalType: "address" },
 		],
 		outputs: [],
 		stateMutability: "nonpayable",
@@ -179,15 +197,17 @@ const userRegistryABI = [
 		stateMutability: "view",
 	},
 	{
+		type: "function",
+		name: "userIds",
+		inputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+		outputs: [{ name: "", type: "string", internalType: "string" }],
+		stateMutability: "view",
+	},
+	{
 		type: "event",
 		name: "RoleAdminChanged",
 		inputs: [
-			{
-				name: "role",
-				type: "bytes32",
-				indexed: true,
-				internalType: "bytes32",
-			},
+			{ name: "role", type: "bytes32", indexed: true, internalType: "bytes32" },
 			{
 				name: "previousAdminRole",
 				type: "bytes32",
@@ -207,12 +227,7 @@ const userRegistryABI = [
 		type: "event",
 		name: "RoleGranted",
 		inputs: [
-			{
-				name: "role",
-				type: "bytes32",
-				indexed: true,
-				internalType: "bytes32",
-			},
+			{ name: "role", type: "bytes32", indexed: true, internalType: "bytes32" },
 			{
 				name: "account",
 				type: "address",
@@ -232,12 +247,7 @@ const userRegistryABI = [
 		type: "event",
 		name: "RoleRevoked",
 		inputs: [
-			{
-				name: "role",
-				type: "bytes32",
-				indexed: true,
-				internalType: "bytes32",
-			},
+			{ name: "role", type: "bytes32", indexed: true, internalType: "bytes32" },
 			{
 				name: "account",
 				type: "address",
@@ -262,5 +272,5 @@ const userRegistryABI = [
 			{ name: "neededRole", type: "bytes32", internalType: "bytes32" },
 		],
 	},
-] as const
-export default userRegistryABI
+] as const;
+export default userRegistryABI;
