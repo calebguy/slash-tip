@@ -72,6 +72,10 @@ export async function getUserExists(userId: string) {
 	}
 }
 
+export function addAllowanceForAllUsers(amount: number) {
+	return slashTipContract.write.addAllowanceForAllUsers([BigInt(amount)]);
+}
+
 export function syndicateMint({
 	from,
 	to,
