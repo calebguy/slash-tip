@@ -8,6 +8,7 @@ import {
 	registerUser,
 } from "../chain";
 import { mustBeRegistered } from "../middleware";
+import { peom } from "../openai";
 import { Commands, type SlackSlashCommandPayload } from "../types";
 import {
 	abbreviate,
@@ -56,19 +57,11 @@ const app = new Hono()
 			],
 		});
 	})
-	.post(Commands.Tip, async (c) => {
+	.post(Commands.Tip, mustBeRegistered, async (c) => {
 		const { text, user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
-		if (!(await getUserAddress(user_id))) {
-			return c.json({
-				response_type: "ephemeral",
-				text: "Register first with '/register <your-eth-address>'",
-			});
-		}
 
 		const { id, amount: _amount } = parseTipCommandArgs(text);
 		console.log(`tipping ${_amount} to ${id}`);
-
-		// @note TODO need to check if id user exists
 
 		if (!id) {
 			return c.json({
@@ -107,17 +100,32 @@ const app = new Hono()
 		});
 		console.log(`minted ${amount} to ${id} from ${user_id} with hash ${hash}`);
 
-		return c.json({
-			response_type: "in_channel",
-			blocks: [
-				{
+		const blocks = [
+			{
+				type: "section",
+				text: {
+					type: "mrkdwn",
+					text: `<@${id}> +${toStar(amount)}`,
+				},
+			},
+		];
+
+		if (user_id === id) {
+			const selfHelp = await peom();
+			if (selfHelp) {
+				blocks.push({
 					type: "section",
 					text: {
 						type: "mrkdwn",
-						text: `<@${id}> +${toStar(amount)}`,
+						text: selfHelp,
 					},
-				},
-			],
+				});
+			}
+		}
+
+		return c.json({
+			response_type: "in_channel",
+			blocks,
 		});
 	})
 	.post(Commands.Balance, mustBeRegistered, async (c) => {
