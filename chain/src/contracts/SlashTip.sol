@@ -12,6 +12,11 @@ contract SlashTip is AccessControl {
     UserRegistry public userRegistry;
     Tip public tipToken;
 
+    struct UserWithBalance {
+      UserRegistry.User user;
+      uint256 balance;
+    }
+
     constructor(address _admin, address _userRegistry, address _tipToken, string memory _description) {
       _grantRole(DEFAULT_ADMIN_ROLE, _admin);
       _grantRole(SLASH_TIP_MANAGER, _admin);
@@ -53,5 +58,40 @@ contract SlashTip is AccessControl {
 
     function allowanceOf(string memory _userId) public view returns (uint256) {
       return userRegistry.getUser(_userId).allowance;
+    }
+
+    function leaderboard(uint256 _tokenId) public view returns (UserWithBalance[] memory) {
+      UserRegistry.User[] memory users = userRegistry.listUsers();
+      UserWithBalance[] memory usersWithBalance = new UserWithBalance[](users.length);
+      for (uint256 i = 0; i < users.length; i++) {
+        usersWithBalance[i].user = users[i];
+        usersWithBalance[i].balance = tipToken.balanceOf(users[i].account, _tokenId);
+      }
+
+      // sort the usersWithBalance array by the balance desdending
+      for (uint256 i = 0; i < usersWithBalance.length; i++) {
+        for (uint256 j = i + 1; j < usersWithBalance.length; j++) {
+          if (usersWithBalance[i].balance < usersWithBalance[j].balance) {
+            UserWithBalance memory temp = usersWithBalance[i];
+            usersWithBalance[i] = usersWithBalance[j];
+            usersWithBalance[j] = temp;
+          }
+        }
+      }
+      return usersWithBalance;
+    }
+
+    function setAllowanceForAllUsers(uint256 _amount) public onlyRole(SLASH_TIP_MANAGER) {
+      UserRegistry.User[] memory users = userRegistry.listUsers();
+      for (uint256 i = 0; i < users.length; i++) {
+        userRegistry.setUserAllowance(users[i].id, _amount);
+      }
+    }
+
+    function addAllowanceForAllUsers(uint256 _amount) public onlyRole(SLASH_TIP_MANAGER) {
+      UserRegistry.User[] memory users = userRegistry.listUsers();
+      for (uint256 i = 0; i < users.length; i++) {
+        userRegistry.addUserAllowance(users[i].id, _amount);
+      }
     }
 }

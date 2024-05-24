@@ -18,12 +18,14 @@ contract SlashTipTest is Test {
     uint256 tokenId = 1;
 
     UserRegistry.User public fromUser = UserRegistry.User({
+        id: "user1",
         nickname: "from user",
         account: 0x18F33CEf45817C428d98C4E188A770191fDD4B79,
         allowance: 10
     });
 
     UserRegistry.User public toUser = UserRegistry.User({
+        id: "user2",
         nickname: "to user",
         account: 0x9a37E57d177c5Ff8817B55da36F2A2b3532CDE3F,
         allowance: 10
@@ -90,11 +92,13 @@ contract SlashTipTest is Test {
         uint256 allowance = 3;
 
         registry.addUser(fromUserId, UserRegistry.User({
+            id: "user1",
             nickname: "a test user",
             account: 0x18F33CEf45817C428d98C4E188A770191fDD4B79,
             allowance: allowance
         }));
         registry.addUser(toUserId, UserRegistry.User({
+            id: "user2",
             nickname: "another test user",
             account: 0x9a37E57d177c5Ff8817B55da36F2A2b3532CDE3F,
             allowance: 0
@@ -102,5 +106,38 @@ contract SlashTipTest is Test {
 
         vm.expectRevert(bytes("Insufficient allowance to mint"));
         slash.tip(fromUserId, toUserId, tokenId, allowance + 1);
+    }
+
+    function test_leaderboard() public {
+        registry.addUser(fromUserId, fromUser);
+        registry.addUser(toUserId, toUser);
+
+        uint256 amountToMint = 1;
+        slash.tip(fromUserId, toUserId, tokenId, amountToMint);
+
+        SlashTip.UserWithBalance[] memory leaderboard = slash.leaderboard(tokenId);
+        assertEq(leaderboard.length, 2);
+        assertEq(leaderboard[0].balance, amountToMint);
+        assertEq(leaderboard[1].balance, 0);
+    }
+
+    function test_setAllowanceForAllUsers() public {
+        uint256 amount = 2;
+        registry.addUser(fromUserId, fromUser);
+        registry.addUser(toUserId, toUser);
+
+        slash.setAllowanceForAllUsers(amount);
+        assertEq(registry.getUserAllowance(fromUserId), amount);
+        assertEq(registry.getUserAllowance(toUserId), amount);
+    }
+
+    function test_addAllowanceForAllUsers() public {
+        uint256 amount = 2;
+        registry.addUser(fromUserId, fromUser);
+        registry.addUser(toUserId, toUser);
+
+        slash.addAllowanceForAllUsers(amount);
+        assertEq(registry.getUserAllowance(fromUserId), fromUser.allowance + amount);
+        assertEq(registry.getUserAllowance(toUserId), toUser.allowance + amount);
     }
 }

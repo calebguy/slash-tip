@@ -12,6 +12,7 @@ contract UserRegistryTest is Test {
 
     string public userId = "user1";
     UserRegistry.User public user = UserRegistry.User({
+        id: "user1",
         nickname: "a test user",
         account: 0x18F33CEf45817C428d98C4E188A770191fDD4B79,
         allowance: 10
@@ -88,5 +89,28 @@ contract UserRegistryTest is Test {
     function test_hasDefaultAdminRole() public view {
         bytes32 DEFAULT_ADMIN_ROLE = 0x00;
         assertEq(registry.hasRole(DEFAULT_ADMIN_ROLE, address(this)), true);
+    }
+
+    function test_listUsers() public {
+        registry.addUser(userId, user);
+
+        string memory userId2 = "user2";
+        address account2 = 0x9a37E57d177c5Ff8817B55da36F2A2b3532CDE3F;
+        string memory nickname2 = "another test";
+        uint256 allowance2 = 20;
+        registry.addUser("user2", UserRegistry.User({
+            id: userId2,
+            nickname: nickname2,
+            account: account2,
+            allowance: allowance2
+        }));
+        UserRegistry.User[] memory users = registry.listUsers();
+        assertEq(users.length, 2);
+        assertEq(users[0].account, user.account);
+        assertEq(users[0].allowance, user.allowance);
+        assertEq(users[0].nickname, user.nickname);
+        assertEq(users[1].account, account2);
+        assertEq(users[1].allowance, allowance2);
+        assertEq(users[1].nickname, nickname2);
     }
 }

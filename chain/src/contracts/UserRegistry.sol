@@ -5,6 +5,7 @@ import { AccessControl } from "openzeppelin/access/AccessControl.sol";
 
 contract UserRegistry is AccessControl {
     struct User {
+      string id;
       string nickname;
       address account;
       uint256 allowance;
@@ -12,6 +13,7 @@ contract UserRegistry is AccessControl {
 
     bytes32 USER_REGISTRY_MANAGER = keccak256("USER_REGISTRY_MANAGER");
     mapping(string => User) public idToUser;
+    string[] public userIds;
 
     string public description;
 
@@ -33,12 +35,35 @@ contract UserRegistry is AccessControl {
     }
 
     function addUser(string memory _id, User calldata _user) public onlyRole(USER_REGISTRY_MANAGER) {
+      require(_user.account != address(0), "User account cannot be 0x0");
+      require(bytes(_user.nickname).length > 0, "User nickname cannot be empty");
+      require(_user.allowance >= 0, "User allowance cannot be negative");
+      require(idToUser[_id].account == address(0), "User already exists");
+
       idToUser[_id] = _user;
+      userIds.push(_id);
     }
 
     function removeUser(string memory _id) public onlyRole(USER_REGISTRY_MANAGER) {
       _getUser(_id);
+
       delete idToUser[_id];
+      for (uint256 i = 0; i < userIds.length; i++) {
+        if (keccak256(abi.encodePacked(userIds[i])) == keccak256(abi.encodePacked(_id))) {
+          userIds[i] = userIds[userIds.length - 1];
+          userIds.pop();
+          break;
+        }
+      }
+    }
+
+    function listUsers() public view returns (User[] memory) {
+      User[] memory users = new User[](userIds.length);
+      for (uint256 i = 0; i < userIds.length; i++) {
+        users[i] = idToUser[userIds[i]];
+      }
+
+      return users;
     }
 
     function getUserAddress(string memory _id) public view returns (address) {
