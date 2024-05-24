@@ -28,3 +28,10 @@ export function extractEthereumAddresses(text: string) {
 export function toStar(amount: bigint | number) {
 	return "✺".repeat(Number(amount));
 }
+
+export function abbreviate(input: string) {
+	if (input.length <= 10) {
+		return input;
+	}
+	return [input.slice(0, 6), input.slice(-4)];
+}

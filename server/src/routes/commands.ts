@@ -10,6 +10,7 @@ import {
 import { mustBeRegistered } from "../middleware";
 import { Commands, type SlackSlashCommandPayload } from "../types";
 import {
+	abbreviate,
 	extractEthereumAddresses,
 	parseTipCommandArgs,
 	toStar,
@@ -47,7 +48,9 @@ const app = new Hono()
 					type: "section",
 					text: {
 						type: "mrkdwn",
-						text: `<@${user_id}> registered with <https://basescan.org/address/${address}|${address}>`,
+						text: `<@${user_id}> registered with <https://basescan.org/address/${address}|${abbreviate(
+							address,
+						)}>. View the leaderboard <https://slash-tip.onrender.com/|here>`,
 					},
 				},
 			],
@@ -93,7 +96,7 @@ const app = new Hono()
 		if (allowance < BigInt(amount)) {
 			return c.json({
 				response_type: "ephemeral",
-				text: `Insufficient allowance, you only have ${allowance.toString()} more tips left to give today`,
+				text: `Insufficient allowance, you only have ${allowance.toString()} more tips left to give today. Every day at 9am CT your allowance will increase by ✺✺✺✺✺.`,
 			});
 		}
 
