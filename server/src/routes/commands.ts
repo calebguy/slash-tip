@@ -8,7 +8,7 @@ import {
 	registerUser,
 } from "../chain";
 import { mustBeRegistered } from "../middleware";
-import { peom } from "../openai";
+import { selfLovePoem, stealingPoem } from "../openai";
 import { Commands, type SlackSlashCommandPayload } from "../types";
 import {
 	abbreviate,
@@ -78,13 +78,21 @@ const app = new Hono()
 		}
 
 		if (!_amount) {
+			const text = await stealingPoem();
 			return c.json({
 				response_type: "ephemeral",
-				text: "Could not parse amount",
+				text,
 			});
 		}
 
 		const amount = Number(_amount);
+		if (amount <= 0) {
+			return c.json({
+				response_type: "ephemeral",
+				text: "Amount must be positive",
+			});
+		}
+
 		const allowance = await getAllowance(user_id);
 		if (allowance < BigInt(amount)) {
 			return c.json({
@@ -111,7 +119,7 @@ const app = new Hono()
 		];
 
 		if (user_id === id) {
-			const selfHelp = await peom();
+			const selfHelp = await selfLovePoem();
 			if (selfHelp) {
 				blocks.push({
 					type: "section",
