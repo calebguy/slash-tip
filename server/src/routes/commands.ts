@@ -47,7 +47,7 @@ const app = new Hono()
 					type: "section",
 					text: {
 						type: "mrkdwn",
-						text: `<@${user_id}> registered: ${address}`,
+						text: `<@${user_id}> registered with <https://basescan.org/address/${address}|${address}>`,
 					},
 				},
 			],
