@@ -8,13 +8,15 @@ const app = new Hono()
 	.get("/leaderboard", async (c) => {
 		const leaderboard = await getLeaderBoard();
 		return c.json(
-			leaderboard.map(({ balance, allowance, nickname, id, account }) => ({
-				balance: balance.toString(),
-				allowance: allowance.toString(),
-				nickname,
-				id,
-				account,
-			})),
+			leaderboard.map(
+				({ balance, user: { allowance, nickname, id, account } }) => ({
+					balance: balance.toString(),
+					allowance: allowance.toString(),
+					nickname,
+					id,
+					account,
+				}),
+			),
 		);
 	});
 
