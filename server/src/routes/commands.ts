@@ -8,7 +8,7 @@ import {
 	registerUser,
 } from "../chain";
 import { mustBeRegistered } from "../middleware";
-import { peom, stealingPoem } from "../openai";
+import { selfLovePoem, stealingPoem } from "../openai";
 import { Commands, type SlackSlashCommandPayload } from "../types";
 import {
 	abbreviate,
@@ -126,7 +126,7 @@ const app = new Hono()
 		];
 
 		if (user_id === id) {
-			const selfHelp = await peom();
+			const selfHelp = await selfLovePoem();
 			if (selfHelp) {
 				blocks.push({
 					type: "section",
