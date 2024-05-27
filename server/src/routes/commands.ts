@@ -169,7 +169,9 @@ const app = new Hono()
 					type: "section",
 					text: {
 						type: "mrkdwn",
-						text: `<@${user_id}> ${toStar(allowance)}`,
+						text: `<@${user_id}> ${
+							allowance === BigInt(0) ? "0" : toStar(allowance)
+						}`,
 					},
 				},
 			],
