@@ -73,8 +73,8 @@ const app = new Hono()
 
 		if (!(await getUserExists(id))) {
 			return c.json({
-				response_type: "ephemeral",
-				text: `<@${id}> must register before accepting a tip! Register with '/register <your-eth-address>'`,
+				response_type: "in_channel",
+				text: `<@${id}> someone just tried to tip you! Register with '/register <your-eth-address>' to accept tips`,
 			});
 		}
 
