@@ -4,6 +4,7 @@ import {
 	getBalance,
 	getLeaderBoard,
 	getUserAddress,
+	getUserExists,
 	mint,
 	registerUser,
 } from "../chain";
@@ -70,7 +71,7 @@ const app = new Hono()
 			});
 		}
 
-		if (!(await getUserAddress(id))) {
+		if (!(await getUserExists(id))) {
 			return c.json({
 				response_type: "ephemeral",
 				text: `<@${id}> must register before accepting a tip! Register with '/register <your-eth-address>'`,
@@ -145,6 +146,12 @@ const app = new Hono()
 	})
 	.post(Commands.Balance, mustBeRegistered, async (c) => {
 		const { user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
+		if (!(await getUserExists(user_id))) {
+			return c.json({
+				response_type: "ephemeral",
+				text: `<@${user_id}> you must register first with '/register <your-eth-address>'`,
+			});
+		}
 		const balance = await getBalance(user_id);
 		return c.json({
 			response_type: "in_channel",
@@ -161,6 +168,12 @@ const app = new Hono()
 	})
 	.post(Commands.Allowance, mustBeRegistered, async (c) => {
 		const { user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
+		if (!(await getUserExists(user_id))) {
+			return c.json({
+				response_type: "ephemeral",
+				text: `<@${user_id}> you must register first with '/register <your-eth-address>'`,
+			});
+		}
 		const allowance = await getAllowance(user_id);
 		return c.json({
 			response_type: "in_channel",
@@ -179,10 +192,10 @@ const app = new Hono()
 	})
 	.post(Commands.Address, mustBeRegistered, async (c) => {
 		const { user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
-		if (!(await getUserAddress(user_id))) {
+		if (!(await getUserExists(user_id))) {
 			return c.json({
 				response_type: "ephemeral",
-				text: "Register first with '/register <your-eth-address>'",
+				text: `<@${user_id}> you must register first with '/register <your-eth-address>'`,
 			});
 		}
 		const address = await getUserAddress(user_id);
