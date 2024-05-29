@@ -221,7 +221,7 @@ const app = new Hono()
 				text: {
 					type: "mrkdwn",
 					text: `<@${user.id}> ${
-						balance > BigInt(0) ? `${toStar(balance)}✺` : "-"
+						balance > BigInt(0) ? `${toStar(balance)}✺` : "0 🥲"
 					}`,
 				},
 			})),
