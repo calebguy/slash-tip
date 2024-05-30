@@ -117,6 +117,7 @@ contract PrizeRegistry is ERC1155Holder, ERC721Holder, ReentrancyGuard, AccessCo
     emit Redeem(redeemedPrizes[_prizeId].ercType, redeemedPrizes[_prizeId].tokenAddress, msg.sender, redeemedPrizes[_prizeId].tokenId, redeemedPrizes[_prizeId].amount);
   }
 
+  // @note manager withdraw should take in an ID an remove from the mapping to withdraw 
   function managerWithdraw721(IERC721 _token, uint256 _tokenId, address _to) external onlyRole(PRIZE_REGISTRY_MANAGER) {
     _token.safeTransferFrom(address(this), _to, _tokenId);
   }
