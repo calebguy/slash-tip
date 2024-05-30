@@ -7,8 +7,12 @@ import { IERC20 } from "openzeppelin/token/ERC20/IERC20.sol";
 import { ERC1155Holder } from "openzeppelin/token/ERC1155/utils/ERC1155Holder.sol";
 import { ERC721Holder } from "openzeppelin/token/ERC721/utils/ERC721Holder.sol";
 import { ReentrancyGuard } from "openzeppelin/utils/ReentrancyGuard.sol";
+import { AccessControl } from "openzeppelin/access/AccessControl.sol";
 
-contract PrizeRegistry is ERC1155Holder, ERC721Holder, ReentrancyGuard {
+
+contract PrizeRegistry is ERC1155Holder, ERC721Holder, ReentrancyGuard, AccessControl {
+
+  bytes32 public constant PRIZE_REGISTRY_MANAGER = keccak256("PRIZE_REGISTRY_MANAGER");
 
   struct Prize {
     string ercType; // ERC721 | ERC1155 | ERC20
@@ -23,55 +27,112 @@ contract PrizeRegistry is ERC1155Holder, ERC721Holder, ReentrancyGuard {
 
   Prize[] public prizes;
 
+  enum ERCType { ERC721, ERC1155, ERC20 }
+
+  struct Prize {
+      ERCType ercType;
+      address tokenAddress;
+      address from;
+      uint256 tokenId;
+      uint256 amount;
+      uint256 price;
+  }
+
+  event Deposit(ERCType ercType, address tokenAddress, address from, uint256 tokenId, uint256 amount, uint256 price);
+  event Redeem(ERCType ercType, address tokenAddress, address to, uint256 tokenId, uint256 amount);
+
+  uint256 public prizeCount;
+  address public ticketAddress;
+  mapping(string => Prize) public availablePrizes;
+  mapping(string => Prize) public redeemedPrizes;
+
+  constructor(address _admin, address _ticketAddress) {
+    _grantRole(DEFAULT_ADMIN_ROLE, _admin);
+    _grantRole(PRIZE_REGISTRY_MANAGER, _admin);
+    ticketAddress = _ticketAddress;
+  }
+
   function deposit721(IERC721 _token, uint256 _tokenId, uint256 _price) external nonReentrant {
     require(_token.ownerOf(_tokenId) == msg.sender, "You do not own this token");
     require(_price > 0, "Price must be greater than 0");
 
     _token.safeTransferFrom(msg.sender, address(this), _tokenId);
-    prizes.push(Prize({
-      ercType: "ERC721",
-      tokenAddress: address(_token),
-      from: msg.sender,
-      tokenId: _tokenId,
-      amount: 1,
-      price: _price
-    }));
+    availablePrizes[prizeCount] = Prize({
+        ercType: ERCType.ERC721,
+        tokenAddress: address(_token),
+        from: msg.sender,
+        tokenId: _tokenId,
+        amount: 1,
+        price: _price
+    });
+    prizeCount++;
 
-
-    emit Deposit("ERC721", address(_token), msg.sender, _tokenId, 1, _price);
+    emit Deposit(ERCType.ERC721, address(_token), msg.sender, _tokenId, 1, _price);
   }
 
   function deposit1155(IERC1155 _token, uint256 _tokenId, uint256 _amount, uint256 _price) external nonReentrant {
-    require(_amount <= _token.balanceOf(msg.sender, _tokenId), "You do not have enough of this token");
+    require(_amount > 0 && _amount <= _token.balanceOf(msg.sender, _tokenId), "Invalid token amount");
     require(_price > 0, "Price must be greater than 0");
 
     _token.safeTransferFrom(msg.sender, address(this), _tokenId, _amount, "");
-    prizes.push(Prize({
-      ercType: "ERC1155",
-      tokenAddress: address(_token),
-      from: msg.sender,
-      tokenId: _tokenId,
-      amount: _amount,
-      price: _price
-    }));
+    availablePrizes[prizeCount] = Prize({
+        ercType: ERCType.ERC1155,
+        tokenAddress: address(_token),
+        from: msg.sender,
+        tokenId: _tokenId,
+        amount: _amount,
+        price: _price
+    });
+    prizeCount++;
 
-    emit Deposit("ERC1155", address(_token), msg.sender, _tokenId, _amount, _price);
+    emit Deposit(ERCType.ERC1155, address(_token), msg.sender, _tokenId, _amount, _price);
   }
 
   function deposit20(IERC20 _token, uint256 _amount, uint256 _price) external nonReentrant {
-    require(_amount <= _token.balanceOf(msg.sender), "You do not have enough of this token");
+    require(_amount > 0 && _amount <= _token.balanceOf(msg.sender), "Invalid token amount");
     require(_price > 0, "Price must be greater than 0");
 
     _token.transferFrom(msg.sender, address(this), _amount);
-    prizes.push(Prize({
-      ercType: "ERC20",
-      tokenAddress: address(_token),
-      from: msg.sender,
-      tokenId: 0,
-      amount: _amount,
-      price: _price
-    }));
+    availablePrizes[prizeCount] = Prize({
+        ercType: ERCType.ERC20,
+        tokenAddress: address(_token),
+        from: msg.sender,
+        tokenId: 0,
+        amount: _amount,
+        price: _price
+    });
+    prizeCount++;
 
-    emit Deposit("ERC20", address(_token), msg.sender, 0, _amount, _price);
+    emit Deposit(ERCType.ERC20, address(_token), msg.sender, 0, _amount, _price);
+  }
+
+  function redeem(string memory _prizeId) public {
+    require(availablePrizes[_prizeId].from != address(0), "Prize does not exist");
+    require(availablePrizes[_prizeId].price <= IERC20(ticketAddress).balanceOf(msg.sender), "Insufficient ticket balance");
+
+    if (availablePrizes[_prizeId].ercType == ERCType.ERC721) {
+      IERC721(availablePrizes[_prizeId].tokenAddress).safeTransferFrom(address(this), msg.sender, availablePrizes[_prizeId].tokenId);
+    } else if (availablePrizes[_prizeId].ercType == ERCType.ERC1155) {
+      IERC1155(availablePrizes[_prizeId].tokenAddress).safeTransferFrom(address(this), msg.sender, availablePrizes[_prizeId].tokenId, availablePrizes[_prizeId].amount, "");
+    } else if (availablePrizes[_prizeId].ercType == ERCType.ERC20) {
+      IERC20(availablePrizes[_prizeId].tokenAddress).transfer(msg.sender, availablePrizes[_prizeId].amount);
+    }
+
+    redeemedPrizes[_prizeId] = availablePrizes[_prizeId];
+    delete availablePrizes[_prizeId];
+
+    emit Redeem(redeemedPrizes[_prizeId].ercType, redeemedPrizes[_prizeId].tokenAddress, msg.sender, redeemedPrizes[_prizeId].tokenId, redeemedPrizes[_prizeId].amount);
+  }
+
+  function withdraw721(IERC721 _token, uint256 _tokenId) external onlyRole(PRIZE_REGISTRY_MANAGER) {
+    _token.safeTransferFrom(address(this), owner(), _tokenId);
+  }
+
+  function withdraw1155(IERC1155 _token, uint256 _tokenId, uint256 _amount) external onlyRole(PRIZE_REGISTRY_MANAGER) {
+    _token.safeTransferFrom(address(this), owner(), _tokenId, _amount, "");
+  }
+
+  function withdraw20(IERC20 _token, uint256 _amount) external onlyRole(PRIZE_REGISTRY_MANAGER) {
+    _token.transfer(owner(), _amount);
   }
 }
