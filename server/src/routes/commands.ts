@@ -62,7 +62,6 @@ const app = new Hono()
 		const { text, user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
 
 		const { id, amount: _amount } = parseTipCommandArgs(text);
-		console.log(`tipping ${_amount} to ${id}`);
 
 		if (!id) {
 			return c.json({
@@ -128,6 +127,7 @@ const app = new Hono()
 
 		if (user_id === id) {
 			const selfHelp = await selfLovePoem();
+			console.log(`user ${user_id} tipped themselves, with poem ${selfHelp}`)
 			if (selfHelp) {
 				blocks.push({
 					type: "section",
