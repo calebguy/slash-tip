@@ -14,8 +14,15 @@ contract PrizeRegistry is ERC1155Holder, ERC721Holder, ReentrancyGuard, AccessCo
 
   bytes32 public constant PRIZE_REGISTRY_MANAGER = keccak256("PRIZE_REGISTRY_MANAGER");
 
+  enum ERCType { ERC721, ERC1155, ERC20 }
+
+  struct Ticket {
+    address tokenAddress;
+    uint256 tokenId;
+  }
+
   struct Prize {
-    string ercType; // ERC721 | ERC1155 | ERC20
+    ERCType ercType;
     address tokenAddress;
     address from;
     uint256 tokenId;
@@ -23,33 +30,19 @@ contract PrizeRegistry is ERC1155Holder, ERC721Holder, ReentrancyGuard, AccessCo
     uint256 price;
   }
 
-  event Deposit(string ercType, address tokenAddress, address from, uint256 tokenId, uint256 amount, uint256 price);
-
-  Prize[] public prizes;
-
-  enum ERCType { ERC721, ERC1155, ERC20 }
-
-  struct Prize {
-      ERCType ercType;
-      address tokenAddress;
-      address from;
-      uint256 tokenId;
-      uint256 amount;
-      uint256 price;
-  }
-
   event Deposit(ERCType ercType, address tokenAddress, address from, uint256 tokenId, uint256 amount, uint256 price);
   event Redeem(ERCType ercType, address tokenAddress, address to, uint256 tokenId, uint256 amount);
 
-  uint256 public prizeCount;
-  address public ticketAddress;
-  mapping(string => Prize) public availablePrizes;
-  mapping(string => Prize) public redeemedPrizes;
+  Ticket public ticket;
 
-  constructor(address _admin, address _ticketAddress) {
+  uint256 public prizeCount;
+  mapping(uint256 => Prize) public availablePrizes;
+  mapping(uint256 => Prize) public redeemedPrizes;
+
+  constructor(address _admin, Ticket memory _ticket) {
     _grantRole(DEFAULT_ADMIN_ROLE, _admin);
     _grantRole(PRIZE_REGISTRY_MANAGER, _admin);
-    ticketAddress = _ticketAddress;
+    ticket = _ticket;
   }
 
   function deposit721(IERC721 _token, uint256 _tokenId, uint256 _price) external nonReentrant {
@@ -106,9 +99,9 @@ contract PrizeRegistry is ERC1155Holder, ERC721Holder, ReentrancyGuard, AccessCo
     emit Deposit(ERCType.ERC20, address(_token), msg.sender, 0, _amount, _price);
   }
 
-  function redeem(string memory _prizeId) public {
+  function redeem(uint256 _prizeId) public {
     require(availablePrizes[_prizeId].from != address(0), "Prize does not exist");
-    require(availablePrizes[_prizeId].price <= IERC20(ticketAddress).balanceOf(msg.sender), "Insufficient ticket balance");
+    require(availablePrizes[_prizeId].price <= IERC1155(ticket.tokenAddress).balanceOf(msg.sender, ticket.tokenId), "Insufficient ticket balance");
 
     if (availablePrizes[_prizeId].ercType == ERCType.ERC721) {
       IERC721(availablePrizes[_prizeId].tokenAddress).safeTransferFrom(address(this), msg.sender, availablePrizes[_prizeId].tokenId);
@@ -124,15 +117,19 @@ contract PrizeRegistry is ERC1155Holder, ERC721Holder, ReentrancyGuard, AccessCo
     emit Redeem(redeemedPrizes[_prizeId].ercType, redeemedPrizes[_prizeId].tokenAddress, msg.sender, redeemedPrizes[_prizeId].tokenId, redeemedPrizes[_prizeId].amount);
   }
 
-  function withdraw721(IERC721 _token, uint256 _tokenId) external onlyRole(PRIZE_REGISTRY_MANAGER) {
-    _token.safeTransferFrom(address(this), owner(), _tokenId);
+  function managerWithdraw721(IERC721 _token, uint256 _tokenId, address _to) external onlyRole(PRIZE_REGISTRY_MANAGER) {
+    _token.safeTransferFrom(address(this), _to, _tokenId);
   }
 
-  function withdraw1155(IERC1155 _token, uint256 _tokenId, uint256 _amount) external onlyRole(PRIZE_REGISTRY_MANAGER) {
-    _token.safeTransferFrom(address(this), owner(), _tokenId, _amount, "");
+  function managerWithdraw1155(IERC1155 _token, uint256 _tokenId, uint256 _amount, address _to) external onlyRole(PRIZE_REGISTRY_MANAGER) {
+    _token.safeTransferFrom(address(this), _to, _tokenId, _amount, "");
   }
 
-  function withdraw20(IERC20 _token, uint256 _amount) external onlyRole(PRIZE_REGISTRY_MANAGER) {
-    _token.transfer(owner(), _amount);
+  function managerWithdraw20(IERC20 _token, uint256 _amount, address _to) external onlyRole(PRIZE_REGISTRY_MANAGER) {
+    _token.transferFrom(address(this), _to, _amount);
+  }
+
+  function supportsInterface(bytes4 interfaceId) public view virtual override(ERC1155Holder, AccessControl) returns (bool) {
+    return ERC1155Holder.supportsInterface(interfaceId) || AccessControl.supportsInterface(interfaceId);
   }
 }
