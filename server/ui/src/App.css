@@ -3,10 +3,10 @@
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
-  display: flex;
-  flex-direction: column;
+  height: 1px;
+  position: relative;
 }
 
 html, body, #root {
-  min-height: 100vh;
+  min-height: calc(100dvh)
 }
