@@ -91,7 +91,7 @@ const app = new Hono()
 		if (!(await getUserExists(id))) {
 			return c.json({
 				response_type: "in_channel",
-				text: `<@${id}> someone just tried to tip you! Register with '/register <your-eth-address>' to accept tips`,
+				text: `<@${id}> someone just tried to tip you! Register with '/register <your-ens.ens | your-eth-address>' to accept tips`,
 			});
 		}
 
@@ -172,7 +172,7 @@ const app = new Hono()
 		}
 		const balance = await getBalance(user_id);
 		return c.json({
-			response_type: "in_channel",
+			response_type: "ephemeral",
 			blocks: [
 				{
 					type: "section",
@@ -194,7 +194,7 @@ const app = new Hono()
 		}
 		const allowance = await getAllowance(user_id);
 		return c.json({
-			response_type: "in_channel",
+			response_type: "ephemeral",
 			blocks: [
 				{
 					type: "section",
@@ -218,7 +218,7 @@ const app = new Hono()
 		}
 		const address = await getUserAddress(user_id);
 		return c.json({
-			response_type: "in_channel",
+			response_type: "ephemeral",
 			blocks: [
 				{
 					type: "section",
