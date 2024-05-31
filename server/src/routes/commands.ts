@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import type { Hex } from "viem";
 import {
 	getAllowance,
 	getBalance,
@@ -8,34 +9,51 @@ import {
 	mint,
 	registerUser,
 } from "../chain";
+import { SITE_URL } from "../constants";
 import { mustBeRegistered } from "../middleware";
 import { selfLovePoem, stealingPoem } from "../openai";
 import { Commands, type SlackSlashCommandPayload } from "../types";
 import {
 	abbreviate,
-	extractEthereumAddresses,
+	extractWordAfterRegisterCommand,
+	isEthAddress,
 	parseTipCommandArgs,
 	toStar,
 } from "../utils";
+import { getAddressFromENS } from "../viem";
 
 // https://api.slack.com/interactivity/slash-commands
 const app = new Hono()
 	.post(Commands.Register, async (c) => {
 		const { user_id, user_name, text } =
 			await c.req.parseBody<SlackSlashCommandPayload>();
-		const address = extractEthereumAddresses(text);
-		if (!address) {
+		let address: Hex;
+		const addressOrEns = extractWordAfterRegisterCommand(text);
+		if (!addressOrEns) {
 			return c.json({
 				response_type: "ephemeral",
-				text: "Could not parse address, please prompt like /register 0x123...",
+				text: "Could not parse address, please prompt like /register (0x123... | you.ens)",
 			});
+		}
+
+		if (isEthAddress(addressOrEns)) {
+			address = addressOrEns as Hex;
+		} else {
+			const tmp = await getAddressFromENS(addressOrEns);
+			if (!tmp) {
+				return c.json({
+					response_type: "ephemeral",
+					text: `Could not resolve ENS name ${addressOrEns}`,
+				});
+			}
+			address = tmp;
 		}
 
 		const registeredAddress = await getUserAddress(user_id).catch(() => null);
 		if (registeredAddress) {
 			return c.json({
 				response_type: "ephemeral",
-				text: `You are already registered with address: ${registeredAddress}, if you would like to change it please reach out to caleb`,
+				text: `You are already registered with address: ${registeredAddress}, if you would like to change it please (tip ✺ first ✺ then) reach out to caleb`,
 			});
 		}
 
@@ -52,7 +70,7 @@ const app = new Hono()
 						type: "mrkdwn",
 						text: `<@${user_id}> registered with <https://basescan.org/address/${address}|${abbreviate(
 							address,
-						)}>. View the leaderboard <https://slash-tip.onrender.com/|here>`,
+						)}>. View the leaderboard <${SITE_URL}|here>`,
 					},
 				},
 			],
@@ -127,7 +145,7 @@ const app = new Hono()
 
 		if (user_id === id) {
 			const selfHelp = await selfLovePoem();
-			console.log(`user ${user_id} tipped themselves, with poem ${selfHelp}`)
+			console.log(`user ${user_id} tipped themselves, with poem ${selfHelp}`);
 			if (selfHelp) {
 				blocks.push({
 					type: "section",

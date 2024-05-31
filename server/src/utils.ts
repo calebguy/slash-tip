@@ -1,4 +1,4 @@
-import type { Hex } from "viem";
+import { getAddress, type Hex } from "viem";
 
 const slackIDPattern = /<@(\w+)\|/;
 
@@ -25,6 +25,12 @@ export function extractEthereumAddresses(text: string) {
 	return addresses ? (addresses[0] as Hex) : null;
 }
 
+export function extractWordAfterRegisterCommand(text: string) {
+	const pattern = /(?<=\/register\s)[^\s]+/;
+	const match = text.match(pattern);
+	return match ? match[0] : null;
+}
+
 export function toStar(amount: bigint | number) {
 	return "✺".repeat(Number(amount));
 }
@@ -34,4 +40,13 @@ export function abbreviate(input: string) {
 		return input;
 	}
 	return `${input.slice(0, 6)}***${input.slice(-4)}`;
+}
+
+export function isEthAddress(input: string) {
+	try {
+		getAddress(input);
+		return true;
+	} catch (e) {
+		return false;
+	}
 }
