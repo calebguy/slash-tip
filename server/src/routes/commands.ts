@@ -15,7 +15,7 @@ import { selfLovePoem, stealingPoem } from "../openai";
 import { Commands, type SlackSlashCommandPayload } from "../types";
 import {
 	abbreviate,
-	extractWordAfterRegisterCommand,
+	extractFirstWord,
 	isEthAddress,
 	parseTipCommandArgs,
 	toStar,
@@ -27,8 +27,9 @@ const app = new Hono()
 	.post(Commands.Register, async (c) => {
 		const { user_id, user_name, text } =
 			await c.req.parseBody<SlackSlashCommandPayload>();
+		console.log(`register command received from ${user_id} with text ${text}`);
 		let address: Hex;
-		const addressOrEns = extractWordAfterRegisterCommand(text);
+		const addressOrEns = extractFirstWord(text);
 		if (!addressOrEns) {
 			return c.json({
 				response_type: "ephemeral",

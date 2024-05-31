@@ -25,10 +25,8 @@ export function extractEthereumAddresses(text: string) {
 	return addresses ? (addresses[0] as Hex) : null;
 }
 
-export function extractWordAfterRegisterCommand(text: string) {
-	const pattern = /(?<=\/register\s)[^\s]+/;
-	const match = text.match(pattern);
-	return match ? match[0] : null;
+export function extractFirstWord(text: string) {
+	return text.split(" ")[0];
 }
 
 export function toStar(amount: bigint | number) {
