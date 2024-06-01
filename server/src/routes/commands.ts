@@ -237,18 +237,23 @@ const app = new Hono()
 		const leaderboard = await getLeaderBoard();
 		return c.json({
 			response_type: "in_channel",
-			blocks: `${leaderboard.map(({ user, balance }) => ({
-				type: "section",
-				text: {
-					type: "mrkdwn",
-					text: `<@${user.id}> ${
-						balance > BigInt(0) ? `${toStar(balance)}✺` : "0 🥲"
-					}`,
-				},
-			}))}
-			
-			full leaderboard <${SITE_URL}|here>
-			`,
+			blocks: leaderboard
+				.map(({ user, balance }) => ({
+					type: "section",
+					text: {
+						type: "mrkdwn",
+						text: `<@${user.id}> ${
+							balance > BigInt(0) ? `${toStar(balance)}✺` : "0 🥲"
+						}`,
+					},
+				}))
+				.concat({
+					type: "section",
+					text: {
+						type: "mrkdwn",
+						text: `<${SITE_URL}|View the full leaderboard>`,
+					},
+				}),
 		});
 	});
 
