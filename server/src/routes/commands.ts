@@ -179,7 +179,9 @@ const app = new Hono()
 					type: "section",
 					text: {
 						type: "mrkdwn",
-						text: `<@${user_id}> ${toStar(balance)}`,
+						text: `<@${user_id}> you have ${
+							balance === BigInt(0) ? "0" : toStar(balance)
+						}`,
 					},
 				},
 			],
@@ -201,9 +203,9 @@ const app = new Hono()
 					type: "section",
 					text: {
 						type: "mrkdwn",
-						text: `<@${user_id}> ${
+						text: `<@${user_id}> you have ${
 							allowance === BigInt(0) ? "0" : toStar(allowance)
-						}`,
+						} left to tip`,
 					},
 				},
 			],
@@ -225,7 +227,7 @@ const app = new Hono()
 					type: "section",
 					text: {
 						type: "mrkdwn",
-						text: `<@${user_id}> <https://basescan.org/address/${address}|${address}>`,
+						text: `<@${user_id}> your registered address is <https://basescan.org/address/${address}|${address}>. If you would like to change it reach out to caleb`,
 					},
 				},
 			],
@@ -235,7 +237,7 @@ const app = new Hono()
 		const leaderboard = await getLeaderBoard();
 		return c.json({
 			response_type: "in_channel",
-			blocks: leaderboard.map(({ user, balance }) => ({
+			blocks: `${leaderboard.map(({ user, balance }) => ({
 				type: "section",
 				text: {
 					type: "mrkdwn",
@@ -243,7 +245,10 @@ const app = new Hono()
 						balance > BigInt(0) ? `${toStar(balance)}✺` : "0 🥲"
 					}`,
 				},
-			})),
+			}))}
+			
+			full leaderboard <${SITE_URL}|here>
+			`,
 		});
 	});
 
