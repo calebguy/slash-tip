@@ -1,7 +1,7 @@
 import { addAllowanceForAllUsers } from "./chain";
 
 async function main() {
-	const allowance = 1;
+	const allowance = 3;
 	const now = new Date();
 	console.log(
 		`[${now.toISOString()}] adding allowance of ${allowance} for all users`,
