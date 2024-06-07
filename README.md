@@ -1,1 +1,2 @@
-*/tip // good job
+*/tip
+good-job
