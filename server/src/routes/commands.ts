@@ -10,7 +10,7 @@ import {
 	registerUser,
 } from "../chain";
 import { SITE_URL } from "../constants";
-import { mustBeRegistered } from "../middleware";
+import { mustBeRegistered } from "../middleware/mustBeRegistered";
 import { selfLovePoem, stealingPoem } from "../openai";
 import { Commands, type SlackSlashCommandPayload } from "../types";
 import {

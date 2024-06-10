@@ -1,6 +1,6 @@
 import { createMiddleware } from "hono/factory";
-import { getUserExists } from "./chain";
-import type { SlackSlashCommandPayload } from "./types";
+import { getUserExists } from "../chain";
+import type { SlackSlashCommandPayload } from "../types";
 
 export const mustBeRegistered = createMiddleware(async (c, next) => {
 	const { user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
