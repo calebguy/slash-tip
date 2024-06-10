@@ -1,12 +1,12 @@
 import { addAllowanceForAllUsers } from "./chain";
+import { DAILY_ALLOWANCE } from "./constants";
 
 async function main() {
-	const allowance = 3;
 	const now = new Date();
 	console.log(
-		`[${now.toISOString()}] adding allowance of ${allowance} for all users`,
+		`[${now.toISOString()}] adding allowance of ${DAILY_ALLOWANCE} for all users`,
 	);
-	await addAllowanceForAllUsers(allowance);
+	await addAllowanceForAllUsers(DAILY_ALLOWANCE);
 }
 
 main()

@@ -3,3 +3,4 @@ export const USER_REGISTRY_ADDRESS =
 export const SLASH_TIP_ADDRESS = "0x4aF53290DB0444638160689E2Ab289256AB66041";
 export const TIP_ADDRESS = "0xA19e91f5c794BBe0632cC14bB51Db434573246e2";
 export const SITE_URL = "https://slash-tip.onrender.com";
+export const DAILY_ALLOWANCE = 3;
