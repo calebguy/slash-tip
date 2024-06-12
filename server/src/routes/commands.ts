@@ -78,7 +78,7 @@ const app = new Hono()
 			],
 		});
 	})
-	.post(Commands.Tip, mustBeRegistered, slackOnly, async (c) => {
+	.post(Commands.Tip, mustBeRegistered, async (c) => {
 		const { text, user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
 
 		const { id, amount: _amount } = parseTipCommandArgs(text);
@@ -166,7 +166,7 @@ const app = new Hono()
 			blocks,
 		});
 	})
-	.post(Commands.Balance, mustBeRegistered, slackOnly, async (c) => {
+	.post(Commands.Balance, mustBeRegistered, async (c) => {
 		const { user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
 		if (!(await getUserExists(user_id))) {
 			return c.json({
@@ -190,7 +190,7 @@ const app = new Hono()
 			],
 		});
 	})
-	.post(Commands.Allowance, mustBeRegistered, slackOnly, async (c) => {
+	.post(Commands.Allowance, mustBeRegistered, async (c) => {
 		const { user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
 		if (!(await getUserExists(user_id))) {
 			return c.json({
@@ -214,7 +214,7 @@ const app = new Hono()
 			],
 		});
 	})
-	.post(Commands.Address, mustBeRegistered, slackOnly, async (c) => {
+	.post(Commands.Address, mustBeRegistered, async (c) => {
 		const { user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
 		if (!(await getUserExists(user_id))) {
 			return c.json({
@@ -259,5 +259,7 @@ const app = new Hono()
 				}),
 		});
 	});
+
+app.use(slackOnly);
 
 export default app;
