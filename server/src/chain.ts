@@ -72,7 +72,12 @@ export async function mint({
 		},
 	});
 	try {
-		return await waitForHash(syndicate, { projectId, transactionId });
+		return await waitForHash(syndicate, {
+			projectId,
+			transactionId,
+			every: 200,
+			maxAttempts: 3,
+		});
 	} catch (e) {
 		console.error(
 			`[mint] could not get transaction hash for ${transactionId} in reasonable amount of time`,
@@ -102,7 +107,12 @@ export async function register({
 		},
 	});
 	try {
-		return await waitForHash(syndicate, { projectId, transactionId });
+		return await waitForHash(syndicate, {
+			projectId,
+			transactionId,
+			every: 200,
+			maxAttempts: 3,
+		});
 	} catch (e) {
 		console.error(
 			`[register-user] could not get transaction hash for ${transactionId} in reasonable amount of time`,
