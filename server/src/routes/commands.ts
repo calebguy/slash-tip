@@ -25,7 +25,7 @@ import { getAddressFromENS } from "../viem";
 
 // https://api.slack.com/interactivity/slash-commands
 const app = new Hono()
-	.post(Commands.Register, async (c) => {
+	.post(Commands.Register, slackOnly, async (c) => {
 		const { user_id, user_name, text } =
 			await c.req.parseBody<SlackSlashCommandPayload>();
 		console.log(`register command received from ${user_id} with text ${text}`);
@@ -78,7 +78,7 @@ const app = new Hono()
 			],
 		});
 	})
-	.post(Commands.Tip, mustBeRegistered, async (c) => {
+	.post(Commands.Tip, mustBeRegistered, slackOnly, async (c) => {
 		const { text, user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
 
 		const { id, amount: _amount } = parseTipCommandArgs(text);
@@ -166,7 +166,7 @@ const app = new Hono()
 			blocks,
 		});
 	})
-	.post(Commands.Balance, mustBeRegistered, async (c) => {
+	.post(Commands.Balance, mustBeRegistered, slackOnly, async (c) => {
 		const { user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
 		if (!(await getUserExists(user_id))) {
 			return c.json({
@@ -190,7 +190,7 @@ const app = new Hono()
 			],
 		});
 	})
-	.post(Commands.Allowance, mustBeRegistered, async (c) => {
+	.post(Commands.Allowance, mustBeRegistered, slackOnly, async (c) => {
 		const { user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
 		if (!(await getUserExists(user_id))) {
 			return c.json({
@@ -214,7 +214,7 @@ const app = new Hono()
 			],
 		});
 	})
-	.post(Commands.Address, mustBeRegistered, async (c) => {
+	.post(Commands.Address, mustBeRegistered, slackOnly, async (c) => {
 		const { user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
 		if (!(await getUserExists(user_id))) {
 			return c.json({
@@ -257,13 +257,6 @@ const app = new Hono()
 						text: `<${SITE_URL}|View the full leaderboard>`,
 					},
 				}),
-		});
-	})
-	.post(Commands.SlackAuth, slackOnly, async (c) => {
-		console.log("made it through the route");
-		return c.json({
-			response_type: "ephemeral",
-			text: "Auth successfull",
 		});
 	});
 
