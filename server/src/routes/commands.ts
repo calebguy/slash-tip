@@ -9,7 +9,7 @@ import {
 	mint,
 	registerUser,
 } from "../chain";
-import { SITE_URL } from "../constants";
+import { DAILY_ALLOWANCE, SITE_URL } from "../constants";
 import { mustBeRegistered } from "../middleware/mustBeRegistered";
 import { selfLovePoem, stealingPoem } from "../openai";
 import { Commands, type SlackSlashCommandPayload } from "../types";
@@ -123,7 +123,9 @@ const app = new Hono()
 		if (allowance < BigInt(amount)) {
 			return c.json({
 				response_type: "ephemeral",
-				text: `Insufficient allowance, you only have ${allowance.toString()} more tips left to give today. Every day at 9am CT your allowance will increase by ✺✺✺✺✺.`,
+				text: `Insufficient allowance, you only have ${allowance.toString()} more tips left to give today. Every day at 9am CT your allowance will increase by ${toStar(
+					DAILY_ALLOWANCE,
+				)}.`,
 			});
 		}
 
