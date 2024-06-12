@@ -25,7 +25,6 @@ import { getAddressFromENS } from "../viem";
 
 // https://api.slack.com/interactivity/slash-commands
 const app = new Hono()
-	.use(slackAuth)
 	.post(Commands.Register, async (c) => {
 		const { user_id, user_name, text } =
 			await c.req.parseBody<SlackSlashCommandPayload>();
@@ -260,5 +259,7 @@ const app = new Hono()
 				}),
 		});
 	});
+
+app.use(slackAuth);
 
 export default app;
