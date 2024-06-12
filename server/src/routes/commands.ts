@@ -11,6 +11,7 @@ import {
 } from "../chain";
 import { DAILY_ALLOWANCE, SITE_URL } from "../constants";
 import { mustBeRegistered } from "../middleware/mustBeRegistered";
+import { slackOnly } from "../middleware/slackOnly";
 import { selfLovePoem, stealingPoem } from "../openai";
 import { Commands, type SlackSlashCommandPayload } from "../types";
 import {
@@ -256,6 +257,13 @@ const app = new Hono()
 						text: `<${SITE_URL}|View the full leaderboard>`,
 					},
 				}),
+		});
+	})
+	.post(Commands.SlackAuth, slackOnly, async (c) => {
+		console.log("made it through the route");
+		return c.json({
+			response_type: "ephemeral",
+			text: "Auth successfull",
 		});
 	});
 
