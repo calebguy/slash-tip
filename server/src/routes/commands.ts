@@ -10,7 +10,8 @@ import {
 	registerUser,
 } from "../chain";
 import { DAILY_ALLOWANCE, SITE_URL } from "../constants";
-import { mustBeRegistered } from "../middleware";
+import { mustBeRegistered } from "../middleware/mustBeRegistered";
+import { slackOnly } from "../middleware/slackOnly";
 import { selfLovePoem, stealingPoem } from "../openai";
 import { Commands, type SlackSlashCommandPayload } from "../types";
 import {
@@ -123,7 +124,9 @@ const app = new Hono()
 		if (allowance < BigInt(amount)) {
 			return c.json({
 				response_type: "ephemeral",
-				text: `Insufficient allowance, you only have ${allowance.toString()} more tips left to give today. Every day at 9am CT your allowance will increase by ${toStar(DAILY_ALLOWANCE)}.`,
+				text: `Insufficient allowance, you only have ${allowance.toString()} more tips left to give today. Every day at 9am CT your allowance will increase by ${toStar(
+					DAILY_ALLOWANCE,
+				)}.`,
 			});
 		}
 
@@ -254,6 +257,13 @@ const app = new Hono()
 						text: `<${SITE_URL}|View the full leaderboard>`,
 					},
 				}),
+		});
+	})
+	.post(Commands.SlackAuth, slackOnly, async (c) => {
+		console.log("made it through the route");
+		return c.json({
+			response_type: "ephemeral",
+			text: "Auth successfull",
 		});
 	});
 
