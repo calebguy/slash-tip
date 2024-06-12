@@ -7,7 +7,7 @@ import {
 	getUserAddress,
 	getUserExists,
 	mint,
-	registerUser,
+	register,
 } from "../chain";
 import { DAILY_ALLOWANCE, SITE_URL } from "../constants";
 import { mustBeRegistered } from "../middleware/mustBeRegistered";
@@ -62,7 +62,14 @@ const app = new Hono()
 		console.log(
 			`registring ${user_id} with address ${address} and nickname ${user_name}`,
 		);
-		await registerUser({ id: user_id, nickname: user_name, address });
+		const hash = await register({
+			id: user_id,
+			nickname: user_name,
+			address,
+		});
+		console.log(
+			`registered ${user_id} with address ${address} and nickname ${user_name} with hash ${hash}`,
+		);
 		return c.json({
 			response_type: "in_channel",
 			blocks: [

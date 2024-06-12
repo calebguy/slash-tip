@@ -1,6 +1,11 @@
 import { SyndicateClient } from "@syndicateio/syndicate-node";
-import type { Hex } from "viem";
-import { SLASH_TIP_ADDRESS, USER_REGISTRY_ADDRESS } from "./constants";
+import { waitForHash } from "@syndicateio/syndicate-node/utils";
+
+import {
+	DAILY_ALLOWANCE,
+	SLASH_TIP_ADDRESS,
+	USER_REGISTRY_ADDRESS,
+} from "./constants";
 import { env } from "./env";
 import { slashTipContract, userRegistryContract } from "./viem";
 
@@ -11,34 +16,6 @@ const syndicate = new SyndicateClient({
 const chainId = 8453;
 const projectId = "570119ce-a49c-4245-8851-11c9d1ad74c7";
 const tokenId = 0;
-
-const userIds = ["U05LE52HUJW", "U04SXK2ADK3", "U06LPBU6A02", "U04T5FRG264"];
-
-interface UserWithBalance {
-	nickname: string;
-	allowance: bigint;
-	id: string;
-	account: Hex;
-}
-
-export function mint({
-	from,
-	to,
-	amount,
-}: { from: string; to: string; amount: number }) {
-	return slashTipContract.write.tip([from, to, BigInt(0), BigInt(amount)]);
-}
-
-export function registerUser({
-	id,
-	nickname,
-	address,
-}: { id: string; nickname: string; address: Hex }) {
-	return userRegistryContract.write.addUser([
-		id,
-		{ id, nickname, account: address, allowance: BigInt(5) },
-	]);
-}
 
 export function getBalance(userId: string): Promise<bigint> {
 	return slashTipContract.read.balanceOf([userId, BigInt(tokenId)]);
@@ -76,32 +53,40 @@ export function addAllowanceForAllUsers(amount: number) {
 	return slashTipContract.write.addAllowanceForAllUsers([BigInt(amount)]);
 }
 
-export function syndicateMint({
+export async function mint({
 	from,
 	to,
 	amount,
 }: { from: string; to: string; amount: number }) {
-	return syndicate.transact.sendTransaction({
+	const { transactionId } = await syndicate.transact.sendTransaction({
 		chainId,
 		projectId,
 		contractAddress: SLASH_TIP_ADDRESS,
 		functionSignature:
 			"tip(string from, string to, uint256 tokenId, uint256 amount)",
 		args: {
-			tokenId: 0,
+			tokenId,
 			from,
 			to,
 			amount,
 		},
 	});
+	try {
+		return await waitForHash(syndicate, { projectId, transactionId });
+	} catch (e) {
+		console.error(
+			`[mint] could not get transaction hash for ${transactionId} in reasonable amount of time`,
+		);
+		return null;
+	}
 }
 
-export function syndicateRegisterUser({
+export async function register({
 	id,
 	nickname,
 	address,
 }: { id: string; nickname: string; address: string }) {
-	return syndicate.transact.sendTransaction({
+	const { transactionId } = await syndicate.transact.sendTransaction({
 		chainId,
 		projectId,
 		contractAddress: USER_REGISTRY_ADDRESS,
@@ -112,8 +97,16 @@ export function syndicateRegisterUser({
 			user: {
 				nickname,
 				account: address,
-				allowance: 5,
+				allowance: DAILY_ALLOWANCE,
 			},
 		},
 	});
+	try {
+		return await waitForHash(syndicate, { projectId, transactionId });
+	} catch (e) {
+		console.error(
+			`[register-user] could not get transaction hash for ${transactionId} in reasonable amount of time`,
+		);
+		return null;
+	}
 }
