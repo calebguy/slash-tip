@@ -2,7 +2,7 @@ import crypto from "crypto";
 import { createMiddleware } from "hono/factory";
 import { env } from "../env";
 
-export const slackOnly = createMiddleware(async (c, next) => {
+export const slackAuth = createMiddleware(async (c, next) => {
 	const rawData = await c.req.text();
 	const requestTime = c.req.header("X-Slack-Request-Timestamp");
 	if (!requestTime) {

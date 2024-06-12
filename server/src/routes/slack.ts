@@ -11,7 +11,7 @@ import {
 } from "../chain";
 import { DAILY_ALLOWANCE, SITE_URL } from "../constants";
 import { mustBeRegistered } from "../middleware/mustBeRegistered";
-import { slackOnly } from "../middleware/slackOnly";
+import { slackAuth } from "../middleware/slackAuth";
 import { selfLovePoem, stealingPoem } from "../openai";
 import { Commands, type SlackSlashCommandPayload } from "../types";
 import {
@@ -25,7 +25,8 @@ import { getAddressFromENS } from "../viem";
 
 // https://api.slack.com/interactivity/slash-commands
 const app = new Hono()
-	.post(Commands.Register, slackOnly, async (c) => {
+	.use(slackAuth)
+	.post(Commands.Register, async (c) => {
 		const { user_id, user_name, text } =
 			await c.req.parseBody<SlackSlashCommandPayload>();
 		console.log(`register command received from ${user_id} with text ${text}`);
@@ -259,7 +260,5 @@ const app = new Hono()
 				}),
 		});
 	});
-
-app.use(slackOnly);
 
 export default app;
