@@ -1,6 +1,7 @@
 import { SyndicateClient } from "@syndicateio/syndicate-node";
 import { waitForHash } from "@syndicateio/syndicate-node/utils";
 
+import { Hex } from "viem";
 import {
 	DAILY_ALLOWANCE,
 	SLASH_TIP_ADDRESS,
@@ -86,7 +87,7 @@ export async function mint({
 	}
 }
 
-export async function register({
+export async function registerSyn({
 	id,
 	nickname,
 	address,
@@ -121,4 +122,20 @@ export async function register({
 		);
 		return null;
 	}
+}
+
+export function register({
+	id,
+	nickname,
+	address,
+}: { id: string; nickname: string; address: Hex }) {
+	return userRegistryContract.write.addUser([
+		id,
+		{
+			id,
+			nickname,
+			account: address,
+			allowance: BigInt(DAILY_ALLOWANCE),
+		},
+	]);
 }
