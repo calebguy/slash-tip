@@ -63,6 +63,10 @@ const app = new Hono()
 			});
 		}
 
+		console.log(
+			`registring ${user_id} with address ${address} and nickname ${user_name}`,
+		);
+
 		const hash = await register({
 			id: user_id,
 			nickname: user_name,
