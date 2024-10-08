@@ -28,9 +28,12 @@ const app = new Hono()
 	.post(Commands.Register, async (c) => {
 		const { user_id, user_name, text } =
 			await c.req.parseBody<SlackSlashCommandPayload>();
+		console.log({ user_id, user_name, text })
+
 		console.log(`register command received from ${user_id} with text ${text}`);
 		let address: Hex;
 		const addressOrEns = extractFirstWord(text);
+		console.log({ addressOrEns });
 		if (!addressOrEns) {
 			return c.json({
 				response_type: "ephemeral",
@@ -42,6 +45,7 @@ const app = new Hono()
 			address = addressOrEns as Hex;
 		} else {
 			const tmp = await getAddressFromENS(addressOrEns);
+			console.log({ tmp });
 			if (!tmp) {
 				return c.json({
 					response_type: "ephemeral",
@@ -50,7 +54,7 @@ const app = new Hono()
 			}
 			address = tmp;
 		}
-
+		console.log({ address });
 		const registeredAddress = await getUserAddress(user_id).catch(() => null);
 		if (registeredAddress) {
 			return c.json({
@@ -62,6 +66,7 @@ const app = new Hono()
 		console.log(
 			`registring ${user_id} with address ${address} and nickname ${user_name}`,
 		);
+
 		const hash = await register({
 			id: user_id,
 			nickname: user_name,
