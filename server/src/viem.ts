@@ -28,7 +28,7 @@ const baseClient = createPublicClient({
 
 const mainnetClient = createPublicClient({
 	chain: mainnet,
-	transport: http(),
+	transport: http("https://eth.llamarpc.com"),
 });
 
 const account = privateKeyToAccount(env.RELAYER_PRIVATE_KEY);
