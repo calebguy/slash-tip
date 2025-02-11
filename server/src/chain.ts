@@ -77,7 +77,7 @@ export async function mint({
 			projectId,
 			transactionId,
 			every: 200,
-			maxAttempts: 3,
+			maxAttempts: 10,
 		});
 	} catch (e) {
 		console.error(
@@ -93,7 +93,15 @@ export async function registerSyn({
 	address,
 }: { id: string; nickname: string; address: string }) {
 	console.log("sending syn transaction");
-	console.log({ id, nickname, address, projectId, chainId, USER_REGISTRY_ADDRESS, DAILY_ALLOWANCE });
+	console.log({
+		id,
+		nickname,
+		address,
+		projectId,
+		chainId,
+		USER_REGISTRY_ADDRESS,
+		DAILY_ALLOWANCE,
+	});
 	const { transactionId } = await syndicate.transact.sendTransaction({
 		chainId,
 		projectId,
