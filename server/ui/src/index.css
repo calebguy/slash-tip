@@ -19,7 +19,9 @@ html, body {
 
 body {
   font-family: var(--font-display);
-  background-image: url("./images/logo.svg");
+  background-image: url("/logo-dark-green.svg");
+  background-repeat: repeat;
+  background-size: 100px;
 }
 
 #root {
