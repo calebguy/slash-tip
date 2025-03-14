@@ -1,0 +1,19 @@
+{
+	"name": "slash-tip",
+	"module": "index.ts",
+	"type": "module",
+	"workspaces": ["packages/*"],
+	"devDependencies": {
+		"@biomejs/biome": "1.9.4",
+		"@types/bun": "latest"
+	},
+	"peerDependencies": {
+		"typescript": "^5.0.0"
+	},
+	"scripts": {
+		"dev": "bun --filter 'ui' dev & bun --filter 'server' dev",
+		"format": "bunx @biomejs/biome format --write .",
+		"start": "bun --filter 'server' start",
+		"build": "bun --filter 'ui' build"
+	}
+}
