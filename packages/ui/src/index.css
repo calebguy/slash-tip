@@ -8,21 +8,28 @@
 	font-style: swap;
 }
 
+@font-face {
+	font-family: "Oracle Plus";
+	src: url("./fonts/ABCOraclePlusVariable-Trial.woff2") format("woff2");
+	font-weight: 100 900;
+	font-style: swap;
+}
+
 @theme {
-	--color-green: #00ff00;
-	--font-display: "Oracle Triple", sans-serif;
+	--color-paper: #E1E3D5;
+	--color-black: #161616;
+	--color-slime: #B6AF2F;
+	--color-orange: #FF6619;
+	--font-display: "Oracle Plus", sans-serif;
 }
 
 html,
 body {
-	background-color: var(--color-green);
+	background-color: var(--color-black);
 }
 
 body {
 	font-family: var(--font-display);
-	background-image: url("/logo-dark-green.svg");
-	background-repeat: repeat;
-	background-size: 100px;
 }
 
 #root {
