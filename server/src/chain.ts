@@ -1,7 +1,7 @@
 import { SyndicateClient } from "@syndicateio/syndicate-node";
 import { waitForHash } from "@syndicateio/syndicate-node/utils";
 
-import { Hex } from "viem";
+import type { Hex } from "viem";
 import {
 	DAILY_ALLOWANCE,
 	SLASH_TIP_ADDRESS,

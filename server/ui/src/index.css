@@ -1,9 +1,36 @@
-@import url('https://fonts.googleapis.com/css2?family=Jacquard+12&display=swap');
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
+@import 'tailwindcss';
 
+@font-face {
+  font-family: "Oracle Triple";
+  src: url("./fonts/ABCOracleTripleVariable-Trial.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: swap;
+}
+
+@theme {
+  --color-green: #00ff00;
+  --font-display: "Oracle Triple", sans-serif;
+}
 
 html, body {
-  background-color: #00ff00;;
+  background-color: var(--color-green);
+}
+
+body {
+  font-family: var(--font-display);
+  background-image: url("./images/logo.svg");
+}
+
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+  height: 1px;
+  position: relative;
+}
+
+html, body, #root {
+  min-height: calc(100dvh)
 }

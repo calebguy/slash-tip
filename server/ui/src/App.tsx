@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { hc, type InferResponseType } from "hono/client";
-import type { ApiType } from "../../src/index";
-import "./App.css";
+import { type InferResponseType, hc } from "hono/client";
+import type { ApiType } from "../../src/server";
 import { abbreviate } from "./utils";
 
 const client = hc<ApiType>("/");
@@ -26,20 +25,20 @@ function App() {
 	});
 
 	return (
-		<div className="font-jacquard text-6xl grow flex flex-col justify-stretch items-stretch h-full">
-			<div className="text-left md:text-center">*/tip</div>
+		<div className="font-jacquard text-4xl md:text-6xl grow flex flex-col justify-stretch items-stretch h-full">
+			<div className="text-left md:text-center">/tip</div>
 			<div className="md:grid md:grid-cols-2 grow overflow-auto my-8">
-				<div className="text-left md:text-right">
+				<div className="text-left md:text-right font-thin">
 					{data?.map((user) => (
 						<div key={`user-${user.nickname}-${user.balance}`}>
-							{user.balance}*/
-							<span className="inline-block md:hidden">
+							<span className="font-thin">{user.balance}</span>/
+							<span className="inline-block md:hidden font-light">
 								<User user={user} />
 							</span>
 						</div>
 					))}
 				</div>
-				<div className="hidden md:flex text-left flex-col items-start">
+				<div className="hidden md:flex text-left flex-col items-start font-light">
 					{data?.map((user) => (
 						<User key={`user-${user.id}`} user={user} />
 					))}
@@ -55,7 +54,9 @@ function App() {
 					</button>
 				</div>
 				<div className="flex justify-center mt-6">
-					<img src={"/black-gif.gif"} alt="✺" width={45} height={45} />
+					<span className="w-12 h-12">
+						<img src={"/logo.svg"} alt="syn" />
+					</span>
 				</div>
 			</div>
 		</div>
@@ -77,8 +78,8 @@ const User = ({ user }: { user: User }) => {
 			<div className="inline-block group-hover:hidden">{user.nickname}</div>
 			<div className="hidden group-hover:block cursor-pointer active:text-[#02d100] select-none group">
 				<span>{first}</span>
-				<span className="inline-block align-bottom leading-6 md:leading-10 text-4xl md:text-6xl mx-1">
-					***
+				<span className="inline-flex items-center mx-1">
+					<img src={"/thing.svg"} alt="syn" className="w-6 h-6" />
 				</span>
 				<span>{last}</span>
 			</div>
