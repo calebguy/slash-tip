@@ -27,9 +27,9 @@ function Leaderboard() {
 	});
 
 	return (
-		<div className="text-3xl md:text-4xl grow">
+		<div className="text-3xl md:text-4xl grow flex flex-col">
 			<Header />
-			<div className="md:grid md:grid-cols-2 grow overflow-auto my-8">
+			<div className="md:grid md:grid-cols-2 grow overflow-auto">
 				<div className="text-left md:text-right font-thin text-slime">
 					{data?.map((user) => (
 						<div key={`user-${user.nickname}-${user.balance}`}>

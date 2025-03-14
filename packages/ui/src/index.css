@@ -40,6 +40,8 @@ body {
 	text-align: center;
 	height: 1px;
 	position: relative;
+	display: flex;
+	flex-direction: column;
 }
 
 html,
