@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { type InferResponseType, hc } from "hono/client";
-import type { ApiType } from "../../server/src/server";
-import { IDK } from "./icons/idk";
-import { Logo } from "./icons/logo";
-import { abbreviate } from "./utils";
+import type { ApiType } from "../../../server/src/server";
+import { IDK } from "../icons/idk";
+import { abbreviate } from "../utils";
+import { Header } from "./Header";
 
 const client = hc<ApiType>("/");
 
@@ -27,11 +27,8 @@ function Leaderboard() {
 	});
 
 	return (
-		<div className="text-3xl md:text-4xl grow flex flex-col">
-			<div className="flex items-center">
-				<Logo className="md:w-14 md:h-14 w-10 h-10 text-slime" />
-				<div className="font-thin text-3xl md:text-5xl text-slime">/tip</div>
-			</div>
+		<div className="text-3xl md:text-4xl grow">
+			<Header />
 			<div className="md:grid md:grid-cols-2 grow overflow-auto my-8">
 				<div className="text-left md:text-right font-thin text-slime">
 					{data?.map((user) => (
