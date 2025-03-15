@@ -30,17 +30,17 @@ function Leaderboard() {
 		<div className="text-3xl md:text-4xl grow flex flex-col">
 			<Header />
 			<div className="md:grid md:grid-cols-2 grow overflow-auto">
-				<div className="text-left md:text-right font-thin text-slime">
+				<div className="text-left md:text-right">
 					{data?.map((user) => (
 						<div key={`user-${user.nickname}-${user.balance}`}>
-							<span className="font-thin text-slime">{user.balance}</span>/
-							<span className="inline-block md:hidden font-light">
+							<span className="text-slime font-thin">{user.balance}</span>
+							<span className="inline-block md:hidden font-thin">
 								<User user={user} />
 							</span>
 						</div>
 					))}
 				</div>
-				<div className="hidden md:flex text-left flex-col items-start font-light">
+				<div className="hidden md:flex text-left flex-col items-start font-thin">
 					{data?.map((user) => (
 						<User key={`user-${user.id}`} user={user} />
 					))}
