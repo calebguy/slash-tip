@@ -7,16 +7,11 @@ import {
 } from "viem";
 import { base, mainnet } from "viem/chains";
 
+import SlashTipAbi from "utils/src/abis/SlashTipAbi";
+import UserRegistryAbi from "utils/src/abis/UserRegistryAbi";
 import { privateKeyToAccount } from "viem/accounts";
 import { normalize } from "viem/ens";
-import slashTipABI from "./abi/slashTip";
-import tipABI from "./abi/tip";
-import userRegistryABI from "./abi/userRegistry";
-import {
-	SLASH_TIP_ADDRESS,
-	TIP_ADDRESS,
-	USER_REGISTRY_ADDRESS,
-} from "./constants";
+import { SLASH_TIP_ADDRESS, USER_REGISTRY_ADDRESS } from "./constants";
 import { env } from "./env";
 
 const rpcUrl = env.BASE_RPC_URL;
@@ -40,19 +35,13 @@ export const walletClient = createWalletClient({
 
 export const slashTipContract = getContract({
 	address: SLASH_TIP_ADDRESS,
-	abi: slashTipABI,
+	abi: SlashTipAbi,
 	client: { public: baseClient, wallet: walletClient },
 });
 
 export const userRegistryContract = getContract({
 	address: USER_REGISTRY_ADDRESS,
-	abi: userRegistryABI,
-	client: { public: baseClient, wallet: walletClient },
-});
-
-export const tipContract = getContract({
-	address: TIP_ADDRESS,
-	abi: tipABI,
+	abi: UserRegistryAbi,
 	client: { public: baseClient, wallet: walletClient },
 });
 

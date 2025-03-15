@@ -1,4 +1,4 @@
-const tipABI = [
+const TipAbi = [
 	{
 		type: "constructor",
 		inputs: [
@@ -377,4 +377,4 @@ const tipABI = [
 	},
 ] as const;
 
-export default tipABI;
+export default TipAbi;

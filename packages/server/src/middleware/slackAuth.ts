@@ -1,5 +1,5 @@
-import crypto from "crypto";
 import { createMiddleware } from "hono/factory";
+import crypto from "node:crypto";
 import { env } from "../env";
 
 export const slackAuth = createMiddleware(async (c, next) => {

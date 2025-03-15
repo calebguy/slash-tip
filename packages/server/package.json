@@ -9,7 +9,8 @@
 		"@syndicateio/syndicate-node": "^1.0.1",
 		"hono": "^4.2.9",
 		"openai": "^4.47.1",
-		"viem": "^2.10.5"
+		"viem": "^2.10.5",
+		"utils": "workspace:*"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "1.7.2",

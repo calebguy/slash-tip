@@ -1,10 +1,8 @@
-const slashTipABI = [
+const UserRegistryAbi = [
 	{
 		type: "constructor",
 		inputs: [
 			{ name: "_admin", type: "address", internalType: "address" },
-			{ name: "_userRegistry", type: "address", internalType: "address" },
-			{ name: "_tipToken", type: "address", internalType: "address" },
 			{ name: "_description", type: "string", internalType: "string" },
 		],
 		stateMutability: "nonpayable",
@@ -18,27 +16,33 @@ const slashTipABI = [
 	},
 	{
 		type: "function",
-		name: "addAllowanceForAllUsers",
-		inputs: [{ name: "_amount", type: "uint256", internalType: "uint256" }],
+		name: "addUser",
+		inputs: [
+			{ name: "_id", type: "string", internalType: "string" },
+			{
+				name: "_user",
+				type: "tuple",
+				internalType: "struct UserRegistry.User",
+				components: [
+					{ name: "id", type: "string", internalType: "string" },
+					{ name: "nickname", type: "string", internalType: "string" },
+					{ name: "account", type: "address", internalType: "address" },
+					{ name: "allowance", type: "uint256", internalType: "uint256" },
+				],
+			},
+		],
 		outputs: [],
 		stateMutability: "nonpayable",
 	},
 	{
 		type: "function",
-		name: "allowanceOf",
-		inputs: [{ name: "_userId", type: "string", internalType: "string" }],
-		outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
-		stateMutability: "view",
-	},
-	{
-		type: "function",
-		name: "balanceOf",
+		name: "addUserAllowance",
 		inputs: [
-			{ name: "_userId", type: "string", internalType: "string" },
-			{ name: "_tokenId", type: "uint256", internalType: "uint256" },
+			{ name: "_id", type: "string", internalType: "string" },
+			{ name: "_plus", type: "uint256", internalType: "uint256" },
 		],
-		outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
-		stateMutability: "view",
+		outputs: [],
+		stateMutability: "nonpayable",
 	},
 	{
 		type: "function",
@@ -52,6 +56,39 @@ const slashTipABI = [
 		name: "getRoleAdmin",
 		inputs: [{ name: "role", type: "bytes32", internalType: "bytes32" }],
 		outputs: [{ name: "", type: "bytes32", internalType: "bytes32" }],
+		stateMutability: "view",
+	},
+	{
+		type: "function",
+		name: "getUser",
+		inputs: [{ name: "_id", type: "string", internalType: "string" }],
+		outputs: [
+			{
+				name: "",
+				type: "tuple",
+				internalType: "struct UserRegistry.User",
+				components: [
+					{ name: "id", type: "string", internalType: "string" },
+					{ name: "nickname", type: "string", internalType: "string" },
+					{ name: "account", type: "address", internalType: "address" },
+					{ name: "allowance", type: "uint256", internalType: "uint256" },
+				],
+			},
+		],
+		stateMutability: "view",
+	},
+	{
+		type: "function",
+		name: "getUserAddress",
+		inputs: [{ name: "_id", type: "string", internalType: "string" }],
+		outputs: [{ name: "", type: "address", internalType: "address" }],
+		stateMutability: "view",
+	},
+	{
+		type: "function",
+		name: "getUserAllowance",
+		inputs: [{ name: "_id", type: "string", internalType: "string" }],
+		outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
 		stateMutability: "view",
 	},
 	{
@@ -76,30 +113,41 @@ const slashTipABI = [
 	},
 	{
 		type: "function",
-		name: "leaderboard",
-		inputs: [{ name: "_tokenId", type: "uint256", internalType: "uint256" }],
+		name: "idToUser",
+		inputs: [{ name: "", type: "string", internalType: "string" }],
+		outputs: [
+			{ name: "id", type: "string", internalType: "string" },
+			{ name: "nickname", type: "string", internalType: "string" },
+			{ name: "account", type: "address", internalType: "address" },
+			{ name: "allowance", type: "uint256", internalType: "uint256" },
+		],
+		stateMutability: "view",
+	},
+	{
+		type: "function",
+		name: "listUsers",
+		inputs: [],
 		outputs: [
 			{
 				name: "",
 				type: "tuple[]",
-				internalType: "struct SlashTip.UserWithBalance[]",
+				internalType: "struct UserRegistry.User[]",
 				components: [
-					{
-						name: "user",
-						type: "tuple",
-						internalType: "struct UserRegistry.User",
-						components: [
-							{ name: "id", type: "string", internalType: "string" },
-							{ name: "nickname", type: "string", internalType: "string" },
-							{ name: "account", type: "address", internalType: "address" },
-							{ name: "allowance", type: "uint256", internalType: "uint256" },
-						],
-					},
-					{ name: "balance", type: "uint256", internalType: "uint256" },
+					{ name: "id", type: "string", internalType: "string" },
+					{ name: "nickname", type: "string", internalType: "string" },
+					{ name: "account", type: "address", internalType: "address" },
+					{ name: "allowance", type: "uint256", internalType: "uint256" },
 				],
 			},
 		],
 		stateMutability: "view",
+	},
+	{
+		type: "function",
+		name: "removeUser",
+		inputs: [{ name: "_id", type: "string", internalType: "string" }],
+		outputs: [],
+		stateMutability: "nonpayable",
 	},
 	{
 		type: "function",
@@ -123,23 +171,20 @@ const slashTipABI = [
 	},
 	{
 		type: "function",
-		name: "setAllowanceForAllUsers",
-		inputs: [{ name: "_amount", type: "uint256", internalType: "uint256" }],
-		outputs: [],
-		stateMutability: "nonpayable",
-	},
-	{
-		type: "function",
-		name: "setTipToken",
-		inputs: [{ name: "_tipToken", type: "address", internalType: "address" }],
-		outputs: [],
-		stateMutability: "nonpayable",
-	},
-	{
-		type: "function",
-		name: "setUserRegistry",
+		name: "setUserAllowance",
 		inputs: [
-			{ name: "_userRegistry", type: "address", internalType: "address" },
+			{ name: "_id", type: "string", internalType: "string" },
+			{ name: "_allowance", type: "uint256", internalType: "uint256" },
+		],
+		outputs: [],
+		stateMutability: "nonpayable",
+	},
+	{
+		type: "function",
+		name: "subUserAllowance",
+		inputs: [
+			{ name: "_id", type: "string", internalType: "string" },
+			{ name: "_sub", type: "uint256", internalType: "uint256" },
 		],
 		outputs: [],
 		stateMutability: "nonpayable",
@@ -153,30 +198,9 @@ const slashTipABI = [
 	},
 	{
 		type: "function",
-		name: "tip",
-		inputs: [
-			{ name: "_fromId", type: "string", internalType: "string" },
-			{ name: "_toId", type: "string", internalType: "string" },
-			{ name: "_tokenId", type: "uint256", internalType: "uint256" },
-			{ name: "_amount", type: "uint256", internalType: "uint256" },
-		],
-		outputs: [],
-		stateMutability: "nonpayable",
-	},
-	{
-		type: "function",
-		name: "tipToken",
-		inputs: [],
-		outputs: [{ name: "", type: "address", internalType: "contract Tip" }],
-		stateMutability: "view",
-	},
-	{
-		type: "function",
-		name: "userRegistry",
-		inputs: [],
-		outputs: [
-			{ name: "", type: "address", internalType: "contract UserRegistry" },
-		],
+		name: "userIds",
+		inputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+		outputs: [{ name: "", type: "string", internalType: "string" }],
 		stateMutability: "view",
 	},
 	{
@@ -249,5 +273,4 @@ const slashTipABI = [
 		],
 	},
 ] as const;
-
-export default slashTipABI;
+export default UserRegistryAbi;
