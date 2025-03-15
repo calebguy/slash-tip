@@ -35,7 +35,7 @@ contract SlashTipTest is Test {
         registry = new UserRegistry(address(this), "/users");
         tip = new Tip(address(this), baseURI);
         slash = new SlashTip(address(this), address(registry), address(tip), "/tip");
-    
+
         // slash-tip needs tip manager role in order to mint
         tip.grantRole(keccak256("TIP_MANAGER"), address(slash));
 
@@ -81,7 +81,7 @@ contract SlashTipTest is Test {
         assertEq(registry.getUserAllowance(toUserId), toUser.allowance);
 
         uint256 amountToMint = 1;
-        slash.tip(fromUserId, toUserId, tokenId, amountToMint);
+        slash.tip(fromUserId, toUserId, tokenId, amountToMint, "");
         assertEq(tip.balanceOf(toUser.account, tokenId), amountToMint);
         assertEq(slash.balanceOf(toUserId, tokenId), amountToMint);
         assertEq(slash.allowanceOf(fromUserId), fromUser.allowance - amountToMint);
@@ -91,21 +91,27 @@ contract SlashTipTest is Test {
     function test_tipOverAllowanceRevert() public {
         uint256 allowance = 3;
 
-        registry.addUser(fromUserId, UserRegistry.User({
-            id: "user1",
-            nickname: "a test user",
-            account: 0x18F33CEf45817C428d98C4E188A770191fDD4B79,
-            allowance: allowance
-        }));
-        registry.addUser(toUserId, UserRegistry.User({
-            id: "user2",
-            nickname: "another test user",
-            account: 0x9a37E57d177c5Ff8817B55da36F2A2b3532CDE3F,
-            allowance: 0
-        }));
+        registry.addUser(
+            fromUserId,
+            UserRegistry.User({
+                id: "user1",
+                nickname: "a test user",
+                account: 0x18F33CEf45817C428d98C4E188A770191fDD4B79,
+                allowance: allowance
+            })
+        );
+        registry.addUser(
+            toUserId,
+            UserRegistry.User({
+                id: "user2",
+                nickname: "another test user",
+                account: 0x9a37E57d177c5Ff8817B55da36F2A2b3532CDE3F,
+                allowance: 0
+            })
+        );
 
         vm.expectRevert(bytes("Insufficient allowance to mint"));
-        slash.tip(fromUserId, toUserId, tokenId, allowance + 1);
+        slash.tip(fromUserId, toUserId, tokenId, allowance + 1, "");
     }
 
     function test_leaderboard() public {
@@ -113,7 +119,7 @@ contract SlashTipTest is Test {
         registry.addUser(toUserId, toUser);
 
         uint256 amountToMint = 1;
-        slash.tip(fromUserId, toUserId, tokenId, amountToMint);
+        slash.tip(fromUserId, toUserId, tokenId, amountToMint, "");
 
         SlashTip.UserWithBalance[] memory leaderboard = slash.leaderboard(tokenId);
         assertEq(leaderboard.length, 2);
