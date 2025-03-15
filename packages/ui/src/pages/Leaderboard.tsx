@@ -26,24 +26,15 @@ function Leaderboard() {
 	});
 
 	return (
-		<div className="text-3xl md:text-4xl grow flex flex-col justify-center items-center">
-			<div className="md:grid md:grid-cols-2 grow overflow-auto">
-				<div className="text-left md:text-right">
-					{data?.map((user) => (
-						<div key={`user-${user.nickname}-${user.balance}`}>
-							<span className="text-slime font-thin">{user.balance}</span>
-							<span className="inline-block md:hidden font-thin">
-								<User user={user} />
-							</span>
-						</div>
-					))}
+		<div>
+			{data?.map((user) => (
+				<div key={`user-${user.nickname}`} className="font-thin">
+					<span className="text-slime">{user.balance}/</span>
+					<span>
+						<User user={user} />
+					</span>
 				</div>
-				<div className="hidden md:flex text-left flex-col items-start font-thin">
-					{data?.map((user) => (
-						<User key={`user-${user.id}`} user={user} />
-					))}
-				</div>
-			</div>
+			))}
 		</div>
 	);
 }
