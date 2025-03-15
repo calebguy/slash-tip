@@ -1,14 +1,30 @@
 import { BrowserRouter, Route, Routes } from "react-router";
-import { Home } from "./components/Home";
-import Leaderboard from "./components/Leaderboard";
+import { AppLayout } from "./layouts/App.layout";
+import { Home } from "./pages/Home";
+import Leaderboard from "./pages/Leaderboard";
 
+export const routes = [
+	{
+		path: "/",
+		element: <Home />,
+		title: "/tip",
+	},
+	{
+		path: "/leaderboard",
+		element: <Leaderboard />,
+		title: "/leaderboard",
+	},
+];
 export function App() {
 	return (
 		<BrowserRouter>
-			<Routes>
-				<Route path="/" element={<Home />} />
-				<Route path="/leaderboard" element={<Leaderboard />} />
-			</Routes>
+			<AppLayout>
+				<Routes>
+					{routes.map((route) => (
+						<Route key={route.path} path={route.path} element={route.element} />
+					))}
+				</Routes>
+			</AppLayout>
 		</BrowserRouter>
 	);
 }

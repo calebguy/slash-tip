@@ -3,7 +3,6 @@ import { type InferResponseType, hc } from "hono/client";
 import type { ApiType } from "../../../server/src/server";
 import { IDK } from "../icons/idk";
 import { abbreviate } from "../utils";
-import { Header } from "./Header";
 
 const client = hc<ApiType>("/");
 
@@ -27,8 +26,7 @@ function Leaderboard() {
 	});
 
 	return (
-		<div className="text-3xl md:text-4xl grow flex flex-col">
-			<Header />
+		<div className="text-3xl md:text-4xl grow flex flex-col justify-center items-center">
 			<div className="md:grid md:grid-cols-2 grow overflow-auto">
 				<div className="text-left md:text-right">
 					{data?.map((user) => (
