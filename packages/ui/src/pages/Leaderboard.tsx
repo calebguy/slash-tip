@@ -27,40 +27,34 @@ function Leaderboard() {
 
 	return (
 		<div>
-			{data?.map((user) => (
-				<div key={`user-${user.nickname}`} className="font-thin">
-					<span className="text-slime">{user.balance}/</span>
-					<span>
-						<User user={user} />
-					</span>
-				</div>
-			))}
+			{data?.map((user) => {
+				const [first, last] = abbreviate(user.account);
+				return (
+					<div key={`user-${user.nickname}`} className="font-thin">
+						<span className="text-slime">{user.balance}/</span>
+						<div
+							key={`user-${user.nickname}`}
+							className="group inline-block"
+							onClick={() => navigator.clipboard.writeText(user.account)}
+							onKeyDown={() => navigator.clipboard.writeText(user.account)}
+							onDoubleClick={() =>
+								window.open(`https://basescan.org/address/${user.account}`)
+							}
+						>
+							<div className="inline-block group-hover:hidden text-paper">
+								{user.nickname}
+							</div>
+							<div className="group hidden group-hover:inline-flex cursor-pointer text-orange active:text-orange/75 select-none items-center gap-1">
+								<span>{first}</span>
+								<IDK className="w-5 h-5 md:w-6 md:h-6 text-orange/75" />
+								<span>{last}</span>
+							</div>
+						</div>
+					</div>
+				);
+			})}
 		</div>
 	);
 }
-
-const User = ({ user }: { user: User }) => {
-	const [first, last] = abbreviate(user.account);
-	return (
-		<div
-			key={`user-${user.nickname}`}
-			className="group inline-block"
-			onClick={() => navigator.clipboard.writeText(user.account)}
-			onKeyDown={() => navigator.clipboard.writeText(user.account)}
-			onDoubleClick={() =>
-				window.open(`https://basescan.org/address/${user.account}`)
-			}
-		>
-			<div className="inline-block group-hover:hidden text-paper">
-				{user.nickname}
-			</div>
-			<div className="group hidden group-hover:inline-flex cursor-pointer text-orange active:text-orange/70 select-none items-center gap-1">
-				<span>{first}</span>
-				<IDK className="w-5 h-5 md:w-6 md:h-6" />
-				<span>{last}</span>
-			</div>
-		</div>
-	);
-};
 
 export default Leaderboard;

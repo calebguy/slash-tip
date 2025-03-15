@@ -1,4 +1,4 @@
-const UserRegistryAbi = [
+export const UserRegistryAbi = [
 	{
 		type: "constructor",
 		inputs: [

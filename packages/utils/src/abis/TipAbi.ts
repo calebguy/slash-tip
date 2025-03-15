@@ -1,4 +1,4 @@
-const TipAbi = [
+export const TipAbi = [
 	{
 		type: "constructor",
 		inputs: [

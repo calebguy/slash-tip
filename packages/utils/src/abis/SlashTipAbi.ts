@@ -1,4 +1,4 @@
-const SlashTipAbi = [
+export const SlashTipAbi = [
 	{
 		type: "constructor",
 		inputs: [

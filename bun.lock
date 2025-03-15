@@ -31,8 +31,10 @@
       "name": "ponder",
       "version": "0.0.1",
       "dependencies": {
+        "db": "workspace:*",
         "hono": "^4.5.0",
         "ponder": "^0.9.28",
+        "utils": "workspace:*",
         "viem": "^2.21.3",
       },
       "devDependencies": {

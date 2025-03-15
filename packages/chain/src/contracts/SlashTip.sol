@@ -12,6 +12,16 @@ contract SlashTip is AccessControl {
     UserRegistry public userRegistry;
     Tip public tipToken;
 
+    event Tipped(
+        string fromId,
+        string toId,
+        address indexed from,
+        address indexed to,
+        uint256 tokenId,
+        uint256 amount,
+        bytes data
+    );
+
     struct UserWithBalance {
         UserRegistry.User user;
         uint256 balance;
@@ -53,6 +63,8 @@ contract SlashTip is AccessControl {
 
         // mint tip token to recipient
         tipToken.mint(toUser.account, _tokenId, _amount, _data);
+
+        emit Tipped(_fromId, _toId, fromUser.account, toUser.account, _tokenId, _amount, _data);
     }
 
     function balanceOf(string memory _userId, uint256 _tokenId) public view returns (uint256) {
