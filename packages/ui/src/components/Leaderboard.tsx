@@ -65,13 +65,9 @@ const User = ({ user }: { user: User }) => {
 			<div className="inline-block group-hover:hidden text-paper">
 				{user.nickname}
 			</div>
-			<div className="group hidden group-hover:block cursor-pointer text-orange active:text-orange/70 select-none">
+			<div className="group hidden group-hover:inline-flex cursor-pointer text-orange active:text-orange/70 select-none items-center gap-1">
 				<span>{first}</span>
-				<span className="inline-flex items-center gap-0.5 md:gap-1">
-					<IDK className="w-4 h-4 md:w-5 md:h-5" />
-					<IDK className="w-4 h-4 md:w-5 md:h-5" />
-					<IDK className="w-4 h-4 md:w-5 md:h-5" />
-				</span>
+				<IDK className="w-5 h-5 md:w-6 md:h-6" />
 				<span>{last}</span>
 			</div>
 		</div>
