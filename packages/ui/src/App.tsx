@@ -6,13 +6,13 @@ import Leaderboard from "./pages/Leaderboard";
 export const routes = [
 	{
 		path: "/",
+		title: "/activity",
 		element: <Home />,
-		title: "/tip",
 	},
 	{
 		path: "/leaderboard",
-		element: <Leaderboard />,
 		title: "/leaderboard",
+		element: <Leaderboard />,
 	},
 ];
 export function App() {

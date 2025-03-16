@@ -8,8 +8,9 @@ import {
 } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
-	id: serial("id").primaryKey(),
+	id: text("id").primaryKey(),
 	nickname: text("nickname").notNull(),
+	address: text("address").notNull(),
 });
 
 export const tips = pgTable("tips", {
@@ -20,4 +21,4 @@ export const tips = pgTable("tips", {
 	message: text("message"),
 	txHash: text("tx_hash").notNull(),
 	createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+});	
