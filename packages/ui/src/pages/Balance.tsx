@@ -19,14 +19,14 @@ async function getLeaderboard() {
 	return data;
 }
 
-function Leaderboard() {
+export function Balance() {
 	const { data } = useQuery({
 		queryKey: ["getLeaderboard"],
 		queryFn: getLeaderboard,
 	});
 
 	return (
-		<div>
+		<div className="h-[calc(100dvh-250px)] overflow-y-auto" id="orange-track">
 			{data?.map((user) => {
 				const [first, last] = abbreviate(user.account);
 				return (
@@ -34,19 +34,19 @@ function Leaderboard() {
 						<span className="text-slime">{user.balance}/</span>
 						<div
 							key={`user-${user.nickname}`}
-							className="group inline-block"
+							className="group inline-block relative cursor-pointer"
 							onClick={() => navigator.clipboard.writeText(user.account)}
 							onKeyDown={() => navigator.clipboard.writeText(user.account)}
 							onDoubleClick={() =>
 								window.open(`https://basescan.org/address/${user.account}`)
 							}
 						>
-							<div className="inline-block group-hover:hidden text-paper">
+							<div className="absolute top-0 left-0 inline-block group-hover:text-transparent text-paper">
 								{user.nickname}
 							</div>
-							<div className="group hidden group-hover:inline-flex cursor-pointer text-orange active:text-orange/75 select-none items-center gap-1">
+							<div className="group text-transparent group-hover:text-orange inline-flex cursor-pointer  active:text-orange/75 select-none items-center gap-1">
 								<span>{first}</span>
-								<IDK className="w-5 h-5 md:w-6 md:h-6 text-orange/75" />
+								<IDK className="w-5 h-5 md:w-6 md:h-6 text-transparent group-hover:text-orange/75" />
 								<span>{last}</span>
 							</div>
 						</div>
@@ -56,5 +56,3 @@ function Leaderboard() {
 		</div>
 	);
 }
-
-export default Leaderboard;

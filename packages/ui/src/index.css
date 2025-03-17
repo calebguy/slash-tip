@@ -46,3 +46,8 @@ body,
 #root {
 	min-height: calc(100dvh);
 }
+
+#orange-track {
+	scrollbar-color: var(--color-orange) var(--color-black);
+	scrollbar-width: thin;
+}

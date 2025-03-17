@@ -1,11 +1,4 @@
-import {
-	integer,
-	numeric,
-	pgTable,
-	serial,
-	text,
-	timestamp,
-} from "drizzle-orm/pg-core";
+import { bigint, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
 	id: text("id").primaryKey(),
@@ -15,10 +8,11 @@ export const users = pgTable("users", {
 
 export const tips = pgTable("tips", {
 	id: serial("id").primaryKey(),
-	amount: numeric("amount").notNull(),
-	fromUserId: integer("from_user_id").references(() => users.id),
-	toUserId: integer("to_user_id").references(() => users.id),
+	txHash: text("tx_hash").notNull().unique(),
+	fromUserId: text("from_user_id").notNull(),
+	toUserId: text("to_user_id").notNull(),
+	tokenId: bigint("token_id", { mode: "bigint" }).notNull(),
+	amount: bigint("amount", { mode: "bigint" }).notNull(),
 	message: text("message"),
-	txHash: text("tx_hash").notNull(),
 	createdAt: timestamp("created_at").notNull().defaultNow(),
-});	
+});

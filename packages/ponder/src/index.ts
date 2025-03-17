@@ -1,7 +1,12 @@
+import { Db } from "db";
 import { ponder } from "ponder:registry";
 import SlashTipAbi from "utils/src/abis/SlashTipAbi";
-import TipAbi from "utils/src/abis/TipAbi";
-import { createPublicClient, decodeFunctionData, http } from "viem";
+import {
+	createPublicClient,
+	decodeFunctionData,
+	http,
+	zeroAddress,
+} from "viem";
 import { base } from "viem/chains";
 
 const publicClient = createPublicClient({
@@ -9,25 +14,40 @@ const publicClient = createPublicClient({
 	transport: http(process.env.PONDER_RPC_URL_1),
 });
 
+const db = new Db(
+	process.env.DATABASE_URL!,
+	process.env.DATABASE_URL!.includes("neon"),
+);
+
 ponder.on("Tip:TransferSingle", async ({ event, context }) => {
 	const { hash } = event.transaction;
 	// const { from, to, id, amount, operator } = event.args;
 	// console.log({ hash, from, to, id, amount, operator });
 
-	const tx = await publicClient.getTransaction({ hash });
+	const tx = await publicClient.getTransactioxn({ hash });
 	try {
-		const decoded = decodeFunctionData({
+		const {
+			args: [fromUserId, toUserId, tokenId, amount],
+		} = decodeFunctionData({
 			abi: SlashTipAbi,
 			data: tx.input,
 		});
-		console.log(decoded);
-	} catch (e) {}
-
-	try {
-		const decoded = decodeFunctionData({
-			abi: TipAbi,
-			data: tx.input,
-		});
-		console.log(decoded);
-	} catch (e) {}
+		if (
+			fromUserId !== zeroAddress &&
+			toUserId !== zeroAddress &&
+			tokenId &&
+			amount
+		) {
+			await db.upsertTip({
+				txHash: hash,
+				fromUserId: fromUserId as string,
+				toUserId: toUserId as string,
+				tokenId,
+				amount,
+			});
+			console.log("one", decoded);
+		}
+	} catch (e) {
+		console.warn("skipping...");
+	}
 });

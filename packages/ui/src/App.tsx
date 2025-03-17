@@ -1,7 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router";
 import { AppLayout } from "./layouts/App.layout";
+import { Balance } from "./pages/Balance";
 import { Home } from "./pages/Home";
-import Leaderboard from "./pages/Leaderboard";
 
 export const routes = [
 	{
@@ -10,9 +10,9 @@ export const routes = [
 		element: <Home />,
 	},
 	{
-		path: "/leaderboard",
-		title: "/leaderboard",
-		element: <Leaderboard />,
+		path: "/balance",
+		title: "/balance",
+		element: <Balance />,
 	},
 ];
 export function App() {
