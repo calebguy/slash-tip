@@ -41,10 +41,10 @@ export function Balance() {
 								window.open(`https://basescan.org/address/${user.account}`)
 							}
 						>
-							<div className="absolute top-0 left-0 inline-block group-hover:text-transparent text-paper">
+							<div className="absolute top-0 left-0 pointer-events-none inline-block group-hover:text-transparent text-paper">
 								{user.nickname}
 							</div>
-							<div className="group text-transparent group-hover:text-orange inline-flex cursor-pointer  active:text-orange/75 select-none items-center gap-1">
+							<div className="text-transparent group-hover:text-orange inline-flex cursor-pointer  active:text-orange/75 select-none items-center gap-1">
 								<span>{first}</span>
 								<IDK className="w-5 h-5 md:w-6 md:h-6 text-transparent group-hover:text-orange/75" />
 								<span>{last}</span>
