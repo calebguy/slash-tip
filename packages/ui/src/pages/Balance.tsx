@@ -69,7 +69,6 @@ export function Balance() {
 								<span>{first}</span>
 								<IDK
 									className={classNames("w-5 h-5 md:w-6 md:h-6", {
-										"text-orange/75": isHovered,
 										"text-transparent": !isHovered,
 									})}
 								/>
