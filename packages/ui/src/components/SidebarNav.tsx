@@ -12,7 +12,7 @@ export function SidebarNav() {
 						to={route.path}
 						key={route.path}
 						className={classNames(
-							"font-thin text-4xl hover:text-orange block",
+							"font-thin text-4xl hover:text-orange block transition-colors duration-150",
 							{
 								"text-orange": pathname === route.path,
 								"text-paper": pathname !== route.path,

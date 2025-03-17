@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
+import classNames from "classnames";
 import { type InferResponseType, hc } from "hono/client";
+import { useState } from "react";
 import type { ApiType } from "../../../server/src/server";
 import { IDK } from "../icons/idk";
 import { abbreviate } from "../utils";
@@ -24,29 +26,53 @@ export function Balance() {
 		queryKey: ["getLeaderboard"],
 		queryFn: getLeaderboard,
 	});
+	const [idHovered, setIdHovered] = useState<string | null>(null);
 
 	return (
 		<div className="h-[calc(100dvh-250px)] overflow-y-auto" id="orange-track">
 			{data?.map((user) => {
 				const [first, last] = abbreviate(user.account);
+				const isHovered = idHovered === user.id;
 				return (
 					<div key={`user-${user.nickname}`} className="font-thin">
 						<span className="text-slime">{user.balance}/</span>
 						<div
 							key={`user-${user.nickname}`}
-							className="group inline-block relative cursor-pointer"
-							onClick={() => navigator.clipboard.writeText(user.account)}
-							onKeyDown={() => navigator.clipboard.writeText(user.account)}
-							onDoubleClick={() =>
-								window.open(`https://basescan.org/address/${user.account}`)
-							}
+							className={classNames("inline-block relative")}
 						>
-							<div className="absolute top-0 left-0 pointer-events-none inline-block group-hover:text-transparent text-paper">
+							<div
+								onMouseEnter={() => setIdHovered(user.id)}
+								className={classNames(
+									"text-paper",
+									{ hidden: isHovered },
+									{ "block absolute left-0 top-0": !isHovered },
+								)}
+							>
 								{user.nickname}
 							</div>
-							<div className="text-transparent group-hover:text-orange inline-flex cursor-pointer  active:text-orange/75 select-none items-center gap-1">
+							<div
+								onMouseLeave={() => setIdHovered(null)}
+								onClick={() => navigator.clipboard.writeText(user.account)}
+								onKeyDown={() => navigator.clipboard.writeText(user.account)}
+								onDoubleClick={() =>
+									window.open(`https://basescan.org/address/${user.account}`)
+								}
+								className={classNames(
+									"select-none inline-flex items-center gap-1",
+									{
+										"text-transparent": !isHovered,
+										"text-orange active:text-orange/75 cursor-pointer":
+											isHovered,
+									},
+								)}
+							>
 								<span>{first}</span>
-								<IDK className="w-5 h-5 md:w-6 md:h-6 text-transparent group-hover:text-orange/75" />
+								<IDK
+									className={classNames("w-5 h-5 md:w-6 md:h-6", {
+										"text-orange/75": isHovered,
+										"text-transparent": !isHovered,
+									})}
+								/>
 								<span>{last}</span>
 							</div>
 						</div>
