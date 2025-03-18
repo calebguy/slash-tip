@@ -1,25 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import classNames from "classnames";
-import { type InferResponseType, hc } from "hono/client";
 import { useState } from "react";
-import type { ApiType } from "../../../server/src/server";
+import { getLeaderboard } from "../api";
 import { IDK } from "../icons/idk";
 import { abbreviate } from "../utils";
-
-const client = hc<ApiType>("/");
-
-export type User = InferResponseType<
-	typeof client.slash.ui.leaderboard.$get
->[0];
-
-async function getLeaderboard() {
-	const res = await client.slash.ui.leaderboard.$get();
-	if (!res.ok) {
-		throw new Error("Failed to fetch leaderboard");
-	}
-	const data = await res.json();
-	return data;
-}
 
 export function Balance() {
 	const { data } = useQuery({

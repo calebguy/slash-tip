@@ -48,6 +48,7 @@
       "name": "server",
       "dependencies": {
         "@syndicateio/syndicate-node": "^1.0.1",
+        "db": "workspace:*",
         "hono": "^4.2.9",
         "openai": "^4.47.1",
         "utils": "workspace:*",

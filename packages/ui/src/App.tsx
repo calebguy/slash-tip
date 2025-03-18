@@ -1,13 +1,13 @@
 import { BrowserRouter, Route, Routes } from "react-router";
 import { AppLayout } from "./layouts/App.layout";
+import { Activity } from "./pages/Activity";
 import { Balance } from "./pages/Balance";
-import { Home } from "./pages/Home";
 
 export const routes = [
 	{
 		path: "/",
 		title: "/activity",
-		element: <Home />,
+		element: <Activity />,
 	},
 	{
 		path: "/balance",

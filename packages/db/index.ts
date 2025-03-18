@@ -23,7 +23,7 @@ class Db {
 	}
 
 	getTips() {
-		return this.pg.select().from(tips).orderBy(desc(tips.createdAt));
+		return this.pg.select().from(tips).orderBy(desc(tips.createdAt)).limit(50);
 	}
 
 	getUsers() {
@@ -41,6 +41,15 @@ class Db {
 	}
 }
 
+export function tipToJsonSafe(tip: Tip) {
+	return {
+		...tip,
+		tokenId: tip.tokenId.toString(),
+		amount: tip.amount.toString(),
+	};
+}
+
 export type InsertTip = typeof tips.$inferInsert;
+export type Tip = typeof tips.$inferSelect;
 
 export { Db };
