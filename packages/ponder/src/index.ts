@@ -9,22 +9,23 @@ import {
 } from "viem";
 import { base } from "viem/chains";
 
+if (!process.env.DATABASE_URL) {
+	throw new Error("DATABASE_URL is not set");
+}
+
 const publicClient = createPublicClient({
 	chain: base,
 	transport: http(process.env.PONDER_RPC_URL_1),
 });
 
 const db = new Db(
-	process.env.DATABASE_URL!,
-	process.env.DATABASE_URL!.includes("neon"),
+	process.env.DATABASE_URL,
+	process.env.DATABASE_URL.includes("neon"),
 );
 
 ponder.on("Tip:TransferSingle", async ({ event, context }) => {
 	const { hash } = event.transaction;
-	// const { from, to, id, amount, operator } = event.args;
-	// console.log({ hash, from, to, id, amount, operator });
-
-	const tx = await publicClient.getTransactioxn({ hash });
+	const tx = await publicClient.getTransaction({ hash });
 	try {
 		const {
 			args: [fromUserId, toUserId, tokenId, amount],
@@ -35,8 +36,8 @@ ponder.on("Tip:TransferSingle", async ({ event, context }) => {
 		if (
 			fromUserId !== zeroAddress &&
 			toUserId !== zeroAddress &&
-			tokenId &&
-			amount
+			tokenId !== undefined &&
+			amount !== undefined
 		) {
 			await db.upsertTip({
 				txHash: hash,
@@ -45,7 +46,6 @@ ponder.on("Tip:TransferSingle", async ({ event, context }) => {
 				tokenId,
 				amount,
 			});
-			console.log("one", decoded);
 		}
 	} catch (e) {
 		console.warn("skipping...");
