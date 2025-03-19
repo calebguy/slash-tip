@@ -32,7 +32,7 @@ export function Balance() {
 									window.open(`https://basescan.org/address/${user.account}`)
 								}
 								className={classNames(
-									"select-none items-center gap-1 hidden group-hover:inline-flex text-orange active:text-orange/75 cursor-pointer",
+									"select-none items-center gap-1 hidden group-hover:inline-flex text-orange active:text-white/10 cursor-pointer",
 								)}
 							>
 								<span>{first}</span>
