@@ -4,6 +4,7 @@ export const env = {
 	BASE_RPC_URL: process.env.BASE_RPC_URL as string,
 	OPENAI_API_KEY: process.env.OPENAI_API_KEY as string,
 	SLACK_SIGNING_SECRET: process.env.SLACK_SIGNING_SECRET as string,
+	DATABASE_URL: process.env.DATABASE_URL as string,
 };
 
 for (const key in env) {

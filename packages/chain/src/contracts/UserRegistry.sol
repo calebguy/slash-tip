@@ -4,6 +4,8 @@ pragma solidity ^0.8.13;
 import {AccessControl} from "openzeppelin/access/AccessControl.sol";
 
 contract UserRegistry is AccessControl {
+    bytes32 USER_REGISTRY_MANAGER = keccak256("USER_REGISTRY_MANAGER");
+
     struct User {
         string id;
         string nickname;
@@ -14,7 +16,6 @@ contract UserRegistry is AccessControl {
     event UserAdded(string id, string nickname, address account);
     event UserRemoved(string id);
 
-    bytes32 USER_REGISTRY_MANAGER = keccak256("USER_REGISTRY_MANAGER");
     mapping(string => User) public idToUser;
     string[] public userIds;
 

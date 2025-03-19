@@ -13,12 +13,10 @@ export function Activity() {
 		>
 			<div>
 				{data?.map((item) => (
-					<div className="break-all text-sm inline-flex gap-2" key={item.id}>
+					<div className="break-all text-sm flex gap-2" key={item.id}>
 						<div>{item.fromUserId}</div>
 						<div>{item.toUserId}</div>
 						<div>{item.amount}</div>
-						<div>{item.message}</div>
-						<div>{item.createdAt}</div>
 					</div>
 				))}
 			</div>

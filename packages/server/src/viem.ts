@@ -9,9 +9,9 @@ import { base, mainnet } from "viem/chains";
 
 import SlashTipAbi from "utils/src/abis/SlashTipAbi";
 import UserRegistryAbi from "utils/src/abis/UserRegistryAbi";
+import { SLASH_TIP_ADDRESS, USER_REGISTRY_ADDRESS } from "utils/src/constants";
 import { privateKeyToAccount } from "viem/accounts";
 import { normalize } from "viem/ens";
-import { SLASH_TIP_ADDRESS, USER_REGISTRY_ADDRESS } from "./constants";
 import { env } from "./env";
 
 const rpcUrl = env.BASE_RPC_URL;

@@ -14,5 +14,7 @@ export const tips = pgTable("tips", {
 	tokenId: bigint("token_id", { mode: "bigint" }).notNull(),
 	amount: bigint("amount", { mode: "bigint" }).notNull(),
 	message: text("message"),
+	blockNumber: bigint("block_number", { mode: "bigint" }).notNull(),
+	blockCreatedAt: timestamp("block_created_at").notNull(),
 	createdAt: timestamp("created_at").notNull().defaultNow(),
 });

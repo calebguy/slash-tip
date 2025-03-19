@@ -1,12 +1,9 @@
 import { SyndicateClient } from "@syndicateio/syndicate-node";
 import { waitForHash } from "@syndicateio/syndicate-node/utils";
 
+import { SLASH_TIP_ADDRESS, USER_REGISTRY_ADDRESS } from "utils/src/constants";
 import type { Hex } from "viem";
-import {
-	DAILY_ALLOWANCE,
-	SLASH_TIP_ADDRESS,
-	USER_REGISTRY_ADDRESS,
-} from "./constants";
+import { DAILY_ALLOWANCE } from "./constants";
 import { env } from "./env";
 import { slashTipContract, userRegistryContract } from "./viem";
 

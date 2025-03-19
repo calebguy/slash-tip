@@ -1,27 +1,10 @@
-import { Db } from "db";
 import { ponder } from "ponder:registry";
 import SlashTipAbi from "utils/src/abis/SlashTipAbi";
-import {
-	createPublicClient,
-	decodeFunctionData,
-	http,
-	zeroAddress,
-} from "viem";
-import { base } from "viem/chains";
+import { decodeFunctionData, zeroAddress } from "viem";
+import { db, publicClient } from "./shared";
+import { syncUserRegistry } from "./userRegistry";
 
-if (!process.env.DATABASE_URL) {
-	throw new Error("DATABASE_URL is not set");
-}
-
-const publicClient = createPublicClient({
-	chain: base,
-	transport: http(process.env.PONDER_RPC_URL_1),
-});
-
-const db = new Db(
-	process.env.DATABASE_URL,
-	process.env.DATABASE_URL.includes("neon"),
-);
+syncUserRegistry();
 
 ponder.on("Tip:TransferSingle", async ({ event, context }) => {
 	const { hash } = event.transaction;
@@ -39,12 +22,17 @@ ponder.on("Tip:TransferSingle", async ({ event, context }) => {
 			tokenId !== undefined &&
 			amount !== undefined
 		) {
+			const block = await publicClient.getBlock({
+				blockNumber: tx.blockNumber,
+			});
 			await db.upsertTip({
 				txHash: hash,
 				fromUserId: fromUserId as string,
 				toUserId: toUserId as string,
 				tokenId,
 				amount,
+				blockNumber: tx.blockNumber,
+				blockCreatedAt: new Date(Number(block.timestamp) * 1000),
 			});
 		}
 	} catch (e) {

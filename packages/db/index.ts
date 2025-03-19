@@ -39,6 +39,16 @@ class Db {
 				set: tip,
 			});
 	}
+
+	upsertUser(user: InsertUser) {
+		return this.pg
+			.insert(users)
+			.values(user)
+			.onConflictDoUpdate({
+				target: [users.id],
+				set: user,
+			});
+	}
 }
 
 export function tipToJsonSafe(tip: Tip) {
@@ -49,6 +59,8 @@ export function tipToJsonSafe(tip: Tip) {
 	};
 }
 
+export type InsertUser = typeof users.$inferInsert;
+export type User = typeof users.$inferSelect;
 export type InsertTip = typeof tips.$inferInsert;
 export type Tip = typeof tips.$inferSelect;
 

@@ -1,19 +1,12 @@
 import { Db } from "db";
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
+import { env } from "./env";
 import commandRoutes from "./routes/slack";
 import uiRoutes from "./routes/ui";
 
 const app = new Hono();
-
-if (!process.env.DATABASE_URL) {
-	throw new Error("DATABASE_URL is not set");
-}
-
-export const db = new Db(
-	process.env.DATABASE_URL,
-	process.env.DATABASE_URL.includes("neon"),
-);
+export const db = new Db(env.DATABASE_URL, env.DATABASE_URL.includes("neon"));
 
 const api = app
 	.basePath("/slash")
