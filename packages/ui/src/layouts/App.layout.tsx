@@ -12,7 +12,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 					id="orange-track"
 					className="text-3xl md:text-4xl grow flex flex-col justify-center items-start md:p-10 mt-10 md:mt-0"
 				>
-					<div className="h-[calc(100dvh-250px)] overflow-y-auto w-full">
+					<div className="h-[calc(100dvh-250px)] overflow-y-auto w-full leading-10">
 						{children}
 					</div>
 				</div>
