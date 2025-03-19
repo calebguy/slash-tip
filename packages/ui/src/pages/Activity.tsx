@@ -18,11 +18,11 @@ export function Activity() {
 						<Arrow className="w-5 h-5 md:w-6 md:h-6 text-slime -rotate-90 mx-1 -ml-1" />
 						<div className="text-paper">{item.toUser?.nickname}</div>
 					</div>
-					<div className="flex items-end grow flex-wrap">
+					<div className="flex items-end grow flex-wrap gap-1">
 						{Array.from({ length: Number(item.amount) }).map((_, index) => (
 							<IDK
 								key={`arrow-${index}`}
-								className="w-5 h-5 md:w-6 md:h-6 text-orange -rotate-90 mx-1"
+								className="w-5 h-5 md:w-6 md:h-6 text-orange -rotate-90"
 							/>
 						))}
 						<div className="text-orange/40 text-lg leading-4">
