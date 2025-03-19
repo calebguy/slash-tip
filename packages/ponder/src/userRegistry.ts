@@ -1,6 +1,8 @@
 import UserRegistryAbi from "utils/src/abis/UserRegistryAbi";
 import { USER_REGISTRY_ADDRESS } from "utils/src/constants";
 import { db, publicClient } from "./shared";
+
+
 export async function syncUserRegistry() {
 	const users = await publicClient.readContract({
 		address: USER_REGISTRY_ADDRESS,

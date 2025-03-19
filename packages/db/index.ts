@@ -56,6 +56,7 @@ export function tipToJsonSafe(tip: Tip) {
 		...tip,
 		tokenId: tip.tokenId.toString(),
 		amount: tip.amount.toString(),
+		blockNumber: tip.blockNumber.toString(),
 	};
 }
 

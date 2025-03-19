@@ -1,5 +1,5 @@
 {
-  "id": "75e1c03a-311e-4ae3-93c4-f11876ce4f73",
+  "id": "e382fc85-795c-42cc-b16c-b271f6a4ad03",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -49,6 +49,18 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "block_number": {
+          "name": "block_number",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "block_created_at": {
+          "name": "block_created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
         },
         "created_at": {
           "name": "created_at",

@@ -6,6 +6,8 @@ CREATE TABLE "tips" (
 	"token_id" bigint NOT NULL,
 	"amount" bigint NOT NULL,
 	"message" text,
+	"block_number" bigint NOT NULL,
+	"block_created_at" timestamp NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "tips_tx_hash_unique" UNIQUE("tx_hash")
 );

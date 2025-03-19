@@ -13,7 +13,10 @@ export function Balance() {
 	const [idHovered, setIdHovered] = useState<string | null>(null);
 
 	return (
-		<div className="h-[calc(100dvh-250px)] overflow-y-auto" id="orange-track">
+		<div
+			className="h-[calc(100dvh-250px)] overflow-y-auto w-full"
+			id="orange-track"
+		>
 			{data?.map((user) => {
 				const [first, last] = abbreviate(user.account);
 				const isHovered = idHovered === user.id;
