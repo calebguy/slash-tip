@@ -25,7 +25,7 @@ export function Activity() {
 								className="w-5 h-5 md:w-6 md:h-6 text-orange -rotate-90 mx-1"
 							/>
 						))}
-						<div className="text-orange/50 text-lg leading-4">
+						<div className="text-orange/40 text-lg leading-4">
 							({item.amount})
 						</div>
 					</div>
