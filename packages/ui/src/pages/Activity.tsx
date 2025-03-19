@@ -9,12 +9,13 @@ export function Activity() {
 		queryFn: getActivity,
 	});
 	return (
-		<div className="font-thin flex flex-col gap-2">
+		<div className="font-thin flex flex-col gap-2 select-none">
 			{data?.map((item) => (
 				<div key={item.id}>
 					<div className="flex items-center">
 						<div className="text-paper italic">{item.fromUser?.nickname}</div>
-						<Arrow className="w-5 h-5 md:w-6 md:h-6 text-slime -rotate-90 mx-1" />
+						<Arrow className="w-5 h-5 md:w-6 md:h-6 text-slime -rotate-90 ml-2" />
+						<Arrow className="w-5 h-5 md:w-6 md:h-6 text-slime -rotate-90 mx-1 -ml-1" />
 						<div className="text-paper">{item.toUser?.nickname}</div>
 					</div>
 					<div className="flex items-end grow flex-wrap">
