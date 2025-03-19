@@ -10,10 +10,7 @@ export function Balance() {
 		queryFn: getLeaderboard,
 	});
 	return (
-		<div
-			className="h-[calc(100dvh-250px)] overflow-y-auto w-full"
-			id="orange-track"
-		>
+		<>
 			{data?.map((user) => {
 				const [first, last] = abbreviate(user.account);
 				return (
@@ -46,6 +43,6 @@ export function Balance() {
 					</div>
 				);
 			})}
-		</div>
+		</>
 	);
 }

@@ -7,19 +7,14 @@ export function Activity() {
 		queryFn: getActivity,
 	});
 	return (
-		<div
-			id="orange-track"
-			className="font-thin h-[calc(100dvh-250px)] overflow-y-auto"
-		>
-			<div>
-				{data?.map((item) => (
-					<div className="break-all text-sm flex gap-2" key={item.id}>
-						<div>{item.fromUserId}</div>
-						<div>{item.toUserId}</div>
-						<div>{item.amount}</div>
-					</div>
-				))}
-			</div>
+		<div className="font-thin">
+			{data?.map((item) => (
+				<div className="break-all text-sm flex gap-2" key={item.id}>
+					<div>{item.fromUser?.nickname}</div>
+					<div>{item.toUser?.nickname}</div>
+					<div>{item.amount}</div>
+				</div>
+			))}
 		</div>
 	);
 }

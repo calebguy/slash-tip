@@ -1,4 +1,4 @@
-import { tipToJsonSafe } from "db";
+import { tipWithUsersToJsonSafe } from "db";
 import { Hono } from "hono";
 import { getLeaderBoard } from "../chain";
 import { db } from "../server";
@@ -20,7 +20,7 @@ const app = new Hono()
 	})
 	.get("/activity", async (c) => {
 		const tips = await db.getTips();
-		return c.json(tips.map(tipToJsonSafe));
+		return c.json(tips.map(tipWithUsersToJsonSafe));
 	});
 
 export default app;

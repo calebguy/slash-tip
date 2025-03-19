@@ -8,8 +8,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 				<div>
 					<SidebarNav />
 				</div>
-				<div className="text-3xl md:text-4xl grow flex flex-col justify-center items-start md:p-10 mt-10 md:mt-0">
-					{children}
+				<div
+					id="orange-track"
+					className="text-3xl md:text-4xl grow flex flex-col justify-center items-start md:p-10 mt-10 md:mt-0"
+				>
+					<div className="h-[calc(100dvh-250px)] overflow-y-auto w-full">
+						{children}
+					</div>
 				</div>
 			</div>
 			<Footer />
