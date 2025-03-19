@@ -9,10 +9,11 @@ export function Activity() {
 	return (
 		<div className="font-thin">
 			{data?.map((item) => (
-				<div className="break-all text-sm flex gap-2" key={item.id}>
+				<div className="break-all flex items-center" key={item.id}>
+					<div className="text-slime">{item.amount}/</div>
 					<div>{item.fromUser?.nickname}</div>
+					<div className="text-orange">→</div>
 					<div>{item.toUser?.nickname}</div>
-					<div>{item.amount}</div>
 				</div>
 			))}
 		</div>
