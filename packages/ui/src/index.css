@@ -1,0 +1,53 @@
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap");
+@import "tailwindcss";
+
+@font-face {
+	font-family: "Oracle Triple";
+	src: url("./fonts/ABCOracleTripleVariable-Trial.woff2") format("woff2");
+	font-weight: 100 900;
+	font-style: swap;
+}
+
+@font-face {
+	font-family: "Oracle Plus";
+	src: url("./fonts/ABCOraclePlusVariable-Trial.woff2") format("woff2");
+	font-weight: 100 900;
+	font-style: swap;
+}
+
+@theme {
+	--color-paper: #e1e3d5;
+	--color-black: #161616;
+	--color-slime: #b6af2f;
+	--color-orange: #ff6619;
+	--color-moss: #4F6B3D;
+	--color-sky: #71A4BF;
+	--font-display: "Oracle Plus", sans-serif;
+}
+
+html,
+body {
+	background-color: var(--color-black);
+	color: var(--color-paper);
+}
+
+body {
+	font-family: var(--font-display);
+}
+
+#root {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+}
+
+html,
+body,
+#root {
+	min-height: calc(100dvh);
+}
+
+#orange-track {
+	scrollbar-color: var(--color-orange) var(--color-black);
+	scrollbar-width: thin;
+}

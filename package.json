@@ -1,0 +1,21 @@
+{
+	"name": "slash-tip",
+	"module": "index.ts",
+	"type": "module",
+	"workspaces": ["packages/*"],
+	"devDependencies": {
+		"@biomejs/biome": "1.9.4",
+		"@types/bun": "latest"
+	},
+	"peerDependencies": {
+		"typescript": "^5.0.0"
+	},
+	"scripts": {
+		"dev": "bun --filter 'db' dev & bun --filter 'server' dev & bun --filter 'ponder' dev & bun --filter 'ui' dev",
+		"format": "bunx @biomejs/biome format --write .",
+		"ponder:start": "bun --filter 'ponder' start",
+		"db:migrate": "bun --filter 'db' migrate",
+		"server:install": "bun --filter 'server' install",
+		"server:start": "bun --filter 'server' start"
+	}
+}
