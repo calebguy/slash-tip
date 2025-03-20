@@ -17,6 +17,7 @@
 		"db:migrate": "bun --filter 'db' migrate",
 		"server:install": "bun --filter 'server' install",
 		"server:start": "bun --filter 'server' start",
-		"build": "bun --filter 'ui' build"
+		"build": "bun --filter 'ui' build",
+		"start": "bun --filter 'server' start"
 	}
 }
