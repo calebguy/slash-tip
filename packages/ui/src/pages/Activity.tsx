@@ -21,6 +21,7 @@ export function Activity() {
 					<div className="flex items-end grow flex-wrap gap-1">
 						{Array.from({ length: Number(item.amount) }).map((_, index) => (
 							<IDK
+								// biome-ignore lint/suspicious/noArrayIndexKey: so what
 								key={`arrow-${index}`}
 								className="w-5 h-5 md:w-6 md:h-6 text-orange -rotate-90"
 							/>
