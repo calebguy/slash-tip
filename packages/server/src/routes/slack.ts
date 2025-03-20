@@ -79,7 +79,7 @@ const app = new Hono()
 						type: "mrkdwn",
 						text: `<@${user_id}> registered with <https://basescan.org/address/${address}|${abbreviate(
 							address,
-						)}>. View the leaderboard <${SITE_URL}|here>`,
+						)}>. <${SITE_URL}|syndicate.slack.tips>`,
 					},
 				},
 			],
@@ -263,7 +263,7 @@ const app = new Hono()
 					type: "section",
 					text: {
 						type: "mrkdwn",
-						text: `<${SITE_URL}|View the full leaderboard>`,
+						text: `<${SITE_URL}|syndicate.slack.tips>`,
 					},
 				}),
 		});
