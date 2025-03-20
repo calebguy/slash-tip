@@ -18,10 +18,12 @@ export function Balance() {
 						<span className="text-slime">{user.balance}/</span>
 						<div
 							key={`user-${user.nickname}`}
-							className={classNames("inline-block relative group")}
+							className={classNames("inline-block relative group transition")}
 						>
 							<div
-								className={classNames("text-paper group-hover:hidden block")}
+								className={classNames(
+									"text-paper group-hover:hidden block transition duration-150",
+								)}
 							>
 								{user.nickname}
 							</div>
@@ -32,7 +34,7 @@ export function Balance() {
 									window.open(`https://basescan.org/address/${user.account}`)
 								}
 								className={classNames(
-									"select-none items-center gap-1 hidden group-hover:inline-flex text-orange active:text-orange/50 cursor-pointer",
+									"select-none items-center gap-1 hidden group-hover:inline-flex text-orange active:text-orange/50 cursor-pointer transition duration-150",
 								)}
 							>
 								<span>{first}</span>
