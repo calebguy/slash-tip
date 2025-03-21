@@ -13,6 +13,7 @@ import { DAILY_ALLOWANCE, SITE_URL } from "../constants";
 import { mustBeRegistered } from "../middleware/mustBeRegistered";
 import { slackAuth } from "../middleware/slackAuth";
 import { selfLovePoem, stealingPoem } from "../openai";
+import { db } from "../server";
 import { Commands, type SlackSlashCommandPayload } from "../types";
 import {
 	abbreviate,
@@ -149,7 +150,7 @@ const app = new Hono()
 				type: "section",
 				text: {
 					type: "mrkdwn",
-					text: `<@${id}> +${toStar(amount)}`,
+					text: `<@${id}> +${amount.toString()}`,
 				},
 			},
 		];
@@ -254,8 +255,8 @@ const app = new Hono()
 					type: "section",
 					text: {
 						type: "mrkdwn",
-						text: `<@${user.id}> ${
-							balance > BigInt(0) ? `${toStar(balance)} (${balance})` : "0 🥲"
+						text: `${user.nickname} ${
+							balance > BigInt(0) ? `${balance}` : "0 🥲"
 						}`,
 					},
 				}))
@@ -266,6 +267,20 @@ const app = new Hono()
 						text: `<${SITE_URL}|syndicate.slack.tips>`,
 					},
 				}),
+		});
+	})
+	.get(Commands.Activity, async (c) => {
+		const activity = await db.getTips();
+		const blocks = activity.map(({ fromUser, toUser, amount }) => ({
+			type: "section",
+			text: {
+				type: "mrkdwn",
+				text: `<@${fromUser?.nickname}> ->-> <@${toUser?.nickname}> ${amount.toString()}`,
+			},
+		}));
+		return c.json({
+			response_type: "in_channel",
+			blocks,
 		});
 	});
 
