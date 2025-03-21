@@ -190,7 +190,7 @@ const app = new Hono()
 					type: "section",
 					text: {
 						type: "mrkdwn",
-						text: `Your registered address is <https://basescan.org/address/${address}|${address}>. You have ${
+						text: `Your registered address is <https://basescan.org/address/${address}|${address}>\n. You have ${
 							allowance === BigInt(0) ? "0" : `${allowance}`
 						} left to tip.`,
 					},
