@@ -2,7 +2,6 @@ import { Hono } from "hono";
 import type { Hex } from "viem";
 import {
 	getAllowance,
-	getBalance,
 	getLeaderBoard,
 	getUserAddress,
 	getUserExists,
@@ -174,30 +173,6 @@ const app = new Hono()
 			blocks,
 		});
 	})
-	.post(Commands.Balance, mustBeRegistered, async (c) => {
-		const { user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
-		if (!(await getUserExists(user_id))) {
-			return c.json({
-				response_type: "ephemeral",
-				text: `<@${user_id}> you must register first with '/register <your-eth-address>'`,
-			});
-		}
-		const balance = await getBalance(user_id);
-		return c.json({
-			response_type: "ephemeral",
-			blocks: [
-				{
-					type: "section",
-					text: {
-						type: "mrkdwn",
-						text: `<@${user_id}> you have ${
-							balance === BigInt(0) ? "0" : `${toStar(balance)} (${balance})`
-						}`,
-					},
-				},
-			],
-		});
-	})
 	.post(Commands.Allowance, mustBeRegistered, async (c) => {
 		const { user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
 		if (!(await getUserExists(user_id))) {
@@ -246,7 +221,7 @@ const app = new Hono()
 			],
 		});
 	})
-	.post(Commands.Leaderboard, async (c) => {
+	.post(Commands.Balance, async (c) => {
 		const leaderboard = await getLeaderBoard();
 		return c.json({
 			response_type: "in_channel",
