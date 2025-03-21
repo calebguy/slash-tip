@@ -18,9 +18,7 @@ export enum Commands {
 	Tip = "/tip",
 	Balance = "/balance",
 	Activity = "/activity",
-	Address = "/address",
 	Register = "/register",
-	Allowance = "/allowance",
-	Leaderboard = "/leaderboard",
+	Me = "/me",
 	SlackAuth = "/slack-auth",
 }

@@ -173,33 +173,7 @@ const app = new Hono()
 			blocks,
 		});
 	})
-	.post(Commands.Allowance, mustBeRegistered, async (c) => {
-		const { user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
-		if (!(await getUserExists(user_id))) {
-			return c.json({
-				response_type: "ephemeral",
-				text: `<@${user_id}> you must register first with '/register <your-eth-address>'`,
-			});
-		}
-		const allowance = await getAllowance(user_id);
-		return c.json({
-			response_type: "ephemeral",
-			blocks: [
-				{
-					type: "section",
-					text: {
-						type: "mrkdwn",
-						text: `<@${user_id}> you have ${
-							allowance === BigInt(0)
-								? "0"
-								: `${toStar(allowance)} (${allowance})`
-						} left to tip`,
-					},
-				},
-			],
-		});
-	})
-	.post(Commands.Address, mustBeRegistered, async (c) => {
+	.post(Commands.Me, mustBeRegistered, async (c) => {
 		const { user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
 		if (!(await getUserExists(user_id))) {
 			return c.json({
@@ -208,6 +182,7 @@ const app = new Hono()
 			});
 		}
 		const address = await getUserAddress(user_id);
+		const allowance = await getAllowance(user_id);
 		return c.json({
 			response_type: "ephemeral",
 			blocks: [
@@ -215,7 +190,9 @@ const app = new Hono()
 					type: "section",
 					text: {
 						type: "mrkdwn",
-						text: `<@${user_id}> your registered address is <https://basescan.org/address/${address}|${address}>. If you would like to change it reach out to caleb`,
+						text: `<@${user_id}> your registered address is <https://basescan.org/address/${address}|${address}>. You have ${
+							allowance === BigInt(0) ? "0" : `${allowance}`
+						} left to tip`,
 					},
 				},
 			],
@@ -244,7 +221,7 @@ const app = new Hono()
 				}),
 		});
 	})
-	.get(Commands.Activity, async (c) => {
+	.post(Commands.Activity, async (c) => {
 		const activity = await db.getTips();
 		const blocks = activity.map(({ fromUser, toUser, amount }) => ({
 			type: "section",
