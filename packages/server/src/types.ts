@@ -19,6 +19,6 @@ export enum Commands {
 	Balance = "/balance",
 	Activity = "/activity",
 	Register = "/register",
-	Me = "/me",
+	Info = "/info",
 	SlackAuth = "/slack-auth",
 }

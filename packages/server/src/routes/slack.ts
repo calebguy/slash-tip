@@ -173,7 +173,7 @@ const app = new Hono()
 			blocks,
 		});
 	})
-	.post(Commands.Me, mustBeRegistered, async (c) => {
+	.post(Commands.Info, mustBeRegistered, async (c) => {
 		const { user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
 		if (!(await getUserExists(user_id))) {
 			return c.json({
