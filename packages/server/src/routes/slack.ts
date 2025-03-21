@@ -190,9 +190,9 @@ const app = new Hono()
 					type: "section",
 					text: {
 						type: "mrkdwn",
-						text: `Your registered address is <https://basescan.org/address/${address}|${address}>\n. You have ${
+						text: `Your registered address is <https://basescan.org/address/${address}|${address}>.\n You have ${
 							allowance === BigInt(0) ? "0" : `${allowance}`
-						} left to tip.`,
+						} tips left to give.`,
 					},
 				},
 			],
@@ -227,7 +227,7 @@ const app = new Hono()
 			type: "section",
 			text: {
 				type: "mrkdwn",
-				text: `${fromUser?.nickname} ->-> ${toUser?.nickname} ${amount.toString()}`,
+				text: `${fromUser?.nickname} ->-> ${toUser?.nickname}: ${amount.toString()}`,
 			},
 		}));
 		return c.json({
