@@ -190,9 +190,9 @@ const app = new Hono()
 					type: "section",
 					text: {
 						type: "mrkdwn",
-						text: `<@${user_id}> your registered address is <https://basescan.org/address/${address}|${address}>. You have ${
+						text: `Your registered address is <https://basescan.org/address/${address}|${address}>. You have ${
 							allowance === BigInt(0) ? "0" : `${allowance}`
-						} left to tip`,
+						} left to tip.`,
 					},
 				},
 			],
@@ -222,7 +222,7 @@ const app = new Hono()
 		});
 	})
 	.post(Commands.Activity, async (c) => {
-		const activity = await db.getTips();
+		const activity = await db.getTips(10);
 		const blocks = activity.map(({ fromUser, toUser, amount }) => ({
 			type: "section",
 			text: {

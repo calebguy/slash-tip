@@ -27,7 +27,7 @@ class Db {
 		return this.pg.select().from(tips).orderBy(desc(tips.createdAt)).limit(50);
 	}
 
-	getTips() {
+	getTips(limit = 50) {
 		const fromUsers = alias(users, "fromUsers");
 		const toUsers = alias(users, "toUsers");
 		return this.pg
@@ -55,7 +55,7 @@ class Db {
 			.leftJoin(fromUsers, eq(tips.fromUserId, fromUsers.id))
 			.leftJoin(toUsers, eq(tips.toUserId, toUsers.id))
 			.orderBy(desc(tips.blockNumber))
-			.limit(50);
+			.limit(limit);
 	}
 
 	getUsers() {
