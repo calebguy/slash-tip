@@ -275,7 +275,7 @@ const app = new Hono()
 			type: "section",
 			text: {
 				type: "mrkdwn",
-				text: `<@${fromUser?.nickname}> ->-> <@${toUser?.nickname}> ${amount.toString()}`,
+				text: `${fromUser?.nickname} ->-> ${toUser?.nickname} ${amount.toString()}`,
 			},
 		}));
 		return c.json({
