@@ -207,7 +207,7 @@ const app = new Hono()
 					type: "section",
 					text: {
 						type: "mrkdwn",
-						text: `${user.nickname} ${
+						text: `${user.nickname}: ${
 							balance > BigInt(0) ? `${balance}` : "0 🥲"
 						}`,
 					},
@@ -222,7 +222,7 @@ const app = new Hono()
 		});
 	})
 	.post(Commands.Activity, async (c) => {
-		const activity = await db.getTips(10);
+		const activity = await db.getTips(6);
 		const blocks = activity.map(({ fromUser, toUser, amount }) => ({
 			type: "section",
 			text: {
