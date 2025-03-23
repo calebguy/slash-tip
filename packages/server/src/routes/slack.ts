@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { type Hex, toHex } from "viem";
+import { type Hex } from "viem";
 import {
 	getAllowance,
 	getLeaderBoard,
@@ -142,7 +142,7 @@ const app = new Hono()
 			from: user_id,
 			to: id,
 			amount,
-			data: toHex(message),
+			data: message,
 		});
 		console.log(`minted ${amount} to ${id} from ${user_id} with hash ${hash}`);
 
