@@ -19,7 +19,7 @@ contract SlashTip is AccessControl {
         address indexed to,
         uint256 tokenId,
         uint256 amount,
-        bytes data
+        string data
     );
 
     struct UserWithBalance {
@@ -45,7 +45,7 @@ contract SlashTip is AccessControl {
         tipToken = Tip(_tipToken);
     }
 
-    function tip(string memory _fromId, string memory _toId, uint256 _tokenId, uint256 _amount, bytes memory _data)
+    function tip(string memory _fromId, string memory _toId, uint256 _tokenId, uint256 _amount, string memory _data)
         public
         onlyRole(SLASH_TIP_MANAGER)
     {
@@ -62,7 +62,7 @@ contract SlashTip is AccessControl {
         UserRegistry.User memory toUser = userRegistry.getUser(_toId);
 
         // mint tip token to recipient
-        tipToken.mint(toUser.account, _tokenId, _amount, _data);
+        tipToken.mint(toUser.account, _tokenId, _amount, bytes(_data));
 
         emit Tipped(_fromId, _toId, fromUser.account, toUser.account, _tokenId, _amount, _data);
     }
