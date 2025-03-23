@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import type { Hex } from "viem";
+import { type Hex, toHex } from "viem";
 import {
 	getAllowance,
 	getLeaderBoard,
@@ -88,7 +88,8 @@ const app = new Hono()
 	.post(Commands.Tip, mustBeRegistered, async (c) => {
 		const { text, user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
 
-		const { id, amount: _amount } = parseTipCommandArgs(text);
+		const { id, amount: _amount, message } = parseTipCommandArgs(text);
+		console.log("got args", id, _amount, message);
 
 		if (!id) {
 			return c.json({
@@ -141,6 +142,7 @@ const app = new Hono()
 			from: user_id,
 			to: id,
 			amount,
+			data: toHex(message),
 		});
 		console.log(`minted ${amount} to ${id} from ${user_id} with hash ${hash}`);
 

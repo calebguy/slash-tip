@@ -10,26 +10,26 @@ import {
 import { http } from "viem";
 export default createConfig({
 	networks: {
-		op: {
+		target: {
 			chainId: 10,
 			transport: http(process.env.PONDER_RPC_URL_1),
 		},
 	},
 	contracts: {
 		Tip: {
-			network: "op",
+			network: "target",
 			abi: TipAbi,
 			address: TIP_ADDRESS,
 			startBlock: 14510881,
 		},
 		UserRegistry: {
-			network: "op",
+			network: "target",
 			abi: UserRegistryAbi,
 			address: USER_REGISTRY_ADDRESS,
 			startBlock: 1234567,
 		},
 		SlashTip: {
-			network: "op",
+			network: "target",
 			abi: SlashTipAbi,
 			address: SLASH_TIP_ADDRESS,
 			startBlock: 1234567,

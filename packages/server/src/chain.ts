@@ -55,18 +55,20 @@ export async function mint({
 	from,
 	to,
 	amount,
-}: { from: string; to: string; amount: number }) {
+	data,
+}: { from: string; to: string; amount: number; data: Hex }) {
 	const { transactionId } = await syndicate.transact.sendTransaction({
 		chainId,
 		projectId,
 		contractAddress: SLASH_TIP_ADDRESS,
 		functionSignature:
-			"tip(string from, string to, uint256 tokenId, uint256 amount)",
+			"tip(string from, string to, uint256 tokenId, uint256 amount, bytes data)",
 		args: {
 			tokenId,
 			from,
 			to,
 			amount,
+			data,
 		},
 	});
 	try {

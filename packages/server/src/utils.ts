@@ -1,23 +1,20 @@
 import { type Hex, getAddress } from "viem";
 
-const slackIDPattern = /<@(\w+)\|/;
-
-export function parseUserFromText(input: string) {
-	const id = input.match(slackIDPattern);
-	return id ? id[1] : null;
-}
-
 export function parseTipCommandArgs(input: string) {
 	console.log("input", input);
-	const numberPattern = /(\d+)$/;
 
-	const _amount = input.match(numberPattern);
+	// Match the user mention, amount, and optional message
+	const pattern = /^<@([A-Z0-9]+)\|[^>]+>\s+(\d+)(?:\s+(.*))?$/;
+	const match = input.match(pattern);
 
-	const amount = _amount ? _amount[0] : null;
+	if (!match) {
+		return { id: null, amount: null, message: null };
+	}
 
-	return { id: parseUserFromText(input), amount };
+	const [, id, amount, message] = match;
+
+	return { id, amount, message: message || "" };
 }
-
 export function extractEthereumAddresses(text: string) {
 	// Ethereum address regex pattern
 	const ethAddressPattern = /\b0x[a-fA-F0-9]{40}\b/g;
