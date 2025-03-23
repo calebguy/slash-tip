@@ -4,6 +4,6 @@ out = "out"
 libs = ["lib"]
 
 [profile.rpc-endpoints]
-frame = "${FRAME_RPC_URL}"
+base = "${BASE_RPC_URL}"
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
