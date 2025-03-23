@@ -151,7 +151,7 @@ const app = new Hono()
 				type: "section",
 				text: {
 					type: "mrkdwn",
-					text: `<@${id}> +${amount.toString()}`,
+					text: `+${amount.toString()} ${message ? `(${message})` : ""}\n<@${user_id}> ->-> <@${id}>`,
 				},
 			},
 		];
