@@ -89,7 +89,7 @@ const app = new Hono()
 		const { text, user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
 
 		const { id, amount: _amount, message } = parseTipCommandArgs(text);
-		console.log("got args", id, _amount, message);
+		console.log("got from slack", { id, amount: _amount, message });
 
 		if (!id) {
 			return c.json({

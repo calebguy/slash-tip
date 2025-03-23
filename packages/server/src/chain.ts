@@ -57,6 +57,7 @@ export async function mint({
 	amount,
 	data,
 }: { from: string; to: string; amount: number; data: Hex }) {
+	console.log("args", { tokenId, from, to, amount, data });
 	const { transactionId } = await syndicate.transact.sendTransaction({
 		chainId,
 		projectId,
