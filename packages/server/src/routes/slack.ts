@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { type Hex } from "viem";
+import type { Hex } from "viem";
 import {
 	getAllowance,
 	getLeaderBoard,

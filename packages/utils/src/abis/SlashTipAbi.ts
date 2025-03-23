@@ -341,8 +341,8 @@ export const SlashTipAbi = [
 			},
 			{
 				name: "_data",
-				type: "bytes",
-				internalType: "bytes",
+				type: "string",
+				internalType: "string",
 			},
 		],
 		outputs: [],
@@ -491,9 +491,9 @@ export const SlashTipAbi = [
 			},
 			{
 				name: "data",
-				type: "bytes",
+				type: "string",
 				indexed: false,
-				internalType: "bytes",
+				internalType: "string",
 			},
 		],
 		anonymous: false,

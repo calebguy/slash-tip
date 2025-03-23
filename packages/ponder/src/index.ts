@@ -1,6 +1,6 @@
 import { ponder } from "ponder:registry";
-import SlashTipAbi from "utils/src/abis/SlashTipAbi";
 import { decodeFunctionData, zeroAddress } from "viem";
+import { OldSlashTipAbi } from "./OldSlashTipAbi";
 import { db, publicClient } from "./shared";
 import { syncUserRegistry } from "./userRegistry";
 
@@ -13,7 +13,7 @@ ponder.on("Tip:TransferSingle", async ({ event, context }) => {
 		const {
 			args: [fromUserId, toUserId, tokenId, amount],
 		} = decodeFunctionData({
-			abi: SlashTipAbi,
+			abi: OldSlashTipAbi,
 			data: tx.input,
 		});
 		if (
@@ -37,5 +37,6 @@ ponder.on("Tip:TransferSingle", async ({ event, context }) => {
 		}
 	} catch (e) {
 		console.warn("skipping...");
+		console.error(e);
 	}
 });
