@@ -1,4 +1,4 @@
-import { getAddress, type Hex } from "viem";
+import { type Hex, getAddress } from "viem";
 
 const slackIDPattern = /<@(\w+)\|/;
 
@@ -8,6 +8,7 @@ export function parseUserFromText(input: string) {
 }
 
 export function parseTipCommandArgs(input: string) {
+	console.log("input", input);
 	const numberPattern = /(\d+)$/;
 
 	const _amount = input.match(numberPattern);
