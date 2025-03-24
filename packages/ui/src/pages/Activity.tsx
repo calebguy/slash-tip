@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import classNames from "classnames";
 import { getActivity } from "../api";
 import { Arrow } from "../icons/arrow";
 import { IDK } from "../icons/idk";
@@ -18,7 +19,16 @@ export function Activity() {
 						<Arrow className="w-5 h-5 md:w-6 md:h-6 text-slime -rotate-90 mx-1 -ml-1" />
 						<div className="text-paper">{item.toUser?.nickname}</div>
 					</div>
-					<div className="flex items-end grow flex-wrap gap-1">
+					{item.message && (
+						<div className="text-paper/35 text-lg leading-4 italic">
+							{item.message}
+						</div>
+					)}
+					<div
+						className={classNames("flex items-end grow flex-wrap gap-1", {
+							"mt-1": item.message,
+						})}
+					>
 						{Array.from({ length: Number(item.amount) }).map((_, index) => (
 							<IDK
 								// biome-ignore lint/suspicious/noArrayIndexKey: so what
