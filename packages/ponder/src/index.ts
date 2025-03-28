@@ -4,7 +4,9 @@ import { OldSlashTipAbi } from "./OldSlashTipAbi";
 import { db, publicClient } from "./shared";
 import { syncUserRegistry } from "./userRegistry";
 
-syncUserRegistry();
+syncUserRegistry().catch((e) => {
+	console.error(e);
+});
 
 ponder.on("Tip:TransferSingle", async ({ event }) => {
 	const { hash } = event.transaction;
@@ -50,14 +52,25 @@ ponder.on("SlashTip:Tipped", async ({ event }) => {
 		blockNumber: tx.blockNumber,
 	});
 
-	await db.upsertTip({
-		txHash: hash,
-		fromUserId: fromId,
-		toUserId: toId,
-		tokenId,
-		amount,
-		blockNumber: tx.blockNumber,
-		blockCreatedAt: new Date(Number(block.timestamp) * 1000),
-		message: data,
-	});
+	await db
+		.upsertTip({
+			txHash: hash,
+			fromUserId: fromId,
+			toUserId: toId,
+			tokenId,
+			amount,
+			blockNumber: tx.blockNumber,
+			blockCreatedAt: new Date(Number(block.timestamp) * 1000),
+			message: data,
+		})
+		.catch((e) => {
+			console.warn("failed to upsert tip", {
+				hash,
+				fromId,
+				toId,
+				tokenId,
+				amount,
+				data,
+			});
+		});
 });

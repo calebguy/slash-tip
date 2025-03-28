@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import classNames from "classnames";
+import * as emoji from "node-emoji";
 import { getActivity } from "../api";
 import { Arrow } from "../icons/arrow";
 import { IDK } from "../icons/idk";
@@ -21,7 +22,7 @@ export function Activity() {
 					</div>
 					{item.message && (
 						<div className="text-paper/35 text-lg leading-4 italic">
-							{item.message}
+							{emoji.emojify(item.message)}
 						</div>
 					)}
 					<div
