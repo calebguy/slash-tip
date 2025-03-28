@@ -21,7 +21,7 @@ export function Activity() {
 						<div className="text-paper">{item.toUser?.nickname}</div>
 					</div>
 					{item.message && (
-						<div className="text-paper/35 text-lg leading-4 italic">
+						<div className="text-[#5e5e5a] text-lg leading-4 italic">
 							{emoji.emojify(item.message)}
 						</div>
 					)}
