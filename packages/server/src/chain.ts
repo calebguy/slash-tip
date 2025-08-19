@@ -77,7 +77,7 @@ export async function mint({
 			projectId,
 			transactionId,
 			every: 200,
-			maxAttempts: 10,
+			maxAttempts: 2,
 		});
 	} catch (e) {
 		console.error(
