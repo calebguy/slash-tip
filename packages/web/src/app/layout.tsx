@@ -1,12 +1,12 @@
+import { Footer } from "@/components/Footer";
+import { Providers } from "@/components/Providers";
+import { SidebarNav } from "@/components/SidebarNav";
 import type { Metadata } from "next";
 import "./globals.css";
-import { Providers } from "@/components/Providers";
-import { Footer } from "@/components/Footer";
-import { SidebarNav } from "@/components/SidebarNav";
 
 export const metadata: Metadata = {
-	title: "Slash Tip",
-	description: "Onchain tipping for Slack",
+	title: "/tip",
+	description: "Slack tips onchain",
 };
 
 export default function RootLayout({
