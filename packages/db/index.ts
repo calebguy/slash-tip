@@ -1,8 +1,8 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { drizzle as drizzleNeon } from "drizzle-orm/neon-http";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { alias } from "drizzle-orm/pg-core";
-import { tips, users } from "./src/schema";
+import { organizations, tips, users } from "./src/schema";
 
 class Db {
 	private pg;
@@ -15,6 +15,7 @@ class Db {
 			casing: "snake_case",
 			connection: this.connectionUrl,
 			schema: {
+				organizations,
 				users,
 				tips,
 			},
@@ -23,6 +24,36 @@ class Db {
 		this.pg = isNeon ? drizzleNeon(params) : drizzle(params);
 	}
 
+	// Organization methods
+	getOrgBySlug(slug: string) {
+		return this.pg
+			.select()
+			.from(organizations)
+			.where(eq(organizations.slug, slug))
+			.limit(1);
+	}
+
+	getOrgBySlackTeamId(slackTeamId: string) {
+		return this.pg
+			.select()
+			.from(organizations)
+			.where(eq(organizations.slackTeamId, slackTeamId))
+			.limit(1);
+	}
+
+	createOrg(org: InsertOrganization) {
+		return this.pg.insert(organizations).values(org).returning();
+	}
+
+	updateOrg(id: string, org: Partial<InsertOrganization>) {
+		return this.pg
+			.update(organizations)
+			.set(org)
+			.where(eq(organizations.id, id))
+			.returning();
+	}
+
+	// Tips methods
 	_getTips() {
 		return this.pg.select().from(tips).orderBy(desc(tips.createdAt)).limit(50);
 	}
@@ -58,8 +89,45 @@ class Db {
 			.limit(limit);
 	}
 
+	getTipsByOrg(orgId: string, limit = 50) {
+		const fromUsers = alias(users, "fromUsers");
+		const toUsers = alias(users, "toUsers");
+		return this.pg
+			.select({
+				id: tips.id,
+				txHash: tips.txHash,
+				fromUser: {
+					id: fromUsers.id,
+					nickname: fromUsers.nickname,
+					address: fromUsers.address,
+				},
+				toUser: {
+					id: toUsers.id,
+					nickname: toUsers.nickname,
+					address: toUsers.address,
+				},
+				tokenId: tips.tokenId,
+				amount: tips.amount,
+				message: tips.message,
+				blockNumber: tips.blockNumber,
+				blockCreatedAt: tips.blockCreatedAt,
+				createdAt: tips.createdAt,
+			})
+			.from(tips)
+			.leftJoin(fromUsers, eq(tips.fromUserId, fromUsers.id))
+			.leftJoin(toUsers, eq(tips.toUserId, toUsers.id))
+			.where(eq(tips.orgId, orgId))
+			.orderBy(desc(tips.blockNumber))
+			.limit(limit);
+	}
+
+	// User methods
 	getUsers() {
 		return this.pg.select().from(users);
+	}
+
+	getUsersByOrg(orgId: string) {
+		return this.pg.select().from(users).where(eq(users.orgId, orgId));
 	}
 
 	upsertTip(tip: InsertTip) {
@@ -102,6 +170,8 @@ export function tipWithUsersToJsonSafe(tip: TipWithUsers) {
 }
 
 type TipWithUsers = Awaited<ReturnType<Db["getTips"]>>[number];
+export type InsertOrganization = typeof organizations.$inferInsert;
+export type Organization = typeof organizations.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type InsertTip = typeof tips.$inferInsert;

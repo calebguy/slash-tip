@@ -1,46 +1,20 @@
-import classNames from "classnames";
-import * as emoji from "node-emoji";
-import { getActivity } from "@/lib/api";
-import { Arrow } from "@/icons/arrow";
-import { IDK } from "@/icons/idk";
+import Link from "next/link";
 
-export const dynamic = "force-dynamic";
-
-export default async function ActivityPage() {
-	const data = await getActivity();
-
+export default function LandingPage() {
 	return (
-		<div className="font-thin flex flex-col gap-1 select-none">
-			{data.map((item) => (
-				<div key={item.id} className="flex flex-col gap-0.5">
-					<div className="flex items-center">
-						<div className="text-paper italic">{item.fromUser?.nickname}</div>
-						<Arrow className="w-5 h-5 md:w-6 md:h-6 text-slime -rotate-90 ml-2" />
-						<Arrow className="w-5 h-5 md:w-6 md:h-6 text-slime -rotate-90 mx-1 -ml-1" />
-						<div className="text-paper">{item.toUser?.nickname}</div>
-					</div>
-					{item.message && (
-						<div className="text-[#5e5e5a] text-lg leading-4 italic">
-							{emoji.emojify(item.message)}
-						</div>
-					)}
-					<div
-						className={classNames("flex items-end grow flex-wrap gap-1", {
-							"mt-1": item.message,
-						})}
-					>
-						{Array.from({ length: Number(item.amount) }).map((_, index) => (
-							<IDK
-								key={`arrow-${index}`}
-								className="w-5 h-5 md:w-6 md:h-6 text-orange -rotate-90"
-							/>
-						))}
-						<div className="text-orange/60 text-lg leading-4">
-							({item.amount})
-						</div>
-					</div>
-				</div>
-			))}
+		<div className="flex flex-col min-h-dvh items-center justify-center p-8">
+			<div className="text-center">
+				<h1 className="text-6xl md:text-8xl font-thin text-paper mb-4">/tip</h1>
+				<p className="text-xl md:text-2xl text-paper/60 font-thin mb-12">
+					Onchain kudos for your Slack workspace
+				</p>
+				<Link
+					href="/syndicate"
+					className="inline-block text-2xl font-thin text-orange hover:text-slime transition-colors"
+				>
+					View Demo →
+				</Link>
+			</div>
 		</div>
 	);
 }

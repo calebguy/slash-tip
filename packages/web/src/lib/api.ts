@@ -18,21 +18,27 @@ export type ActivityItem = {
 	toUser: { nickname: string } | null;
 };
 
-export async function getLeaderboard(): Promise<User[]> {
-	const res = await fetch(`${API_BASE}/slash/ui/leaderboard`, {
+export async function getLeaderboard(org: string): Promise<User[]> {
+	const res = await fetch(`${API_BASE}/slash/ui/${org}/leaderboard`, {
 		next: { revalidate: 30 },
 	});
 	if (!res.ok) {
+		if (res.status === 404) {
+			throw new Error("Organization not found");
+		}
 		throw new Error("Failed to fetch leaderboard");
 	}
 	return res.json();
 }
 
-export async function getActivity(): Promise<ActivityItem[]> {
-	const res = await fetch(`${API_BASE}/slash/ui/activity`, {
+export async function getActivity(org: string): Promise<ActivityItem[]> {
+	const res = await fetch(`${API_BASE}/slash/ui/${org}/activity`, {
 		next: { revalidate: 30 },
 	});
 	if (!res.ok) {
+		if (res.status === 404) {
+			throw new Error("Organization not found");
+		}
 		throw new Error("Failed to fetch activity");
 	}
 	return res.json();

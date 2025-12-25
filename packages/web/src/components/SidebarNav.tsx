@@ -4,19 +4,23 @@ import classNames from "classnames";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const routes = [
-	{
-		path: "/",
-		title: "/activity",
-	},
-	{
-		path: "/balance",
-		title: "/balance",
-	},
-];
+function getRoutes(org: string) {
+	return [
+		{
+			path: `/${org}`,
+			title: "/activity",
+		},
+		{
+			path: `/${org}/balance`,
+			title: "/balance",
+		},
+	];
+}
 
-export function SidebarNav() {
+export function SidebarNav({ org }: { org: string }) {
 	const pathname = usePathname();
+	const routes = getRoutes(org);
+
 	return (
 		<div className="flex flex-col md:items-end items-start justify-center h-full">
 			<div className="text-left">
