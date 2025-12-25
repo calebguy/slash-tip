@@ -11,6 +11,8 @@ export const db = new Db(env.DATABASE_URL, env.DATABASE_URL.includes("neon"));
 // Enable CORS for all origins
 app.use("*", cors());
 
+app.get("/", (c) => c.text("slack.tips"));
+
 // Health check at root level for Render
 app.get("/health", (c) => c.json({ status: "ok" }));
 
