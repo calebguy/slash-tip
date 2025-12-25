@@ -11,11 +11,13 @@ export const db = new Db(env.DATABASE_URL, env.DATABASE_URL.includes("neon"));
 // Enable CORS for all origins
 app.use("*", cors());
 
+// Health check at root level for Render
+app.get("/health", (c) => c.json({ status: "ok" }));
+
 const api = app
 	.basePath("/slash")
 	.route("/ui", uiRoutes)
-	.route("/slack", commandRoutes)
-	.get("/health", (c) => c.json({ status: "ok" }));
+	.route("/slack", commandRoutes);
 
 export type ApiType = typeof api;
 export default {
