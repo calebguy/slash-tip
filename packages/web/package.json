@@ -9,7 +9,6 @@
 		"lint": "next lint"
 	},
 	"dependencies": {
-		"@tanstack/react-query": "^5.37.1",
 		"classnames": "^2.5.1",
 		"next": "^14.2.20",
 		"node-emoji": "^2.2.0",

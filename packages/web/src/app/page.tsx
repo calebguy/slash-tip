@@ -1,20 +1,17 @@
-"use client";
-
-import { useQuery } from "@tanstack/react-query";
 import classNames from "classnames";
 import * as emoji from "node-emoji";
 import { getActivity } from "@/lib/api";
 import { Arrow } from "@/icons/arrow";
 import { IDK } from "@/icons/idk";
 
-export default function ActivityPage() {
-	const { data } = useQuery({
-		queryKey: ["activity"],
-		queryFn: getActivity,
-	});
+export const dynamic = "force-dynamic";
+
+export default async function ActivityPage() {
+	const data = await getActivity();
+
 	return (
 		<div className="font-thin flex flex-col gap-1 select-none">
-			{data?.map((item) => (
+			{data.map((item) => (
 				<div key={item.id} className="flex flex-col gap-0.5">
 					<div className="flex items-center">
 						<div className="text-paper italic">{item.fromUser?.nickname}</div>
