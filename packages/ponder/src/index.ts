@@ -27,6 +27,13 @@ ponder.on("Tip:TransferSingle", async ({ event }) => {
 			const block = await publicClient.getBlock({
 				blockNumber: tx.blockNumber,
 			});
+			// Look up sender's org to associate tip with organization
+			const [fromUser] = await db.getUserById(fromUserId as string);
+			if (!fromUser) {
+				console.warn(`User ${fromUserId} not found, skipping tip`);
+				return;
+			}
+
 			await db.upsertTip({
 				txHash: hash,
 				fromUserId: fromUserId as string,
@@ -35,6 +42,7 @@ ponder.on("Tip:TransferSingle", async ({ event }) => {
 				amount,
 				blockNumber: tx.blockNumber,
 				blockCreatedAt: new Date(Number(block.timestamp) * 1000),
+				orgId: fromUser.orgId,
 			});
 		}
 	} catch (e) {
@@ -52,6 +60,13 @@ ponder.on("SlashTip:Tipped", async ({ event }) => {
 		blockNumber: tx.blockNumber,
 	});
 
+	// Look up sender's org to associate tip with organization
+	const [fromUser] = await db.getUserById(fromId);
+	if (!fromUser) {
+		console.warn(`User ${fromId} not found, skipping tip`);
+		return;
+	}
+
 	await db
 		.upsertTip({
 			txHash: hash,
@@ -62,6 +77,7 @@ ponder.on("SlashTip:Tipped", async ({ event }) => {
 			blockNumber: tx.blockNumber,
 			blockCreatedAt: new Date(Number(block.timestamp) * 1000),
 			message: data,
+			orgId: fromUser.orgId,
 		})
 		.catch((e) => {
 			console.warn("failed to upsert tip", {

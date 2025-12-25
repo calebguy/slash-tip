@@ -126,6 +126,10 @@ class Db {
 		return this.pg.select().from(users);
 	}
 
+	getUserById(id: string) {
+		return this.pg.select().from(users).where(eq(users.id, id)).limit(1);
+	}
+
 	getUsersByOrg(orgId: string) {
 		return this.pg.select().from(users).where(eq(users.orgId, orgId));
 	}

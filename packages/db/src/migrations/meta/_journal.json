@@ -15,6 +15,13 @@
       "when": 1766696752531,
       "tag": "0001_solid_kabuki",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1766699151053,
+      "tag": "0002_shallow_princess_powerful",
+      "breakpoints": true
     }
   ]
 }

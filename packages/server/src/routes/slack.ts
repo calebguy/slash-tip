@@ -1,3 +1,4 @@
+import type { Organization } from "db";
 import { Hono } from "hono";
 import type { Hex } from "viem";
 import {
@@ -11,6 +12,7 @@ import {
 import { DAILY_ALLOWANCE, SITE_URL } from "../constants";
 import { mustBeRegistered } from "../middleware/mustBeRegistered";
 import { slackAuth } from "../middleware/slackAuth";
+import { withOrg } from "../middleware/withOrg";
 import { selfLovePoem, stealingPoem } from "../openai";
 import { db } from "../server";
 import { Commands, type SlackSlashCommandPayload } from "../types";
@@ -23,9 +25,17 @@ import {
 } from "../utils";
 import { getAddressFromENS } from "../viem";
 
+type Env = {
+	Variables: {
+		org: Organization;
+	};
+};
+
 // https://api.slack.com/interactivity/slash-commands
-const app = new Hono()
+const app = new Hono<Env>()
+	.use(withOrg)
 	.post(Commands.Register, async (c) => {
+		const org = c.get("org");
 		const { user_id, user_name, text } =
 			await c.req.parseBody<SlackSlashCommandPayload>();
 		console.log(`register command received from ${user_id} with text ${text}`);
@@ -59,7 +69,7 @@ const app = new Hono()
 		}
 
 		console.log(
-			`registring ${user_id} with address ${address} and nickname ${user_name}`,
+			`registring ${user_id} with address ${address} and nickname ${user_name} for org ${org.slug}`,
 		);
 
 		const hash = await register({
@@ -67,6 +77,15 @@ const app = new Hono()
 			nickname: user_name,
 			address,
 		});
+
+		// Save user to database with org_id
+		await db.upsertUser({
+			id: user_id,
+			nickname: user_name,
+			address,
+			orgId: org.id,
+		});
+
 		console.log(
 			`registered ${user_id} with address ${address} and nickname ${user_name} with hash ${hash}`,
 		);
@@ -79,7 +98,7 @@ const app = new Hono()
 						type: "mrkdwn",
 						text: `<@${user_id}> registered with <https://basescan.org/address/${address}|${abbreviate(
 							address,
-						)}>. <${SITE_URL}|syndicate.slack.tips>`,
+						)}>. <${SITE_URL}/${org.slug}|${org.slug}.slack.tips>`,
 					},
 				},
 			],
@@ -201,10 +220,18 @@ const app = new Hono()
 		});
 	})
 	.post(Commands.Balance, async (c) => {
+		const org = c.get("org");
+		const orgUsers = await db.getUsersByOrg(org.id);
+		const orgUserIds = new Set(orgUsers.map((u) => u.id));
+
 		const leaderboard = await getLeaderBoard();
+		const filteredLeaderboard = leaderboard.filter(({ user }) =>
+			orgUserIds.has(user.id),
+		);
+
 		return c.json({
 			response_type: "in_channel",
-			blocks: leaderboard
+			blocks: filteredLeaderboard
 				.map(({ user, balance }) => ({
 					type: "section",
 					text: {
@@ -218,13 +245,14 @@ const app = new Hono()
 					type: "section",
 					text: {
 						type: "mrkdwn",
-						text: `<${SITE_URL}|syndicate.slack.tips>`,
+						text: `<${SITE_URL}/${org.slug}|${org.slug}.slack.tips>`,
 					},
 				}),
 		});
 	})
 	.post(Commands.Activity, async (c) => {
-		const activity = await db.getTips(6);
+		const org = c.get("org");
+		const activity = await db.getTipsByOrg(org.id, 6);
 		const blocks = activity.map(({ fromUser, toUser, amount }) => ({
 			type: "section",
 			text: {

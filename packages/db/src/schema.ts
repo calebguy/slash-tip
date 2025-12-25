@@ -21,14 +21,18 @@ export const organizations = pgTable("organizations", {
 
 export const users = pgTable("users", {
 	id: text("id").primaryKey(),
-	orgId: uuid("org_id").references(() => organizations.id),
+	orgId: uuid("org_id")
+		.references(() => organizations.id)
+		.notNull(),
 	nickname: text("nickname").notNull(),
 	address: text("address").notNull(),
 });
 
 export const tips = pgTable("tips", {
 	id: serial("id").primaryKey(),
-	orgId: uuid("org_id").references(() => organizations.id),
+	orgId: uuid("org_id")
+		.references(() => organizations.id)
+		.notNull(),
 	txHash: text("tx_hash").notNull().unique(),
 	fromUserId: text("from_user_id").notNull(),
 	toUserId: text("to_user_id").notNull(),
