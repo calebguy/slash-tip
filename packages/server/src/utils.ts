@@ -15,6 +15,7 @@ export function parseTipCommandArgs(input: string) {
 
 	return { id, amount, message: message || "" };
 }
+
 export function extractEthereumAddresses(text: string) {
 	// Ethereum address regex pattern
 	const ethAddressPattern = /\b0x[a-fA-F0-9]{40}\b/g;

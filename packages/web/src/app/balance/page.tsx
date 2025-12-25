@@ -1,10 +1,12 @@
+"use client";
+
 import { useQuery } from "@tanstack/react-query";
 import classNames from "classnames";
-import { getLeaderboard } from "../api";
-import { IDK } from "../icons/idk";
-import { abbreviate } from "../utils";
+import { getLeaderboard } from "@/lib/api";
+import { IDK } from "@/icons/idk";
+import { abbreviate } from "@/lib/utils";
 
-export function Balance() {
+export default function BalancePage() {
 	const { data } = useQuery({
 		queryKey: ["getLeaderboard"],
 		queryFn: getLeaderboard,
@@ -12,12 +14,14 @@ export function Balance() {
 	return (
 		<>
 			{data?.map((user) => {
-				const [first, last] = abbreviate(user.account);
+				const abbreviated = abbreviate(user.account);
+				const [first, last] = Array.isArray(abbreviated)
+					? abbreviated
+					: [abbreviated, ""];
 				return (
 					<div key={`user-${user.nickname}`} className="font-thin">
 						<span className="text-slime">{user.balance}/</span>
 						<div
-							key={`user-${user.nickname}`}
 							className={classNames("inline-block relative group transition")}
 						>
 							<div
@@ -38,8 +42,8 @@ export function Balance() {
 								)}
 							>
 								<span>{first}</span>
-								<IDK className={classNames("w-5 h-5 md:w-6 md:h-6")} />
-								<span>{last}</span>
+								{last && <IDK className={classNames("w-5 h-5 md:w-6 md:h-6")} />}
+								{last && <span>{last}</span>}
 							</div>
 						</div>
 					</div>

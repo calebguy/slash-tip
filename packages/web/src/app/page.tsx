@@ -1,11 +1,13 @@
+"use client";
+
 import { useQuery } from "@tanstack/react-query";
 import classNames from "classnames";
 import * as emoji from "node-emoji";
-import { getActivity } from "../api";
-import { Arrow } from "../icons/arrow";
-import { IDK } from "../icons/idk";
+import { getActivity } from "@/lib/api";
+import { Arrow } from "@/icons/arrow";
+import { IDK } from "@/icons/idk";
 
-export function Activity() {
+export default function ActivityPage() {
 	const { data } = useQuery({
 		queryKey: ["activity"],
 		queryFn: getActivity,
@@ -32,7 +34,6 @@ export function Activity() {
 					>
 						{Array.from({ length: Number(item.amount) }).map((_, index) => (
 							<IDK
-								// biome-ignore lint/suspicious/noArrayIndexKey: so what
 								key={`arrow-${index}`}
 								className="w-5 h-5 md:w-6 md:h-6 text-orange -rotate-90"
 							/>

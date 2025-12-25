@@ -3,14 +3,14 @@
 
 @font-face {
 	font-family: "Oracle Triple";
-	src: url("./fonts/ABCOracleTripleVariable-Trial.woff2") format("woff2");
+	src: url("../fonts/ABCOracleTripleVariable-Trial.woff2") format("woff2");
 	font-weight: 100 900;
 	font-style: swap;
 }
 
 @font-face {
 	font-family: "Oracle Plus";
-	src: url("./fonts/ABCOraclePlusVariable-Trial.woff2") format("woff2");
+	src: url("../fonts/ABCOraclePlusVariable-Trial.woff2") format("woff2");
 	font-weight: 100 900;
 	font-style: swap;
 }
@@ -33,18 +33,6 @@ body {
 
 body {
 	font-family: var(--font-display);
-}
-
-#root {
-	position: relative;
-	display: flex;
-	flex-direction: column;
-}
-
-html,
-body,
-#root {
-	min-height: calc(100dvh);
 }
 
 #orange-track {

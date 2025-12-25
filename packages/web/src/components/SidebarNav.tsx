@@ -1,15 +1,28 @@
+"use client";
+
 import classNames from "classnames";
-import { Link, useLocation } from "react-router";
-import { routes } from "../App";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+const routes = [
+	{
+		path: "/",
+		title: "/activity",
+	},
+	{
+		path: "/balance",
+		title: "/balance",
+	},
+];
 
 export function SidebarNav() {
-	const { pathname } = useLocation();
+	const pathname = usePathname();
 	return (
 		<div className="flex flex-col md:items-end items-start justify-center h-full">
 			<div className="text-left">
 				{routes.map((route) => (
 					<Link
-						to={route.path}
+						href={route.path}
 						key={route.path}
 						className={classNames(
 							"font-thin text-4xl hover:text-orange block transition-colors duration-150",
