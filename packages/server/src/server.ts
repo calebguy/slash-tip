@@ -18,6 +18,6 @@ const api = app
 
 export type ApiType = typeof api;
 export default {
-	port: 3001,
+	port: Number.parseInt(env.PORT),
 	fetch: app.fetch,
 };

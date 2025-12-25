@@ -5,6 +5,7 @@ export const env = {
 	OPENAI_API_KEY: process.env.OPENAI_API_KEY as string,
 	SLACK_SIGNING_SECRET: process.env.SLACK_SIGNING_SECRET as string,
 	DATABASE_URL: process.env.DATABASE_URL as string,
+	PORT: process.env.PORT || "4000",
 };
 
 for (const key in env) {
