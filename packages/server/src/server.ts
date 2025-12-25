@@ -14,7 +14,8 @@ app.use("*", cors());
 const api = app
 	.basePath("/slash")
 	.route("/ui", uiRoutes)
-	.route("/slack", commandRoutes);
+	.route("/slack", commandRoutes)
+	.get("/health", (c) => c.json({ status: "ok" }));
 
 export type ApiType = typeof api;
 export default {
