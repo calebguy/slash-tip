@@ -1,0 +1,1 @@
+ALTER TABLE "organizations" ALTER COLUMN "action_type" SET DEFAULT 'syndicate_send_transaction';

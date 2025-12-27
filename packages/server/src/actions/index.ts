@@ -1,5 +1,5 @@
 // Import actions to register them
-import "./mintERC1155";
+import "./syndicateSendTransaction";
 import "./poem";
 
 // Re-export registry functions
@@ -8,14 +8,12 @@ export { getAction, getAvailableActions, hasAction, registerAction } from "./reg
 // Re-export types
 export type {
 	ActionConfig,
-	MintERC1155Config,
 	PoemConfig,
 	SlackBlock,
+	SyndicateSendTransactionConfig,
 	TipAction,
 	TipParams,
 	TipResponse,
 	TipResult,
-	TransferERC20Config,
 	ValidationResult,
-	WebhookConfig,
 } from "./types";

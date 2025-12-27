@@ -51,7 +51,7 @@ export function addAllowanceForAllUsers(amount: number) {
 	return slashTipContract.write.addAllowanceForAllUsers([BigInt(amount)]);
 }
 
-export async function mint({
+export async function 	mint({
 	from,
 	to,
 	amount,

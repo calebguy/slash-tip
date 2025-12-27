@@ -56,32 +56,19 @@ export interface TipAction {
  * Configuration stored in the database for each action type.
  * Each action type can have its own config shape.
  */
-export type ActionConfig =
-	| MintERC1155Config
-	| TransferERC20Config
-	| PoemConfig
-	| WebhookConfig;
+export type ActionConfig = SyndicateSendTransactionConfig | PoemConfig;
 
-export interface MintERC1155Config {
-	type: "mint_erc1155";
+export interface SyndicateSendTransactionConfig {
+	type: "syndicate_send_transaction";
 	contractAddress: string;
-	tokenId: number;
-}
-
-export interface TransferERC20Config {
-	type: "transfer_erc20";
-	vaultAddress: string;
-	tokenAddress: string;
-	tokenSymbol: string;
+	functionSignature: string;
+	args: Record<string, unknown>;
+	chainId?: number;
+	projectId?: string;
+	successMessage?: string;
 }
 
 export interface PoemConfig {
 	type: "poem";
 	style?: "haiku" | "limerick" | "sonnet" | "free";
-}
-
-export interface WebhookConfig {
-	type: "webhook";
-	url: string;
-	secret?: string;
 }
