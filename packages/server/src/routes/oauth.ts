@@ -4,6 +4,7 @@ import { db } from "../server";
 
 const SLACK_OAUTH_URL = "https://slack.com/api/oauth.v2.access";
 const SITE_URL = "https://slack.tips";
+const API_URL = "https://api.slack.tips";
 
 interface SlackOAuthResponse {
 	ok: boolean;
@@ -29,7 +30,7 @@ const app = new Hono()
 	 */
 	.get("/install", (c) => {
 		const scopes = ["commands", "chat:write"].join(",");
-		const redirectUri = `${c.req.url.split("/oauth")[0]}/oauth/callback`;
+		const redirectUri = `${API_URL}/slash/oauth/callback`;
 
 		const slackAuthUrl = new URL("https://slack.com/oauth/v2/authorize");
 		slackAuthUrl.searchParams.set("client_id", env.SLACK_CLIENT_ID);
@@ -57,7 +58,7 @@ const app = new Hono()
 			return c.redirect(`${SITE_URL}?error=missing_code`);
 		}
 
-		const redirectUri = `${c.req.url.split("/oauth")[0]}/oauth/callback`;
+		const redirectUri = `${API_URL}/slash/oauth/callback`;
 
 		try {
 			// Exchange code for access token
