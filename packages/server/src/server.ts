@@ -1,6 +1,8 @@
 import { Db } from "db";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+// Import actions to register them at startup
+import "./actions";
 import { env } from "./env";
 import commandRoutes from "./routes/slack";
 import uiRoutes from "./routes/ui";

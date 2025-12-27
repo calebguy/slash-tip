@@ -1,6 +1,7 @@
 import {
 	bigint,
 	integer,
+	jsonb,
 	pgTable,
 	serial,
 	text,
@@ -16,6 +17,9 @@ export const organizations = pgTable("organizations", {
 	slackBotToken: text("slack_bot_token"),
 	paidAt: timestamp("paid_at"),
 	dailyAllowance: integer("daily_allowance").notNull().default(3),
+	// Action configuration
+	actionType: text("action_type").notNull().default("mint_erc1155"),
+	actionConfig: jsonb("action_config"),
 	createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

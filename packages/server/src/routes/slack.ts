@@ -1,19 +1,18 @@
 import type { Organization } from "db";
 import { Hono } from "hono";
 import type { Hex } from "viem";
+import { getAction } from "../actions";
 import {
 	getAllowance,
 	getLeaderBoard,
 	getUserAddress,
 	getUserExists,
-	mint,
 	register,
 } from "../chain";
-import { DAILY_ALLOWANCE, SITE_URL } from "../constants";
+import { SITE_URL } from "../constants";
 import { mustBeRegistered } from "../middleware/mustBeRegistered";
 import { slackAuth } from "../middleware/slackAuth";
 import { withOrg } from "../middleware/withOrg";
-import { selfLovePoem, stealingPoem } from "../openai";
 import { db } from "../server";
 import { Commands, type SlackSlashCommandPayload } from "../types";
 import {
@@ -21,7 +20,6 @@ import {
 	extractFirstWord,
 	isEthAddress,
 	parseTipCommandArgs,
-	toStar,
 } from "../utils";
 import { getAddressFromENS } from "../viem";
 
@@ -105,93 +103,58 @@ const app = new Hono<Env>()
 		});
 	})
 	.post(Commands.Tip, mustBeRegistered, async (c) => {
-		const { text, user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
+		const org = c.get("org");
+		const body = await c.req.parseBody<SlackSlashCommandPayload>();
+		const { id, amount: _amount, message } = parseTipCommandArgs(body.text);
 
-		const { id, amount: _amount, message } = parseTipCommandArgs(text);
 		console.log("got from slack", { id, amount: _amount, message });
 
+		// Basic parsing validation
 		if (!id) {
 			return c.json({
 				response_type: "ephemeral",
-				text: "Could not parse tipee",
-			});
-		}
-
-		if (!(await getUserExists(id))) {
-			return c.json({
-				response_type: "in_channel",
-				text: `<@${id}> someone just tried to tip you! Register with '/register <your-ens.ens | your-eth-address>' to accept tips`,
+				text: "Could not parse recipient. Usage: /tip @user amount [message]",
 			});
 		}
 
 		if (!_amount) {
 			return c.json({
 				response_type: "ephemeral",
-				text: "Could not parse amount",
+				text: "Could not parse amount. Usage: /tip @user amount [message]",
 			});
 		}
 
 		const amount = Number(_amount);
-		if (amount < 0) {
-			const text = await stealingPoem();
-			return c.json({
-				response_type: "ephemeral",
-				text,
-			});
-		}
 
-		if (amount === 0) {
-			return c.json({
-				response_type: "ephemeral",
-				text: "You can't tip 0 srry!",
-			});
-		}
+		// Get the action for this org
+		const action = getAction(org.actionType);
 
-		const allowance = await getAllowance(user_id);
-		if (allowance < BigInt(amount)) {
-			return c.json({
-				response_type: "ephemeral",
-				text: `Insufficient allowance, you only have ${allowance.toString()} more tips left to give today. Every day at 9am CT your allowance will increase by ${toStar(
-					DAILY_ALLOWANCE,
-				)}.`,
-			});
-		}
-
-		const hash = await mint({
-			from: user_id,
-			to: id,
+		// Build params for the action
+		const params = {
+			org,
+			fromUserId: body.user_id,
+			toUserId: id,
 			amount,
-			data: message,
-		});
-		console.log(`minted ${amount} to ${id} from ${user_id} with hash ${hash}`);
+			message: message || "",
+			raw: body,
+		};
 
-		const blocks = [
-			{
-				type: "section",
-				text: {
-					type: "mrkdwn",
-					text: `+${amount.toString()} ${message ? `(${message})` : ""}\n<@${user_id}> ->-> <@${id}>`,
-				},
-			},
-		];
-
-		if (user_id === id) {
-			const selfHelp = await selfLovePoem();
-			console.log(`user ${user_id} tipped themselves, with poem ${selfHelp}`);
-			if (selfHelp) {
-				blocks.push({
-					type: "section",
-					text: {
-						type: "mrkdwn",
-						text: selfHelp,
-					},
-				});
-			}
+		// Validate
+		const validation = await action.validate(params);
+		if (!validation.valid) {
+			return c.json({
+				response_type: "ephemeral",
+				text: validation.error || "Validation failed",
+			});
 		}
+
+		// Execute the action
+		const result = await action.execute(params);
 
 		return c.json({
-			response_type: "in_channel",
-			blocks,
+			response_type: result.response.type,
+			text: result.response.text,
+			blocks: result.response.blocks,
 		});
 	})
 	.post(Commands.Info, mustBeRegistered, async (c) => {
