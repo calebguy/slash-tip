@@ -13,7 +13,8 @@
 		"next": "^14.2.20",
 		"node-emoji": "^2.2.0",
 		"react": "^18.3.1",
-		"react-dom": "^18.3.1"
+		"react-dom": "^18.3.1",
+		"react-icons": "^5.5.0"
 	},
 	"devDependencies": {
 		"@tailwindcss/postcss": "^4.0.14",
