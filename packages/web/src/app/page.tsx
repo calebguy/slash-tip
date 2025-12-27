@@ -9,7 +9,7 @@ export default function LandingPage() {
 					Onchain kudos for your Slack workspace
 				</p>
 				<Link
-					href="/syndicate"
+					href="/syndicateio"
 					className="inline-block text-2xl font-thin text-orange hover:text-slime transition-colors"
 				>
 					View Demo →
