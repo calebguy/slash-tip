@@ -4,6 +4,7 @@ import { cors } from "hono/cors";
 // Import actions to register them at startup
 import "./actions";
 import { env } from "./env";
+import oauthRoutes from "./routes/oauth";
 import commandRoutes from "./routes/slack";
 import uiRoutes from "./routes/ui";
 
@@ -20,6 +21,7 @@ app.get("/health", (c) => c.json({ status: "ok" }));
 
 const api = app
 	.basePath("/slash")
+	.route("/oauth", oauthRoutes)
 	.route("/ui", uiRoutes)
 	.route("/slack", commandRoutes);
 
