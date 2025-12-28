@@ -11,6 +11,17 @@ export default async function BalancePage({ params }: Props) {
 	const { org } = await params;
 	const data = await getLeaderboard(org);
 
+	if (data.length === 0) {
+		return (
+			<div className="flex flex-col items-center justify-center h-full text-center">
+				<p className="text-paper/60 font-thin text-xl">No balances yet</p>
+				<p className="text-paper/40 font-thin text-lg mt-2">
+					Use /tip in Slack to get started
+				</p>
+			</div>
+		);
+	}
+
 	return (
 		<>
 			{data.map((user) => (

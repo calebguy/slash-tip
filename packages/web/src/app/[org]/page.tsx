@@ -14,6 +14,17 @@ export default async function ActivityPage({ params }: Props) {
 	const { org } = await params;
 	const data = await getActivity(org);
 
+	if (data.length === 0) {
+		return (
+			<div className="flex flex-col items-center justify-center h-full text-center">
+				<p className="text-paper/60 font-thin text-xl">No activity yet</p>
+				<p className="text-paper/40 font-thin text-lg mt-2">
+					Use /tip in Slack to get started
+				</p>
+			</div>
+		);
+	}
+
 	return (
 		<div className="font-thin flex flex-col gap-1 select-none">
 			{data.map((item) => (
