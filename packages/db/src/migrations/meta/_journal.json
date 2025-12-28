@@ -36,6 +36,13 @@
       "when": 1766876969141,
       "tag": "0004_spooky_ikaris",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1766880754525,
+      "tag": "0005_wild_thaddeus_ross",
+      "breakpoints": true
     }
   ]
 }
