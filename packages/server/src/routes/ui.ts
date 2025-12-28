@@ -24,6 +24,20 @@ const app = new Hono()
 		return c.json(tips.map(tipWithUsersToJsonSafe));
 	})
 	// Org-scoped routes
+	.get("/:org", async (c) => {
+		const slug = c.req.param("org");
+		const [org] = await db.getOrgBySlug(slug);
+
+		if (!org) {
+			return c.json({ error: "Organization not found" }, 404);
+		}
+
+		return c.json({
+			slug: org.slug,
+			name: org.name,
+			logoUrl: org.logoUrl,
+		});
+	})
 	.get("/:org/leaderboard", async (c) => {
 		const slug = c.req.param("org");
 		const [org] = await db.getOrgBySlug(slug);
@@ -32,11 +46,17 @@ const app = new Hono()
 			return c.json({ error: "Organization not found" }, 404);
 		}
 
-		// TODO: Filter leaderboard by org once chain supports it
-		// For now, return all leaderboard data
+		// Get users for this org and filter leaderboard
+		const orgUsers = await db.getUsersByOrg(org.id);
+		const orgUserIds = new Set(orgUsers.map((u) => u.id));
+
 		const leaderboard = await getLeaderBoard();
+		const filteredLeaderboard = leaderboard.filter(({ user }) =>
+			orgUserIds.has(user.id),
+		);
+
 		return c.json(
-			leaderboard.map(
+			filteredLeaderboard.map(
 				({ balance, user: { allowance, nickname, id, account } }) => ({
 					balance: balance.toString(),
 					allowance: allowance.toString(),

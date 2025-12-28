@@ -13,6 +13,7 @@ export const organizations = pgTable("organizations", {
 	id: uuid("id").primaryKey().defaultRandom(),
 	slug: text("slug").notNull().unique(),
 	name: text("name").notNull(),
+	logoUrl: text("logo_url"),
 	slackTeamId: text("slack_team_id").unique(),
 	slackBotToken: text("slack_bot_token"),
 	paidAt: timestamp("paid_at"),

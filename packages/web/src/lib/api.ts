@@ -4,6 +4,12 @@ if (!API_BASE) {
 	throw new Error("API_URL is not defined");
 }
 
+export type Org = {
+	slug: string;
+	name: string;
+	logoUrl: string | null;
+};
+
 export type User = {
 	nickname: string;
 	account: string;
@@ -17,6 +23,19 @@ export type ActivityItem = {
 	fromUser: { nickname: string } | null;
 	toUser: { nickname: string } | null;
 };
+
+export async function getOrg(org: string): Promise<Org> {
+	const res = await fetch(`${API_BASE}/slash/ui/${org}`, {
+		next: { revalidate: 60 },
+	});
+	if (!res.ok) {
+		if (res.status === 404) {
+			throw new Error("Organization not found");
+		}
+		throw new Error("Failed to fetch organization");
+	}
+	return res.json();
+}
 
 export async function getLeaderboard(org: string): Promise<User[]> {
 	const res = await fetch(`${API_BASE}/slash/ui/${org}/leaderboard`, {

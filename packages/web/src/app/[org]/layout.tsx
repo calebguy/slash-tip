@@ -1,5 +1,6 @@
 import { Footer } from "@/components/Footer";
 import { SidebarNav } from "@/components/SidebarNav";
+import { getOrg } from "@/lib/api";
 
 type Props = {
 	children: React.ReactNode;
@@ -8,6 +9,7 @@ type Props = {
 
 export default async function OrgLayout({ children, params }: Props) {
 	const { org } = await params;
+	const orgData = await getOrg(org);
 
 	return (
 		<div className="flex flex-col min-h-dvh">
@@ -24,7 +26,7 @@ export default async function OrgLayout({ children, params }: Props) {
 					</div>
 				</div>
 			</div>
-			<Footer />
+			<Footer logoUrl={orgData.logoUrl} orgName={orgData.name} />
 		</div>
 	);
 }
