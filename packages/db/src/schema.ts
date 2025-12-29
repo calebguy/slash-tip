@@ -15,11 +15,13 @@ export const organizations = pgTable("organizations", {
 	name: text("name").notNull(),
 	logoUrl: text("logo_url"),
 	slackTeamId: text("slack_team_id").unique(),
-	slackBotToken: text("slack_bot_token"),
+	slackBotToken: text("slack_bot_token").notNull(),
 	paidAt: timestamp("paid_at"),
 	dailyAllowance: integer("daily_allowance").notNull().default(3),
 	// Action configuration
-	actionType: text("action_type").notNull().default("syndicate_send_transaction"),
+	actionType: text("action_type")
+		.notNull()
+		.default("syndicate_send_transaction"),
 	actionConfig: jsonb("action_config"),
 	createdAt: timestamp("created_at").notNull().defaultNow(),
 });

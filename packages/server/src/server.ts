@@ -4,6 +4,7 @@ import { cors } from "hono/cors";
 // Import actions to register them at startup
 import "./actions";
 import { env } from "./env";
+import eventsRoutes from "./routes/events";
 import oauthRoutes from "./routes/oauth";
 import commandRoutes from "./routes/slack";
 import uiRoutes from "./routes/ui";
@@ -23,7 +24,8 @@ const api = app
 	.basePath("/slash")
 	.route("/oauth", oauthRoutes)
 	.route("/ui", uiRoutes)
-	.route("/slack", commandRoutes);
+	.route("/slack", commandRoutes)
+	.route("/events", eventsRoutes);
 
 export type ApiType = typeof api;
 export default {

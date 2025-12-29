@@ -1,0 +1,249 @@
+import { Hono } from "hono";
+import {
+	deployERC1155,
+	deployERC20,
+	deployERC20Vault,
+} from "../deploy/factory";
+import { db } from "../server";
+import {
+	publishAppHome,
+	openTokenTypeModal,
+	openERC1155ConfigModal,
+	openERC20ConfigModal,
+	openERC20VaultConfigModal,
+} from "../slack/appHome";
+
+interface SlackEvent {
+	type: string;
+	user: string;
+	channel?: string;
+	tab?: string;
+	event_ts?: string;
+}
+
+interface SlackEventPayload {
+	type: string;
+	token?: string;
+	challenge?: string;
+	team_id?: string;
+	event?: SlackEvent;
+}
+
+interface SlackInteractionPayload {
+	type: string;
+	user: { id: string };
+	team: { id: string };
+	trigger_id: string;
+	actions?: Array<{ action_id: string; value?: string }>;
+	view?: {
+		callback_id: string;
+		state: {
+			values: Record<string, Record<string, { value?: string; selected_option?: { value: string } }>>;
+		};
+		private_metadata?: string;
+	};
+}
+
+const app = new Hono()
+	/**
+	 * POST /events
+	 * Handles Slack Events API (app_home_opened, etc.)
+	 */
+	.post("/", async (c) => {
+		const body = await c.req.json<SlackEventPayload>();
+
+		// Handle URL verification challenge
+		if (body.type === "url_verification") {
+			return c.json({ challenge: body.challenge });
+		}
+
+		// Handle events
+		if (body.type === "event_callback" && body.event) {
+			const event = body.event;
+			const teamId = body.team_id;
+
+			if (event.type === "app_home_opened" && event.tab === "home" && teamId) {
+				console.log(`App home opened by ${event.user} in team ${teamId}`);
+
+				// Get org by team ID
+				const [org] = await db.getOrgBySlackTeamId(teamId);
+				if (org?.slackBotToken) {
+					await publishAppHome(org, event.user);
+				}
+			}
+		}
+
+		return c.json({ ok: true });
+	})
+
+	/**
+	 * POST /interactions
+	 * Handles Slack interactive components (buttons, modals)
+	 */
+	.post("/interactions", async (c) => {
+		const formData = await c.req.formData();
+		const payloadStr = formData.get("payload") as string;
+		const payload: SlackInteractionPayload = JSON.parse(payloadStr);
+
+		console.log("Interaction received:", payload.type);
+
+		const teamId = payload.team.id;
+		const [org] = await db.getOrgBySlackTeamId(teamId);
+
+		if (!org?.slackBotToken) {
+			console.error("No org or bot token found for team:", teamId);
+			return c.json({ ok: false });
+		}
+
+		// Handle button clicks
+		if (payload.type === "block_actions" && payload.actions) {
+			const action = payload.actions[0];
+
+			if (action.action_id === "setup_start") {
+				await openTokenTypeModal(org, payload.trigger_id);
+			}
+		}
+
+		// Handle modal submissions
+		if (payload.type === "view_submission" && payload.view) {
+			const callbackId = payload.view.callback_id;
+			const values = payload.view.state.values;
+
+			// Token type selection
+			if (callbackId === "token_type_select") {
+				const tokenType = values.token_type?.token_type_select?.selected_option?.value;
+
+				if (tokenType === "erc1155") {
+					await openERC1155ConfigModal(org, payload.trigger_id);
+				} else if (tokenType === "erc20") {
+					await openERC20ConfigModal(org, payload.trigger_id);
+				} else if (tokenType === "erc20_vault") {
+					await openERC20VaultConfigModal(org, payload.trigger_id);
+				}
+
+				// Return empty response to close the modal and open the next one
+				return c.body(null, 200);
+			}
+
+			// ERC1155 config submission
+			if (callbackId === "erc1155_config") {
+				const baseUri = values.base_uri?.base_uri_input?.value || "";
+				const contractUri = values.contract_uri?.contract_uri_input?.value || "";
+				const tokenId = values.token_id?.token_id_input?.value || "0";
+				const dailyAllowance = values.daily_allowance?.daily_allowance_input?.value || "3";
+
+				console.log("Deploying ERC1155 setup:", { baseUri, contractUri, tokenId, dailyAllowance });
+
+				// Deploy contracts via Syndicate
+				const deployResult = await deployERC1155({
+					orgId: org.id,
+					baseUri,
+					contractUri,
+					tokenId: Number(tokenId),
+				});
+
+				if (!deployResult.success) {
+					console.error("ERC1155 deployment failed:", deployResult.error);
+					// Still save config for retry later
+				}
+
+				// Update org config
+				const [updatedOrg] = await db.updateOrg(org.id, {
+					actionType: "erc1155_mint",
+					actionConfig: {
+						baseUri,
+						contractUri,
+						tokenId: Number(tokenId),
+						deploymentTxHash: deployResult.transactionHash,
+						deploymentStatus: deployResult.success ? "deployed" : "pending",
+					},
+					dailyAllowance: Number(dailyAllowance),
+				});
+
+				// Refresh app home with updated org
+				await publishAppHome(updatedOrg || org, payload.user.id);
+
+				return c.body(null, 200);
+			}
+
+			// ERC20 config submission
+			if (callbackId === "erc20_config") {
+				const tokenName = values.token_name?.token_name_input?.value || "";
+				const tokenSymbol = values.token_symbol?.token_symbol_input?.value || "";
+				const decimals = values.decimals?.decimals_input?.value || "18";
+				const dailyAllowance = values.daily_allowance?.daily_allowance_input?.value || "3";
+
+				console.log("Deploying ERC20 setup:", { tokenName, tokenSymbol, decimals, dailyAllowance });
+
+				// Deploy contracts via Syndicate
+				const deployResult = await deployERC20({
+					orgId: org.id,
+					tokenName,
+					tokenSymbol,
+					decimals: Number(decimals),
+				});
+
+				if (!deployResult.success) {
+					console.error("ERC20 deployment failed:", deployResult.error);
+					// Still save config for retry later
+				}
+
+				// Update org config
+				const [updatedOrg] = await db.updateOrg(org.id, {
+					actionType: "erc20_mint",
+					actionConfig: {
+						tokenName,
+						tokenSymbol,
+						decimals: Number(decimals),
+						deploymentTxHash: deployResult.transactionHash,
+						deploymentStatus: deployResult.success ? "deployed" : "pending",
+					},
+					dailyAllowance: Number(dailyAllowance),
+				});
+
+				// Refresh app home with updated org
+				await publishAppHome(updatedOrg || org, payload.user.id);
+
+				return c.body(null, 200);
+			}
+
+			// ERC20 Vault config submission
+			if (callbackId === "erc20_vault_config") {
+				const tokenAddress = values.token_address?.token_address_input?.value || "";
+				const dailyAllowance = values.daily_allowance?.daily_allowance_input?.value || "3";
+
+				console.log("Deploying ERC20 Vault setup:", { tokenAddress, dailyAllowance });
+
+				// Deploy contracts via Syndicate
+				const deployResult = await deployERC20Vault({
+					orgId: org.id,
+					tokenAddress,
+				});
+
+				if (!deployResult.success) {
+					console.error("ERC20 Vault deployment failed:", deployResult.error);
+					// Still save config for retry later
+				}
+
+				// Update org config
+				const [updatedOrg] = await db.updateOrg(org.id, {
+					actionType: "erc20_vault",
+					actionConfig: {
+						tokenAddress,
+						deploymentTxHash: deployResult.transactionHash,
+						deploymentStatus: deployResult.success ? "deployed" : "pending",
+					},
+					dailyAllowance: Number(dailyAllowance),
+				});
+
+				// Refresh app home with updated org
+				await publishAppHome(updatedOrg || org, payload.user.id);
+
+				return c.body(null, 200);
+			}
+		}
+
+		return c.json({ ok: true });
+	});
+
+export default app;

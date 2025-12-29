@@ -29,7 +29,7 @@ const app = new Hono()
 	 * Redirects to Slack's OAuth authorization page
 	 */
 	.get("/install", (c) => {
-		const scopes = ["commands", "chat:write"].join(",");
+		const scopes = ["commands", "chat:write", "app_mentions:read"].join(",");
 		const redirectUri = `${API_URL}/slash/oauth/callback`;
 
 		const slackAuthUrl = new URL("https://slack.com/oauth/v2/authorize");
@@ -109,7 +109,7 @@ const app = new Hono()
 				slug,
 				name: data.team.name,
 				slackTeamId: data.team.id,
-				slackBotToken: data.access_token,
+				slackBotToken: data.access_token || "",
 				actionType: "syndicate_send_transaction",
 				// actionConfig will need to be set up separately by admin
 			});

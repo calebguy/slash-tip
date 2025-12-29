@@ -10,6 +10,13 @@ export const env = {
 	PORT: process.env.PORT || "4000",
 };
 
+// Optional env vars (checked at runtime when needed)
+export const optionalEnv = {
+	// V2 Factory deployment
+	SLASH_TIP_FACTORY_ADDRESS: process.env.SLASH_TIP_FACTORY_ADDRESS as string | undefined,
+	SLASH_TIP_ADMIN_ADDRESS: process.env.SLASH_TIP_ADMIN_ADDRESS as string | undefined,
+};
+
 for (const key in env) {
 	if (!env[key as keyof typeof env]) {
 		throw new Error(`Environment variable ${key} is missing`);
