@@ -215,6 +215,7 @@ const app = new Hono<Env>()
 	})
 	.post(Commands.Activity, async (c) => {
 		const org = c.get("org");
+		console.log(`Fetching activity for org ${org.slug}`);
 		const activity = await db.getTipsByOrg(org.id, 6);
 		const blocks = activity.map(({ fromUser, toUser, amount }) => ({
 			type: "section",
