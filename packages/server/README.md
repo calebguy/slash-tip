@@ -1,13 +1,3 @@
-# /tip
+# @slash-tip/server
 
-Install deps:
-```sh
-bun install
-```
-
-Run:
-```sh
-bun run dev
-```
-
-open http://localhost:3000
+Backend API server handling Slack commands, OAuth, and tip execution via Syndicate.

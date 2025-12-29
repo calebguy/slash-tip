@@ -1,15 +1,3 @@
-# db
+# @slash-tip/db
 
-To install dependencies:
-
-```bash
-bun install
-```
-
-To run:
-
-```bash
-bun run index.ts
-```
-
-This project was created using `bun init` in bun v1.2.0. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
+Database schema and queries for storing organizations, users, and tip history.
