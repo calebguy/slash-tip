@@ -12,17 +12,18 @@ contract TipERC1155 is ERC1155, AccessControl {
 
     bytes32 public constant TIP_MINTER = keccak256("TIP_MINTER");
 
-    string public name;
     string public baseURI;
+    string public contractURI;
 
     event BaseURIUpdated(string oldURI, string newURI);
+    event ContractURIUpdated(string oldURI, string newURI);
 
-    constructor(address _admin, string memory _name, string memory _baseURI) {
+    constructor(address _admin, string memory _baseURI, string memory _contractURI) {
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(TIP_MINTER, _admin);
 
-        name = _name;
         baseURI = _baseURI;
+        contractURI = _contractURI;
     }
 
     /// @notice Get the URI for a token ID
@@ -70,15 +71,26 @@ contract TipERC1155 is ERC1155, AccessControl {
         emit BaseURIUpdated(oldURI, _baseURI);
     }
 
+    /// @notice Update the contract URI (collection-level metadata)
+    /// @param _contractURI The new contract URI
+    function setContractURI(string memory _contractURI) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        string memory oldURI = contractURI;
+        contractURI = _contractURI;
+        emit ContractURIUpdated(oldURI, _contractURI);
+    }
+
     /// @notice Check if the contract supports an interface
     /// @param interfaceId The interface ID
     /// @return True if supported
     function supportsInterface(bytes4 interfaceId)
         public
-        view
+        pure
         override(ERC1155, AccessControl)
         returns (bool)
     {
-        return super.supportsInterface(interfaceId);
+        return
+            interfaceId == 0xd9b67a26 || // ERC1155
+            interfaceId == 0x0e89341c || // ERC1155MetadataURI
+            interfaceId == 0x01ffc9a7;   // ERC165
     }
 }

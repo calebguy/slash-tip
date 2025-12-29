@@ -46,8 +46,8 @@ contract SlashTipFactory is AccessControl {
     /// @notice Deploy a full SlashTip setup with a new ERC1155 token
     /// @param _orgId Unique organization identifier
     /// @param _admin Admin address for the deployed contracts
-    /// @param _tokenName Name for the ERC1155 token
     /// @param _tokenBaseURI Base URI for token metadata
+    /// @param _contractURI Contract-level metadata URI
     /// @param _tokenId The token ID to use for tips
     /// @return slashTip The deployed SlashTip contract address
     /// @return userRegistry The deployed UserRegistry contract address
@@ -56,8 +56,8 @@ contract SlashTipFactory is AccessControl {
     function deployWithERC1155(
         string calldata _orgId,
         address _admin,
-        string calldata _tokenName,
         string calldata _tokenBaseURI,
+        string calldata _contractURI,
         uint256 _tokenId
     )
         external
@@ -75,7 +75,7 @@ contract SlashTipFactory is AccessControl {
         userRegistry = address(new UserRegistry(address(this), _orgId));
 
         // 2. Deploy TipERC1155 token
-        tipToken = address(new TipERC1155(address(this), _tokenName, _tokenBaseURI));
+        tipToken = address(new TipERC1155(address(this), _tokenBaseURI, _contractURI));
 
         // 3. Deploy ERC1155MintAction
         tipAction = address(new ERC1155MintAction(address(this), tipToken, _tokenId));
