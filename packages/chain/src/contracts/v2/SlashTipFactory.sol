@@ -8,6 +8,7 @@ import {TipERC1155} from "./TipERC1155.sol";
 import {TipERC20} from "./TipERC20.sol";
 import {ERC1155MintAction} from "./ERC1155MintAction.sol";
 import {ERC20MintAction} from "./ERC20MintAction.sol";
+import {ERC20VaultAction} from "./ERC20VaultAction.sol";
 import {ITipAction} from "./ITipAction.sol";
 
 /// @title SlashTipFactory
@@ -175,6 +176,60 @@ contract SlashTipFactory is AccessControl {
         emit OrgDeployed(_orgId, _admin, slashTip, userRegistry, tipAction, tipToken);
     }
 
+    /// @notice Deploy a SlashTip setup with an ERC20 vault (uses existing token)
+    /// @param _orgId Unique organization identifier
+    /// @param _admin Admin address for the deployed contracts
+    /// @param _token Address of the existing ERC20 token to use
+    /// @return slashTip The deployed SlashTip contract address
+    /// @return userRegistry The deployed UserRegistry contract address
+    /// @return tipAction The deployed ERC20VaultAction contract address
+    function deployWithERC20Vault(
+        string calldata _orgId,
+        address _admin,
+        address _token
+    )
+        external
+        onlyRole(FACTORY_MANAGER)
+        returns (
+            address slashTip,
+            address userRegistry,
+            address tipAction
+        )
+    {
+        if (orgs[_orgId].exists) revert OrgAlreadyExists(_orgId);
+
+        // 1. Deploy UserRegistry
+        userRegistry = address(new UserRegistry(address(this), _orgId));
+
+        // 2. Deploy ERC20VaultAction (uses existing token)
+        tipAction = address(new ERC20VaultAction(address(this), _token));
+
+        // 3. Deploy SlashTip
+        slashTip = address(new SlashTip(address(this), userRegistry, tipAction, _orgId));
+
+        // 4. Grant permissions
+        // SlashTip needs REGISTRY_MANAGER role on UserRegistry
+        UserRegistry(userRegistry).grantRole(
+            UserRegistry(userRegistry).REGISTRY_MANAGER(),
+            slashTip
+        );
+
+        // 5. Transfer admin roles to the specified admin
+        _transferERC20VaultAdminRoles(slashTip, userRegistry, tipAction, _admin);
+
+        // 6. Store deployment info (tipToken is the existing token address for reference)
+        orgs[_orgId] = OrgDeployment({
+            slashTip: slashTip,
+            userRegistry: userRegistry,
+            tipAction: tipAction,
+            tipToken: _token,
+            exists: true
+        });
+        orgIds.push(_orgId);
+
+        emit OrgDeployed(_orgId, _admin, slashTip, userRegistry, tipAction, _token);
+    }
+
     /// @notice Deploy a SlashTip setup with a custom tip action (BYOC)
     /// @param _orgId Unique organization identifier
     /// @param _admin Admin address for the deployed contracts
@@ -300,6 +355,22 @@ contract SlashTipFactory is AccessControl {
         TipERC20(_tipToken).grantRole(TipERC20(_tipToken).TIP_MINTER(), _admin);
         TipERC20(_tipToken).renounceRole(TipERC20(_tipToken).DEFAULT_ADMIN_ROLE(), address(this));
         TipERC20(_tipToken).renounceRole(TipERC20(_tipToken).TIP_MINTER(), address(this));
+    }
+
+    /// @dev Transfer admin roles from factory to specified admin (ERC20 vault deployment)
+    function _transferERC20VaultAdminRoles(
+        address _slashTip,
+        address _userRegistry,
+        address _tipAction,
+        address _admin
+    ) internal {
+        _transferCoreAdminRoles(_slashTip, _userRegistry, _admin);
+
+        // ERC20VaultAction
+        ERC20VaultAction(_tipAction).grantRole(ERC20VaultAction(_tipAction).DEFAULT_ADMIN_ROLE(), _admin);
+        ERC20VaultAction(_tipAction).grantRole(ERC20VaultAction(_tipAction).VAULT_MANAGER(), _admin);
+        ERC20VaultAction(_tipAction).renounceRole(ERC20VaultAction(_tipAction).DEFAULT_ADMIN_ROLE(), address(this));
+        ERC20VaultAction(_tipAction).renounceRole(ERC20VaultAction(_tipAction).VAULT_MANAGER(), address(this));
     }
 
     /// @dev Transfer core admin roles (UserRegistry + SlashTip)
