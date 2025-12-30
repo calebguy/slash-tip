@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import {ITipAction} from "./ITipAction.sol";
 import {AccessControl} from "openzeppelin/access/AccessControl.sol";
+import {Initializable} from "openzeppelin/proxy/utils/Initializable.sol";
 
 /// @notice Interface for mintable ERC1155 tokens
 interface IERC1155Mintable {
@@ -11,7 +12,8 @@ interface IERC1155Mintable {
 
 /// @title ERC1155MintAction
 /// @notice Tip action that mints ERC1155 tokens to the recipient
-contract ERC1155MintAction is ITipAction, AccessControl {
+/// @dev Uses Initializable for beacon proxy pattern
+contract ERC1155MintAction is Initializable, ITipAction, AccessControl {
     bytes32 public constant ACTION_MANAGER = keccak256("ACTION_MANAGER");
 
     IERC1155Mintable public token;
@@ -20,7 +22,16 @@ contract ERC1155MintAction is ITipAction, AccessControl {
     event TokenUpdated(address indexed oldToken, address indexed newToken);
     event TokenIdUpdated(uint256 oldTokenId, uint256 newTokenId);
 
-    constructor(address _admin, address _token, uint256 _tokenId) {
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    /// @notice Initialize the contract (replaces constructor for proxy pattern)
+    /// @param _admin The admin address
+    /// @param _token The ERC1155 token contract address
+    /// @param _tokenId The token ID to mint
+    function initialize(address _admin, address _token, uint256 _tokenId) external initializer {
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(ACTION_MANAGER, _admin);
 

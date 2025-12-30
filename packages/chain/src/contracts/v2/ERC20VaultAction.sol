@@ -3,13 +3,14 @@ pragma solidity ^0.8.13;
 
 import {ITipAction} from "./ITipAction.sol";
 import {AccessControl} from "openzeppelin/access/AccessControl.sol";
+import {Initializable} from "openzeppelin/proxy/utils/Initializable.sol";
 import {IERC20} from "openzeppelin/token/ERC20/IERC20.sol";
 import {SafeERC20} from "openzeppelin/token/ERC20/utils/SafeERC20.sol";
 
 /// @title ERC20VaultAction
 /// @notice Tip action that transfers ERC20 tokens from a vault to recipients
-/// @dev Holds ERC20 tokens and distributes them as tips
-contract ERC20VaultAction is ITipAction, AccessControl {
+/// @dev Holds ERC20 tokens and distributes them as tips. Uses Initializable for beacon proxy pattern.
+contract ERC20VaultAction is Initializable, ITipAction, AccessControl {
     using SafeERC20 for IERC20;
 
     bytes32 public constant VAULT_MANAGER = keccak256("VAULT_MANAGER");
@@ -22,7 +23,15 @@ contract ERC20VaultAction is ITipAction, AccessControl {
 
     error InsufficientVaultBalance(uint256 available, uint256 required);
 
-    constructor(address _admin, address _token) {
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    /// @notice Initialize the contract (replaces constructor for proxy pattern)
+    /// @param _admin The admin address
+    /// @param _token The ERC20 token contract address
+    function initialize(address _admin, address _token) external initializer {
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(VAULT_MANAGER, _admin);
 

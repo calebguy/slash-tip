@@ -2,10 +2,12 @@
 pragma solidity ^0.8.13;
 
 import {AccessControl} from "openzeppelin/access/AccessControl.sol";
+import {Initializable} from "openzeppelin/proxy/utils/Initializable.sol";
 
 /// @title UserRegistry
 /// @notice Maps external user IDs (e.g., Slack IDs) to wallet addresses and manages allowances
-contract UserRegistry is AccessControl {
+/// @dev Uses Initializable for beacon proxy pattern
+contract UserRegistry is Initializable, AccessControl {
     bytes32 public constant REGISTRY_MANAGER = keccak256("REGISTRY_MANAGER");
 
     struct User {
@@ -27,7 +29,15 @@ contract UserRegistry is AccessControl {
     error UserAlreadyExists(string id);
     error InvalidUser();
 
-    constructor(address _admin, string memory _orgId) {
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    /// @notice Initialize the contract (replaces constructor for proxy pattern)
+    /// @param _admin The admin address
+    /// @param _orgId The organization ID
+    function initialize(address _admin, string memory _orgId) external initializer {
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(REGISTRY_MANAGER, _admin);
         orgId = _orgId;

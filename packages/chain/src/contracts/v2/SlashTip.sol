@@ -2,12 +2,14 @@
 pragma solidity ^0.8.13;
 
 import {AccessControl} from "openzeppelin/access/AccessControl.sol";
+import {Initializable} from "openzeppelin/proxy/utils/Initializable.sol";
 import {UserRegistry} from "./UserRegistry.sol";
 import {ITipAction} from "./ITipAction.sol";
 
 /// @title SlashTip
 /// @notice Orchestrates tipping by validating allowances and executing tip actions
-contract SlashTip is AccessControl {
+/// @dev Uses Initializable for beacon proxy pattern
+contract SlashTip is Initializable, AccessControl {
     bytes32 public constant TIP_MANAGER = keccak256("TIP_MANAGER");
 
     string public orgId;
@@ -30,12 +32,22 @@ contract SlashTip is AccessControl {
     error InsufficientAllowance(string userId, uint256 allowance, uint256 required);
     error UserNotFound(string userId);
 
-    constructor(
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    /// @notice Initialize the contract (replaces constructor for proxy pattern)
+    /// @param _admin The admin address
+    /// @param _userRegistry The user registry contract address
+    /// @param _tipAction The tip action contract address
+    /// @param _orgId The organization ID
+    function initialize(
         address _admin,
         address _userRegistry,
         address _tipAction,
         string memory _orgId
-    ) {
+    ) external initializer {
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(TIP_MANAGER, _admin);
 

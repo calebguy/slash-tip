@@ -3,11 +3,13 @@ pragma solidity ^0.8.13;
 
 import {ERC1155} from "solmate/tokens/ERC1155.sol";
 import {AccessControl} from "openzeppelin/access/AccessControl.sol";
+import {Initializable} from "openzeppelin/proxy/utils/Initializable.sol";
 import {Strings} from "openzeppelin/utils/Strings.sol";
 
 /// @title TipERC1155
 /// @notice ERC1155 token representing tips
-contract TipERC1155 is ERC1155, AccessControl {
+/// @dev Uses Initializable for beacon proxy pattern
+contract TipERC1155 is Initializable, ERC1155, AccessControl {
     using Strings for uint256;
 
     bytes32 public constant TIP_MINTER = keccak256("TIP_MINTER");
@@ -18,7 +20,20 @@ contract TipERC1155 is ERC1155, AccessControl {
     event BaseURIUpdated(string oldURI, string newURI);
     event ContractURIUpdated(string oldURI, string newURI);
 
-    constructor(address _admin, string memory _baseURI, string memory _contractURI) {
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    /// @notice Initialize the contract (replaces constructor for proxy pattern)
+    /// @param _admin The admin address
+    /// @param _baseURI The base URI for token metadata
+    /// @param _contractURI The contract-level metadata URI
+    function initialize(
+        address _admin,
+        string memory _baseURI,
+        string memory _contractURI
+    ) external initializer {
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(TIP_MINTER, _admin);
 
