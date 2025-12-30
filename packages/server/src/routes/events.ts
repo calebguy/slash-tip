@@ -8,9 +8,9 @@ import { db } from "../server";
 import {
 	publishAppHome,
 	openTokenTypeModal,
-	openERC1155ConfigModal,
-	openERC20ConfigModal,
-	openERC20VaultConfigModal,
+	getERC1155ConfigView,
+	getERC20ConfigView,
+	getERC20VaultConfigView,
 } from "../slack/appHome";
 
 interface SlackEvent {
@@ -109,19 +109,24 @@ const app = new Hono()
 			const callbackId = payload.view.callback_id;
 			const values = payload.view.state.values;
 
-			// Token type selection
+			// Token type selection - return next view in response to avoid trigger_id expiration
 			if (callbackId === "token_type_select") {
 				const tokenType = values.token_type?.token_type_select?.selected_option?.value;
 
+				let nextView;
 				if (tokenType === "erc1155") {
-					await openERC1155ConfigModal(org, payload.trigger_id);
+					nextView = getERC1155ConfigView();
 				} else if (tokenType === "erc20") {
-					await openERC20ConfigModal(org, payload.trigger_id);
+					nextView = getERC20ConfigView();
 				} else if (tokenType === "erc20_vault") {
-					await openERC20VaultConfigModal(org, payload.trigger_id);
+					nextView = getERC20VaultConfigView();
 				}
 
-				// Return empty response to close the modal and open the next one
+				if (nextView) {
+					// Return response_action: push to push the next modal onto the stack
+					return c.json({ response_action: "push", view: nextView });
+				}
+
 				return c.body(null, 200);
 			}
 

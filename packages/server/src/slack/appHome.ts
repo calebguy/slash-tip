@@ -242,13 +242,10 @@ export async function openTokenTypeModal(
 }
 
 /**
- * Open the ERC1155 configuration modal
+ * Get the ERC1155 configuration modal view
  */
-export async function openERC1155ConfigModal(
-	org: Organization,
-	triggerId: string,
-): Promise<void> {
-	const view = {
+export function getERC1155ConfigView() {
+	return {
 		type: "modal",
 		callback_id: "erc1155_config",
 		title: {
@@ -341,21 +338,13 @@ export async function openERC1155ConfigModal(
 			},
 		],
 	};
-
-	await slackApi("views.push", org.slackBotToken, {
-		trigger_id: triggerId,
-		view,
-	});
 }
 
 /**
- * Open the ERC20 configuration modal
+ * Get the ERC20 configuration modal view
  */
-export async function openERC20ConfigModal(
-	org: Organization,
-	triggerId: string,
-): Promise<void> {
-	const view = {
+export function getERC20ConfigView() {
+	return {
 		type: "modal",
 		callback_id: "erc20_config",
 		title: {
@@ -446,21 +435,13 @@ export async function openERC20ConfigModal(
 			},
 		],
 	};
-
-	await slackApi("views.push", org.slackBotToken, {
-		trigger_id: triggerId,
-		view,
-	});
 }
 
 /**
- * Open the ERC20 Vault configuration modal
+ * Get the ERC20 Vault configuration modal view
  */
-export async function openERC20VaultConfigModal(
-	org: Organization,
-	triggerId: string,
-): Promise<void> {
-	const view = {
+export function getERC20VaultConfigView() {
+	return {
 		type: "modal",
 		callback_id: "erc20_vault_config",
 		title: {
@@ -527,9 +508,4 @@ export async function openERC20VaultConfigModal(
 			},
 		],
 	};
-
-	await slackApi("views.push", org.slackBotToken, {
-		trigger_id: triggerId,
-		view,
-	});
 }
