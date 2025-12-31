@@ -43,6 +43,13 @@
       "when": 1766880754525,
       "tag": "0005_wild_thaddeus_ross",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1767209652611,
+      "tag": "0006_same_johnny_blaze",
+      "breakpoints": true
     }
   ]
 }

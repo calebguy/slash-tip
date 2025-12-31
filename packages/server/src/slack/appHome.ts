@@ -37,8 +37,7 @@ export async function publishAppHome(
 	org: Organization,
 	userId: string,
 ): Promise<void> {
-	const isConfigured =
-		org.actionConfig && Object.keys(org.actionConfig).length > 0;
+	const isConfigured = org.actionType !== null;
 	const view = isConfigured
 		? getConfiguredHomeView(org)
 		: getUnconfiguredHomeView(org);

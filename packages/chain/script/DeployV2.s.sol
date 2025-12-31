@@ -81,6 +81,60 @@ contract DeployV2 is Script {
     }
 }
 
+/// @title RedeployFactory
+/// @notice Redeploy just the factory using existing implementation addresses
+/// @dev Run with: forge script script/DeployV2.s.sol:RedeployFactory --rpc-url $RPC_URL --broadcast --verify
+contract RedeployFactory is Script {
+    // Existing implementation addresses on Base Mainnet
+    address constant SLASH_TIP_IMPL = 0xAF9F2C21a085712535e28c070629382Ae4F31534;
+    address constant USER_REGISTRY_IMPL = 0xB765639c781e92B20754E9ee9B749941A6d8d30f;
+    address constant TIP_ERC1155_IMPL = 0xFaed9eCde814329026dC6258674a98040A1e8903;
+    address constant TIP_ERC20_IMPL = 0xaCf41658F6Ca80021D64ff5044fC2A8F7543C1C3;
+    address constant ERC1155_MINT_ACTION_IMPL = 0x57D46C53A522901235e9F59C44b38A79b7C883F8;
+    address constant ERC20_MINT_ACTION_IMPL = 0xAC7F5dE17761e03D59D710b0396894f2eA2E7942;
+    address constant ERC20_VAULT_ACTION_IMPL = 0x4FA419c7AfBD180D6aCC9E023Ea5bb6d5D7385A9;
+
+    function run() external {
+        uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
+        address admin = vm.envAddress("ADMIN_ADDRESS");
+
+        console.log("Redeploying factory with existing implementations...");
+        console.log("Admin address:", admin);
+
+        vm.startBroadcast(deployerPrivateKey);
+
+        SlashTipFactory factory = new SlashTipFactory(
+            admin,
+            SLASH_TIP_IMPL,
+            USER_REGISTRY_IMPL,
+            TIP_ERC1155_IMPL,
+            TIP_ERC20_IMPL,
+            ERC1155_MINT_ACTION_IMPL,
+            ERC20_MINT_ACTION_IMPL,
+            ERC20_VAULT_ACTION_IMPL
+        );
+
+        vm.stopBroadcast();
+
+        console.log("\n========== FACTORY REDEPLOYMENT ==========");
+        console.log("New SlashTipFactory:", address(factory));
+        console.log("");
+        console.log("Using existing implementations:");
+        console.log("  SlashTip:", SLASH_TIP_IMPL);
+        console.log("  UserRegistry:", USER_REGISTRY_IMPL);
+        console.log("  TipERC1155:", TIP_ERC1155_IMPL);
+        console.log("  TipERC20:", TIP_ERC20_IMPL);
+        console.log("  ERC1155MintAction:", ERC1155_MINT_ACTION_IMPL);
+        console.log("  ERC20MintAction:", ERC20_MINT_ACTION_IMPL);
+        console.log("  ERC20VaultAction:", ERC20_VAULT_ACTION_IMPL);
+        console.log("==========================================");
+        console.log("");
+        console.log("Next steps:");
+        console.log("1. Update SLASH_TIP_FACTORY_ADDRESS in your server .env");
+        console.log("2. The old factory at 0x1b7f53A1f5D2951275b6e3E1cb6Ad06333c8459F can be abandoned");
+    }
+}
+
 /// @title DeployOrg
 /// @notice Deploy a new organization using the factory
 /// @dev Run with: forge script script/DeployV2.s.sol:DeployOrg --rpc-url $RPC_URL --broadcast

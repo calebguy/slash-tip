@@ -18,10 +18,8 @@ export const organizations = pgTable("organizations", {
 	slackBotToken: text("slack_bot_token").notNull(),
 	paidAt: timestamp("paid_at"),
 	dailyAllowance: integer("daily_allowance").notNull().default(3),
-	// Action configuration
-	actionType: text("action_type")
-		.notNull()
-		.default("syndicate_send_transaction"),
+	// Action configuration (null = not yet configured)
+	actionType: text("action_type"),
 	actionConfig: jsonb("action_config"),
 	createdAt: timestamp("created_at").notNull().defaultNow(),
 });
