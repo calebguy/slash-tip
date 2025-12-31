@@ -110,8 +110,6 @@ const app = new Hono()
 				name: data.team.name,
 				slackTeamId: data.team.id,
 				slackBotToken: data.access_token || "",
-				actionType: "syndicate_send_transaction",
-				// actionConfig will need to be set up separately by admin
 			});
 
 			console.log(`Created new org: ${newOrg.slug}`);
