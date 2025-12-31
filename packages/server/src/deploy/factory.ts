@@ -43,7 +43,7 @@ export interface ERC20VaultDeploymentConfig {
  * Deploy a new ERC1155 tip setup for an organization
  */
 export async function deployERC1155(
-	config: ERC1155DeploymentConfig
+	config: ERC1155DeploymentConfig,
 ): Promise<DeploymentResult> {
 	if (!FACTORY_ADDRESS) {
 		console.error("SLASH_TIP_FACTORY_ADDRESS not set");
@@ -63,7 +63,7 @@ export async function deployERC1155(
 			projectId: PROJECT_ID,
 			contractAddress: FACTORY_ADDRESS,
 			functionSignature:
-				"deployWithERC1155(string _orgId, address _admin, string _tokenBaseURI, string _contractURI, uint256 _tokenId) returns (address slashTip, address userRegistry, address tipAction, address tipToken)",
+				"deployWithERC1155(string _orgId, address _admin, string _tokenBaseURI, string _contractURI, uint256 _tokenId)",
 			args: {
 				_orgId: config.orgId,
 				_admin: ADMIN_ADDRESS,
@@ -99,7 +99,7 @@ export async function deployERC1155(
  * Deploy a new ERC20 tip setup for an organization
  */
 export async function deployERC20(
-	config: ERC20DeploymentConfig
+	config: ERC20DeploymentConfig,
 ): Promise<DeploymentResult> {
 	if (!FACTORY_ADDRESS) {
 		console.error("SLASH_TIP_FACTORY_ADDRESS not set");
@@ -119,7 +119,7 @@ export async function deployERC20(
 			projectId: PROJECT_ID,
 			contractAddress: FACTORY_ADDRESS,
 			functionSignature:
-				"deployWithERC20(string _orgId, address _admin, string _tokenName, string _tokenSymbol, uint8 _tokenDecimals) returns (address slashTip, address userRegistry, address tipAction, address tipToken)",
+				"deployWithERC20(string _orgId, address _admin, string _tokenName, string _tokenSymbol, uint8 _tokenDecimals)",
 			args: {
 				_orgId: config.orgId,
 				_admin: ADMIN_ADDRESS,
@@ -155,7 +155,7 @@ export async function deployERC20(
  * Deploy an ERC20 vault tip setup for an organization (uses existing token)
  */
 export async function deployERC20Vault(
-	config: ERC20VaultDeploymentConfig
+	config: ERC20VaultDeploymentConfig,
 ): Promise<DeploymentResult> {
 	if (!FACTORY_ADDRESS) {
 		console.error("SLASH_TIP_FACTORY_ADDRESS not set");
@@ -175,7 +175,7 @@ export async function deployERC20Vault(
 			projectId: PROJECT_ID,
 			contractAddress: FACTORY_ADDRESS,
 			functionSignature:
-				"deployWithERC20Vault(string _orgId, address _admin, address _token) returns (address slashTip, address userRegistry, address tipAction)",
+				"deployWithERC20Vault(string _orgId, address _admin, address _token)",
 			args: {
 				_orgId: config.orgId,
 				_admin: ADMIN_ADDRESS,
