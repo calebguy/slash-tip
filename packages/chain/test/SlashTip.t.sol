@@ -2,29 +2,30 @@
 pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
-import {UserRegistry} from "../src/contracts/UserRegistry.sol";
-import {Tip} from "../src/contracts/Tip.sol";
-import {SlashTip} from "../src/contracts/SlashTip.sol";
+import {DeprecatedUserRegistry} from "../src/contracts/DeprecatedUserRegistry.sol";
+import {DeprecatedTip} from "../src/contracts/DeprecatedTip.sol";
+import {DeprecatedSlashTip} from "../src/contracts/DeprecatedSlashTip.sol";
 import "forge-std/console.sol";
 
-contract SlashTipTest is Test {
+/// @notice Tests for the deprecated V1 SlashTip contract
+contract DeprecatedSlashTipTest is Test {
     string public baseURI = "https://example.com/tokens/";
-    UserRegistry public registry;
-    Tip public tip;
-    SlashTip public slash;
+    DeprecatedUserRegistry public registry;
+    DeprecatedTip public tip;
+    DeprecatedSlashTip public slash;
 
     string public fromUserId = "user1";
     string public toUserId = "user2";
     uint256 tokenId = 1;
 
-    UserRegistry.User public fromUser = UserRegistry.User({
+    DeprecatedUserRegistry.User public fromUser = DeprecatedUserRegistry.User({
         id: "user1",
         nickname: "from user",
         account: 0x18F33CEf45817C428d98C4E188A770191fDD4B79,
         allowance: 10
     });
 
-    UserRegistry.User public toUser = UserRegistry.User({
+    DeprecatedUserRegistry.User public toUser = DeprecatedUserRegistry.User({
         id: "user2",
         nickname: "to user",
         account: 0x9a37E57d177c5Ff8817B55da36F2A2b3532CDE3F,
@@ -32,9 +33,9 @@ contract SlashTipTest is Test {
     });
 
     function setUp() public {
-        registry = new UserRegistry(address(this), "/users");
-        tip = new Tip(address(this), baseURI);
-        slash = new SlashTip(address(this), address(registry), address(tip), "/tip");
+        registry = new DeprecatedUserRegistry(address(this), "/users");
+        tip = new DeprecatedTip(address(this), baseURI);
+        slash = new DeprecatedSlashTip(address(this), address(registry), address(tip), "/tip");
 
         // slash-tip needs tip manager role in order to mint
         tip.grantRole(keccak256("TIP_MANAGER"), address(slash));
@@ -93,7 +94,7 @@ contract SlashTipTest is Test {
 
         registry.addUser(
             fromUserId,
-            UserRegistry.User({
+            DeprecatedUserRegistry.User({
                 id: "user1",
                 nickname: "a test user",
                 account: 0x18F33CEf45817C428d98C4E188A770191fDD4B79,
@@ -102,7 +103,7 @@ contract SlashTipTest is Test {
         );
         registry.addUser(
             toUserId,
-            UserRegistry.User({
+            DeprecatedUserRegistry.User({
                 id: "user2",
                 nickname: "another test user",
                 account: 0x9a37E57d177c5Ff8817B55da36F2A2b3532CDE3F,
@@ -121,7 +122,7 @@ contract SlashTipTest is Test {
         uint256 amountToMint = 1;
         slash.tip(fromUserId, toUserId, tokenId, amountToMint, "");
 
-        SlashTip.UserWithBalance[] memory leaderboard = slash.leaderboard(tokenId);
+        DeprecatedSlashTip.UserWithBalance[] memory leaderboard = slash.leaderboard(tokenId);
         assertEq(leaderboard.length, 2);
         assertEq(leaderboard[0].balance, amountToMint);
         assertEq(leaderboard[1].balance, 0);

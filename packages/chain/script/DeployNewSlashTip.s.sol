@@ -2,12 +2,12 @@
 pragma solidity ^0.8.13;
 
 import {Script, console} from "forge-std/Script.sol";
-import {SlashTip} from "../src/contracts/SlashTip.sol";
-import {Tip} from "../src/contracts/Tip.sol";
-import {UserRegistry} from "../src/contracts/UserRegistry.sol";
+import {DeprecatedSlashTip} from "../src/contracts/DeprecatedSlashTip.sol";
+import {DeprecatedTip} from "../src/contracts/DeprecatedTip.sol";
+import {DeprecatedUserRegistry} from "../src/contracts/DeprecatedUserRegistry.sol";
 
-// @note This is ready to to be deployed (has not been yet)
-contract DeployNewSlashTip is Script {
+/// @notice DEPRECATED: This deploys legacy V1 contracts. Use DeployV2.s.sol instead.
+contract DeprecatedDeployNewSlashTip is Script {
     function setUp() public {}
 
     function run() external {
@@ -20,11 +20,11 @@ contract DeployNewSlashTip is Script {
         address adminAddress = 0x18F33CEf45817C428d98C4E188A770191fDD4B79;
         address tipAddress = 0xA19e91f5c794BBe0632cC14bB51Db434573246e2;
 
-        Tip tip = Tip(tipAddress);
+        DeprecatedTip tip = DeprecatedTip(tipAddress);
 
-        // UserRegistry userRegistry = new UserRegistry(adminAddress, "/users");
+        // DeprecatedUserRegistry userRegistry = new DeprecatedUserRegistry(adminAddress, "/users");
 
-        SlashTip slash = new SlashTip(adminAddress, userRegistryAddress, tipAddress, "/tip");
+        DeprecatedSlashTip slash = new DeprecatedSlashTip(adminAddress, userRegistryAddress, tipAddress, "/tip");
         slash.grantRole(keccak256("SLASH_TIP_MANAGER"), relayerAddress);
         tip.grantRole(keccak256("TIP_MANAGER"), address(slash));
         // userRegistry.grantRole(keccak256("USER_REGISTRY_MANAGER"), relayerAddress);

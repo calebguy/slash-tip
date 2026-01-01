@@ -2,7 +2,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { drizzle as drizzleNeon } from "drizzle-orm/neon-http";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { alias } from "drizzle-orm/pg-core";
-import { organizations, tips, users } from "./src/schema";
+import { orgContracts, organizations, tips, users } from "./src/schema";
 
 class Db {
 	private pg;
@@ -18,6 +18,7 @@ class Db {
 				organizations,
 				users,
 				tips,
+				orgContracts,
 			},
 		};
 		//@ts-expect-error
@@ -153,6 +154,53 @@ class Db {
 				set: user,
 			});
 	}
+
+	removeUser(id: string) {
+		return this.pg.delete(users).where(eq(users.id, id));
+	}
+
+	// Org contracts methods (for factory pattern)
+	upsertOrgContracts(contract: InsertOrgContract) {
+		return this.pg
+			.insert(orgContracts)
+			.values(contract)
+			.onConflictDoUpdate({
+				target: [orgContracts.orgId],
+				set: contract,
+			});
+	}
+
+	getOrgContractBySlashTip(slashTipAddress: string) {
+		return this.pg
+			.select()
+			.from(orgContracts)
+			.where(eq(orgContracts.slashTipAddress, slashTipAddress))
+			.limit(1);
+	}
+
+	getOrgContractByUserRegistry(userRegistryAddress: string) {
+		return this.pg
+			.select()
+			.from(orgContracts)
+			.where(eq(orgContracts.userRegistryAddress, userRegistryAddress))
+			.limit(1);
+	}
+
+	getOrgContractByOrgId(orgId: string) {
+		return this.pg
+			.select()
+			.from(orgContracts)
+			.where(eq(orgContracts.orgId, orgId))
+			.limit(1);
+	}
+
+	getAllOrgContracts() {
+		return this.pg.select().from(orgContracts);
+	}
+
+	getAllOrgs() {
+		return this.pg.select().from(organizations);
+	}
 }
 
 export function tipToJsonSafe(tip: Tip) {
@@ -180,5 +228,7 @@ export type InsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type InsertTip = typeof tips.$inferInsert;
 export type Tip = typeof tips.$inferSelect;
+export type InsertOrgContract = typeof orgContracts.$inferInsert;
+export type OrgContract = typeof orgContracts.$inferSelect;
 
 export { Db };

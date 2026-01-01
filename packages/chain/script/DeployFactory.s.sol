@@ -2,24 +2,24 @@
 pragma solidity ^0.8.13;
 
 import {Script, console} from "forge-std/Script.sol";
-import {SlashTip} from "../src/contracts/v2/SlashTip.sol";
-import {UserRegistry} from "../src/contracts/v2/UserRegistry.sol";
-import {TipERC1155} from "../src/contracts/v2/TipERC1155.sol";
-import {TipERC20} from "../src/contracts/v2/TipERC20.sol";
-import {ERC1155MintAction} from "../src/contracts/v2/ERC1155MintAction.sol";
-import {ERC20MintAction} from "../src/contracts/v2/ERC20MintAction.sol";
-import {ERC20VaultAction} from "../src/contracts/v2/ERC20VaultAction.sol";
-import {SlashTipFactory} from "../src/contracts/v2/SlashTipFactory.sol";
+import {SlashTip} from "../src/contracts/SlashTip.sol";
+import {UserRegistry} from "../src/contracts/UserRegistry.sol";
+import {TipERC1155} from "../src/contracts/TipERC1155.sol";
+import {TipERC20} from "../src/contracts/TipERC20.sol";
+import {ERC1155MintAction} from "../src/contracts/ERC1155MintAction.sol";
+import {ERC20MintAction} from "../src/contracts/ERC20MintAction.sol";
+import {ERC20VaultAction} from "../src/contracts/ERC20VaultAction.sol";
+import {SlashTipFactory} from "../src/contracts/SlashTipFactory.sol";
 
-/// @title DeployV2
-/// @notice Deployment script for SlashTip V2 contracts using Beacon Proxy pattern
-/// @dev Run with: forge script script/DeployV2.s.sol:DeployV2 --rpc-url $RPC_URL --broadcast --verify
-contract DeployV2 is Script {
+/// @title DeploySlashTip
+/// @notice Deployment script for SlashTip contracts using Beacon Proxy pattern
+/// @dev Run with: forge script script/DeployV2.s.sol:DeploySlashTip --rpc-url $RPC_URL --broadcast --verify
+contract DeploySlashTip is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
         address admin = vm.envAddress("ADMIN_ADDRESS");
 
-        console.log("Deploying V2 contracts...");
+        console.log("Deploying SlashTip contracts...");
         console.log("Admin address:", admin);
 
         vm.startBroadcast(deployerPrivateKey);

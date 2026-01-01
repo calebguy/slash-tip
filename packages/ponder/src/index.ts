@@ -1,92 +1,88 @@
 import { ponder } from "ponder:registry";
-import { decodeFunctionData, zeroAddress } from "viem";
-import { OldSlashTipAbi } from "./OldSlashTipAbi";
 import { db, publicClient } from "./shared";
-import { syncUserRegistry } from "./userRegistry";
 
-syncUserRegistry().catch((e) => {
-	console.error(e);
-});
+// Handle new org deployments from factory - store contract address mapping
+ponder.on("SlashTipFactory:OrgDeployed", async ({ event }) => {
+	const { orgId, slashTip, userRegistry, tipAction, tipToken } = event.args;
 
-ponder.on("Tip:TransferSingle", async ({ event }) => {
-	const { hash } = event.transaction;
-	const tx = await publicClient.getTransaction({ hash });
-	try {
-		const {
-			args: [fromUserId, toUserId, tokenId, amount],
-		} = decodeFunctionData({
-			abi: OldSlashTipAbi,
-			data: tx.input,
-		});
-		if (
-			fromUserId !== zeroAddress &&
-			toUserId !== zeroAddress &&
-			tokenId !== undefined &&
-			amount !== undefined
-		) {
-			const block = await publicClient.getBlock({
-				blockNumber: tx.blockNumber,
-			});
-			// Look up sender's org to associate tip with organization
-			const [fromUser] = await db.getUserById(fromUserId as string);
-			if (!fromUser) {
-				console.warn(`User ${fromUserId} not found, skipping tip`);
-				return;
-			}
-
-			await db.upsertTip({
-				txHash: hash,
-				fromUserId: fromUserId as string,
-				toUserId: toUserId as string,
-				tokenId,
-				amount,
-				blockNumber: tx.blockNumber,
-				blockCreatedAt: new Date(Number(block.timestamp) * 1000),
-				orgId: fromUser.orgId,
-			});
-		}
-	} catch (e) {
-		console.warn("old abi failed, trying new abi...");
-		console.error(e);
-	}
-});
-
-ponder.on("SlashTip:Tipped", async ({ event }) => {
-	const { hash } = event.transaction;
-	const { fromId, toId, tokenId, amount, data } = event.args;
-
-	const tx = await publicClient.getTransaction({ hash });
-	const block = await publicClient.getBlock({
-		blockNumber: tx.blockNumber,
+	console.log(`OrgDeployed: ${orgId}`, {
+		slashTip,
+		userRegistry,
+		tipAction,
+		tipToken,
 	});
 
-	// Look up sender's org to associate tip with organization
-	const [fromUser] = await db.getUserById(fromId);
-	if (!fromUser) {
-		console.warn(`User ${fromId} not found, skipping tip`);
+	// Store mapping of contract addresses to org
+	await db.upsertOrgContracts({
+		orgId,
+		slashTipAddress: slashTip,
+		userRegistryAddress: userRegistry,
+		tipActionAddress: tipAction,
+		tipTokenAddress: tipToken || null,
+		deployedAt: new Date(Number(event.block.timestamp) * 1000),
+	});
+});
+
+// Handle tips from any SlashTip instance
+ponder.on("SlashTip:Tipped", async ({ event }) => {
+	const contractAddress = event.log.address;
+	const { fromId, toId, amount, data } = event.args;
+
+	// Look up which org this SlashTip belongs to
+	const [orgContract] = await db.getOrgContractBySlashTip(contractAddress);
+	if (!orgContract) {
+		console.warn(`No org found for SlashTip contract ${contractAddress}`);
 		return;
 	}
 
-	await db
-		.upsertTip({
-			txHash: hash,
-			fromUserId: fromId,
-			toUserId: toId,
-			tokenId,
-			amount,
-			blockNumber: tx.blockNumber,
-			blockCreatedAt: new Date(Number(block.timestamp) * 1000),
-			message: data,
-			orgId: fromUser.orgId,
-		})
-		.catch((e) => {
-			console.warn("failed to upsert tip", {
-				hash,
-				fromId,
-				toId,
-				tokenId,
-				amount,
-				data,
-			});
-		});
+	console.log(`Tipped: ${fromId} -> ${toId} (${amount})`, {
+		orgId: orgContract.orgId,
+		txHash: event.transaction.hash,
+	});
+
+	await db.upsertTip({
+		orgId: orgContract.orgId,
+		txHash: event.transaction.hash,
+		fromUserId: fromId,
+		toUserId: toId,
+		amount,
+		message: data || null,
+		blockNumber: event.block.number,
+		blockCreatedAt: new Date(Number(event.block.timestamp) * 1000),
+		tokenId: 0n, // Not used, kept for schema compatibility
+	});
+});
+
+// Handle user registration from any UserRegistry instance
+ponder.on("UserRegistry:UserAdded", async ({ event }) => {
+	const contractAddress = event.log.address;
+	const { id, nickname, account } = event.args;
+
+	// Look up which org this UserRegistry belongs to
+	const [orgContract] = await db.getOrgContractByUserRegistry(contractAddress);
+	if (!orgContract) {
+		console.warn(`No org found for UserRegistry contract ${contractAddress}`);
+		return;
+	}
+
+	console.log(`UserAdded: ${id} (${nickname})`, {
+		orgId: orgContract.orgId,
+		account,
+	});
+
+	await db.upsertUser({
+		id,
+		orgId: orgContract.orgId,
+		nickname,
+		address: account,
+	});
+});
+
+// Handle user removal from any UserRegistry instance
+ponder.on("UserRegistry:UserRemoved", async ({ event }) => {
+	const { id } = event.args;
+
+	console.log(`UserRemoved: ${id}`);
+
+	await db.removeUser(id);
 });

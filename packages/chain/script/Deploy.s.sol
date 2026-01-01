@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import {UserRegistry} from "../src/contracts/UserRegistry.sol";
-import {Tip} from "../src/contracts/Tip.sol";
-import {SlashTip} from "../src/contracts/SlashTip.sol";
+import {DeprecatedUserRegistry} from "../src/contracts/DeprecatedUserRegistry.sol";
+import {DeprecatedTip} from "../src/contracts/DeprecatedTip.sol";
+import {DeprecatedSlashTip} from "../src/contracts/DeprecatedSlashTip.sol";
 import {Script, console} from "forge-std/Script.sol";
 
-contract DeployScript is Script {
+/// @notice DEPRECATED: This deploys the legacy V1 contracts. Use DeployV2.s.sol instead.
+contract DeprecatedDeployScript is Script {
     function setUp() public {}
 
     function run() external {
@@ -16,10 +17,10 @@ contract DeployScript is Script {
 
         address admin = 0x18F33CEf45817C428d98C4E188A770191fDD4B79;
 
-        UserRegistry registry = new UserRegistry(admin, "/users");
-        Tip tip = new Tip(admin, baseURI);
-        SlashTip slash = new SlashTip(admin, address(registry), address(tip), "/tip");
-    
+        DeprecatedUserRegistry registry = new DeprecatedUserRegistry(admin, "/users");
+        DeprecatedTip tip = new DeprecatedTip(admin, baseURI);
+        DeprecatedSlashTip slash = new DeprecatedSlashTip(admin, address(registry), address(tip), "/tip");
+
         string memory tipAddress = string(abi.encodePacked(address(tip)));
         tip.setBaseURI(string.concat("https://metadata.syndicate.io/8453/", tipAddress, "/"));
 

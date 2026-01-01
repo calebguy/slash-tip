@@ -19,6 +19,6 @@
 		"server:start": "bun --filter 'server' start",
 		"start": "bun --filter 'server' start",
 		"cron-allowance": "bun --filter 'server' cron-allowance",
-		"typecheck": "tsc --noEmit"
+		"typecheck": "bun --filter 'web' typecheck && bun --filter 'server' typecheck && bun --filter 'db' typecheck && bun --filter 'ponder' typecheck"
 	}
 }

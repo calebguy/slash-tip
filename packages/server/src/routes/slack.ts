@@ -4,10 +4,10 @@ import type { Hex } from "viem";
 import { getAction } from "../actions";
 import {
 	getAllowance,
-	getLeaderBoard,
 	getUserAddress,
 	getUserExists,
-	register,
+	registerViaSyndicate,
+	type OrgActionConfig,
 } from "../chain";
 import { SITE_URL } from "../constants";
 import { mustBeRegistered } from "../middleware/mustBeRegistered";
@@ -29,6 +29,12 @@ type Env = {
 	};
 };
 
+// Helper to get contract addresses from org config
+function getOrgContracts(org: Organization): OrgActionConfig | null {
+	if (!org.actionConfig) return null;
+	return org.actionConfig as OrgActionConfig;
+}
+
 // https://api.slack.com/interactivity/slash-commands
 const app = new Hono<Env>()
 	.use(withOrg)
@@ -37,6 +43,16 @@ const app = new Hono<Env>()
 		const { user_id, user_name, text } =
 			await c.req.parseBody<SlackSlashCommandPayload>();
 		console.log(`register command received from ${user_id} with text ${text}`);
+
+		// Check if org is configured
+		const config = getOrgContracts(org);
+		if (!config?.userRegistryAddress || config.deploymentStatus !== "deployed") {
+			return c.json({
+				response_type: "ephemeral",
+				text: "This workspace is not yet configured. Please ask an admin to complete setup in the App Home.",
+			});
+		}
+
 		let address: Hex;
 		const addressOrEns = extractFirstWord(text);
 		if (!addressOrEns) {
@@ -58,22 +74,29 @@ const app = new Hono<Env>()
 			}
 			address = tmp;
 		}
-		const registeredAddress = await getUserAddress(user_id).catch(() => null);
-		if (registeredAddress) {
+
+		const registeredAddress = await getUserAddress(
+			config.userRegistryAddress as Hex,
+			user_id,
+		).catch(() => null);
+
+		if (registeredAddress && registeredAddress !== "0x0000000000000000000000000000000000000000") {
 			return c.json({
 				response_type: "ephemeral",
-				text: `You are already registered with address: ${registeredAddress}, if you would like to change it please (tip ✺ first ✺ then) reach out to caleb`,
+				text: `You are already registered with address: ${registeredAddress}, if you would like to change it please reach out to an admin`,
 			});
 		}
 
 		console.log(
-			`registring ${user_id} with address ${address} and nickname ${user_name} for org ${org.slug}`,
+			`registering ${user_id} with address ${address} and nickname ${user_name} for org ${org.slug}`,
 		);
 
-		const hash = await register({
+		const hash = await registerViaSyndicate({
+			userRegistryAddress: config.userRegistryAddress,
 			id: user_id,
 			nickname: user_name,
 			address,
+			allowance: org.dailyAllowance,
 		});
 
 		// Save user to database with org_id
@@ -126,6 +149,14 @@ const app = new Hono<Env>()
 
 		const amount = Number(_amount);
 
+		// Check if org is configured
+		if (!org.actionType) {
+			return c.json({
+				response_type: "ephemeral",
+				text: "Tipping is not configured for this workspace yet. Please ask an admin to set it up in the App Home.",
+			});
+		}
+
 		// Get the action for this org
 		const action = getAction(org.actionType);
 
@@ -158,15 +189,25 @@ const app = new Hono<Env>()
 		});
 	})
 	.post(Commands.Info, mustBeRegistered, async (c) => {
+		const org = c.get("org");
 		const { user_id } = await c.req.parseBody<SlackSlashCommandPayload>();
-		if (!(await getUserExists(user_id))) {
+
+		const config = getOrgContracts(org);
+		if (!config?.userRegistryAddress || !config?.slashTipAddress) {
+			return c.json({
+				response_type: "ephemeral",
+				text: "This workspace is not yet configured.",
+			});
+		}
+
+		if (!(await getUserExists(config.userRegistryAddress as Hex, user_id))) {
 			return c.json({
 				response_type: "ephemeral",
 				text: `<@${user_id}> you must register first with '/register <your-eth-address>'`,
 			});
 		}
-		const address = await getUserAddress(user_id);
-		const allowance = await getAllowance(user_id);
+		const address = await getUserAddress(config.userRegistryAddress as Hex, user_id);
+		const allowance = await getAllowance(config.slashTipAddress as Hex, user_id);
 		return c.json({
 			response_type: "ephemeral",
 			blocks: [
@@ -184,24 +225,33 @@ const app = new Hono<Env>()
 	})
 	.post(Commands.Balance, async (c) => {
 		const org = c.get("org");
-		const orgUsers = await db.getUsersByOrg(org.id);
-		const orgUserIds = new Set(orgUsers.map((u) => u.id));
 
-		const leaderboard = await getLeaderBoard();
-		const filteredLeaderboard = leaderboard.filter(({ user }) =>
-			orgUserIds.has(user.id),
-		);
+		// Get balance info from the database (synced by ponder)
+		const orgUsers = await db.getUsersByOrg(org.id);
+
+		if (orgUsers.length === 0) {
+			return c.json({
+				response_type: "in_channel",
+				blocks: [
+					{
+						type: "section",
+						text: {
+							type: "mrkdwn",
+							text: `No users registered yet. Use /register to get started!\n<${SITE_URL}/${org.slug}|${org.slug}.slack.tips>`,
+						},
+					},
+				],
+			});
+		}
 
 		return c.json({
 			response_type: "in_channel",
-			blocks: filteredLeaderboard
-				.map(({ user, balance }) => ({
+			blocks: orgUsers
+				.map((user) => ({
 					type: "section",
 					text: {
 						type: "mrkdwn",
-						text: `${user.nickname}: ${
-							balance > BigInt(0) ? `${balance}` : "0 🥲"
-						}`,
+						text: `${user.nickname}: registered`,
 					},
 				}))
 				.concat({

@@ -33,6 +33,16 @@ export const users = pgTable("users", {
 	address: text("address").notNull(),
 });
 
+// Contract deployments from factory - maps contract addresses to orgs
+export const orgContracts = pgTable("org_contracts", {
+	orgId: text("org_id").primaryKey(), // orgId from OrgDeployed event (same as organizations.id UUID)
+	slashTipAddress: text("slash_tip_address").notNull(),
+	userRegistryAddress: text("user_registry_address").notNull(),
+	tipActionAddress: text("tip_action_address").notNull(),
+	tipTokenAddress: text("tip_token_address"),
+	deployedAt: timestamp("deployed_at").notNull(),
+});
+
 export const tips = pgTable("tips", {
 	id: serial("id").primaryKey(),
 	orgId: uuid("org_id")

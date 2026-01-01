@@ -2,17 +2,18 @@
 pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
-import {Tip} from "../src/contracts/Tip.sol";
+import {DeprecatedTip} from "../src/contracts/DeprecatedTip.sol";
 import {Strings} from "openzeppelin/utils/Strings.sol";
 
-contract TipTest is Test {
+/// @notice Tests for the deprecated V1 Tip contract
+contract DeprecatedTipTest is Test {
     using Strings for uint256;
-  
-    Tip public tip;
+
+    DeprecatedTip public tip;
     string baseURI = "https://example.com/tokens/";
 
     function setUp() public {
-        tip = new Tip(address(this), baseURI);
+        tip = new DeprecatedTip(address(this), baseURI);
     }
 
     function test_baseURI() public view {

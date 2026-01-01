@@ -4,7 +4,8 @@
 		"dev": "bun run --hot src/server.ts",
 		"start": "bun run src/server.ts",
 		"format": "bunx @biomejs/biome format . --write",
-		"cron-allowance": "bun run src/cron-allowance.ts"
+		"cron-allowance": "bun run src/cron-allowance.ts",
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@syndicateio/syndicate-node": "^1.0.1",

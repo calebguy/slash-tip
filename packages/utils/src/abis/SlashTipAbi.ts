@@ -1,523 +1,154 @@
 export const SlashTipAbi = [
 	{
 		type: "constructor",
-		inputs: [
-			{
-				name: "_admin",
-				type: "address",
-				internalType: "address",
-			},
-			{
-				name: "_userRegistry",
-				type: "address",
-				internalType: "address",
-			},
-			{
-				name: "_tipToken",
-				type: "address",
-				internalType: "address",
-			},
-			{
-				name: "_description",
-				type: "string",
-				internalType: "string",
-			},
-		],
+		inputs: [],
 		stateMutability: "nonpayable",
 	},
 	{
 		type: "function",
 		name: "DEFAULT_ADMIN_ROLE",
 		inputs: [],
-		outputs: [
-			{
-				name: "",
-				type: "bytes32",
-				internalType: "bytes32",
-			},
-		],
+		outputs: [{ name: "", type: "bytes32", internalType: "bytes32" }],
+		stateMutability: "view",
+	},
+	{
+		type: "function",
+		name: "TIP_MANAGER",
+		inputs: [],
+		outputs: [{ name: "", type: "bytes32", internalType: "bytes32" }],
 		stateMutability: "view",
 	},
 	{
 		type: "function",
 		name: "addAllowanceForAllUsers",
-		inputs: [
-			{
-				name: "_amount",
-				type: "uint256",
-				internalType: "uint256",
-			},
-		],
+		inputs: [{ name: "_amount", type: "uint256", internalType: "uint256" }],
 		outputs: [],
 		stateMutability: "nonpayable",
 	},
 	{
 		type: "function",
 		name: "allowanceOf",
-		inputs: [
-			{
-				name: "_userId",
-				type: "string",
-				internalType: "string",
-			},
-		],
-		outputs: [
-			{
-				name: "",
-				type: "uint256",
-				internalType: "uint256",
-			},
-		],
+		inputs: [{ name: "_userId", type: "string", internalType: "string" }],
+		outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
 		stateMutability: "view",
 	},
 	{
 		type: "function",
-		name: "balanceOf",
+		name: "initialize",
 		inputs: [
-			{
-				name: "_userId",
-				type: "string",
-				internalType: "string",
-			},
-			{
-				name: "_tokenId",
-				type: "uint256",
-				internalType: "uint256",
-			},
+			{ name: "_admin", type: "address", internalType: "address" },
+			{ name: "_userRegistry", type: "address", internalType: "address" },
+			{ name: "_tipAction", type: "address", internalType: "address" },
+			{ name: "_orgId", type: "string", internalType: "string" },
 		],
-		outputs: [
-			{
-				name: "",
-				type: "uint256",
-				internalType: "uint256",
-			},
-		],
-		stateMutability: "view",
+		outputs: [],
+		stateMutability: "nonpayable",
 	},
 	{
 		type: "function",
-		name: "description",
+		name: "orgId",
 		inputs: [],
-		outputs: [
-			{
-				name: "",
-				type: "string",
-				internalType: "string",
-			},
-		],
+		outputs: [{ name: "", type: "string", internalType: "string" }],
 		stateMutability: "view",
-	},
-	{
-		type: "function",
-		name: "getRoleAdmin",
-		inputs: [
-			{
-				name: "role",
-				type: "bytes32",
-				internalType: "bytes32",
-			},
-		],
-		outputs: [
-			{
-				name: "",
-				type: "bytes32",
-				internalType: "bytes32",
-			},
-		],
-		stateMutability: "view",
-	},
-	{
-		type: "function",
-		name: "grantRole",
-		inputs: [
-			{
-				name: "role",
-				type: "bytes32",
-				internalType: "bytes32",
-			},
-			{
-				name: "account",
-				type: "address",
-				internalType: "address",
-			},
-		],
-		outputs: [],
-		stateMutability: "nonpayable",
-	},
-	{
-		type: "function",
-		name: "hasRole",
-		inputs: [
-			{
-				name: "role",
-				type: "bytes32",
-				internalType: "bytes32",
-			},
-			{
-				name: "account",
-				type: "address",
-				internalType: "address",
-			},
-		],
-		outputs: [
-			{
-				name: "",
-				type: "bool",
-				internalType: "bool",
-			},
-		],
-		stateMutability: "view",
-	},
-	{
-		type: "function",
-		name: "leaderboard",
-		inputs: [
-			{
-				name: "_tokenId",
-				type: "uint256",
-				internalType: "uint256",
-			},
-		],
-		outputs: [
-			{
-				name: "",
-				type: "tuple[]",
-				internalType: "struct SlashTip.UserWithBalance[]",
-				components: [
-					{
-						name: "user",
-						type: "tuple",
-						internalType: "struct UserRegistry.User",
-						components: [
-							{
-								name: "id",
-								type: "string",
-								internalType: "string",
-							},
-							{
-								name: "nickname",
-								type: "string",
-								internalType: "string",
-							},
-							{
-								name: "account",
-								type: "address",
-								internalType: "address",
-							},
-							{
-								name: "allowance",
-								type: "uint256",
-								internalType: "uint256",
-							},
-						],
-					},
-					{
-						name: "balance",
-						type: "uint256",
-						internalType: "uint256",
-					},
-				],
-			},
-		],
-		stateMutability: "view",
-	},
-	{
-		type: "function",
-		name: "renounceRole",
-		inputs: [
-			{
-				name: "role",
-				type: "bytes32",
-				internalType: "bytes32",
-			},
-			{
-				name: "callerConfirmation",
-				type: "address",
-				internalType: "address",
-			},
-		],
-		outputs: [],
-		stateMutability: "nonpayable",
-	},
-	{
-		type: "function",
-		name: "revokeRole",
-		inputs: [
-			{
-				name: "role",
-				type: "bytes32",
-				internalType: "bytes32",
-			},
-			{
-				name: "account",
-				type: "address",
-				internalType: "address",
-			},
-		],
-		outputs: [],
-		stateMutability: "nonpayable",
 	},
 	{
 		type: "function",
 		name: "setAllowanceForAllUsers",
-		inputs: [
-			{
-				name: "_amount",
-				type: "uint256",
-				internalType: "uint256",
-			},
-		],
+		inputs: [{ name: "_amount", type: "uint256", internalType: "uint256" }],
 		outputs: [],
 		stateMutability: "nonpayable",
 	},
 	{
 		type: "function",
-		name: "setTipToken",
-		inputs: [
-			{
-				name: "_tipToken",
-				type: "address",
-				internalType: "address",
-			},
-		],
+		name: "setTipAction",
+		inputs: [{ name: "_tipAction", type: "address", internalType: "address" }],
 		outputs: [],
 		stateMutability: "nonpayable",
 	},
 	{
 		type: "function",
 		name: "setUserRegistry",
-		inputs: [
-			{
-				name: "_userRegistry",
-				type: "address",
-				internalType: "address",
-			},
-		],
+		inputs: [{ name: "_userRegistry", type: "address", internalType: "address" }],
 		outputs: [],
 		stateMutability: "nonpayable",
-	},
-	{
-		type: "function",
-		name: "supportsInterface",
-		inputs: [
-			{
-				name: "interfaceId",
-				type: "bytes4",
-				internalType: "bytes4",
-			},
-		],
-		outputs: [
-			{
-				name: "",
-				type: "bool",
-				internalType: "bool",
-			},
-		],
-		stateMutability: "view",
 	},
 	{
 		type: "function",
 		name: "tip",
 		inputs: [
-			{
-				name: "_fromId",
-				type: "string",
-				internalType: "string",
-			},
-			{
-				name: "_toId",
-				type: "string",
-				internalType: "string",
-			},
-			{
-				name: "_tokenId",
-				type: "uint256",
-				internalType: "uint256",
-			},
-			{
-				name: "_amount",
-				type: "uint256",
-				internalType: "uint256",
-			},
-			{
-				name: "_data",
-				type: "string",
-				internalType: "string",
-			},
+			{ name: "_fromId", type: "string", internalType: "string" },
+			{ name: "_toId", type: "string", internalType: "string" },
+			{ name: "_amount", type: "uint256", internalType: "uint256" },
+			{ name: "_data", type: "string", internalType: "string" },
 		],
 		outputs: [],
 		stateMutability: "nonpayable",
 	},
 	{
 		type: "function",
-		name: "tipToken",
+		name: "tipAction",
 		inputs: [],
-		outputs: [
-			{
-				name: "",
-				type: "address",
-				internalType: "contract Tip",
-			},
-		],
+		outputs: [{ name: "", type: "address", internalType: "contract ITipAction" }],
 		stateMutability: "view",
 	},
 	{
 		type: "function",
 		name: "userRegistry",
 		inputs: [],
-		outputs: [
-			{
-				name: "",
-				type: "address",
-				internalType: "contract UserRegistry",
-			},
-		],
+		outputs: [{ name: "", type: "address", internalType: "contract UserRegistry" }],
 		stateMutability: "view",
-	},
-	{
-		type: "event",
-		name: "RoleAdminChanged",
-		inputs: [
-			{
-				name: "role",
-				type: "bytes32",
-				indexed: true,
-				internalType: "bytes32",
-			},
-			{
-				name: "previousAdminRole",
-				type: "bytes32",
-				indexed: true,
-				internalType: "bytes32",
-			},
-			{
-				name: "newAdminRole",
-				type: "bytes32",
-				indexed: true,
-				internalType: "bytes32",
-			},
-		],
-		anonymous: false,
-	},
-	{
-		type: "event",
-		name: "RoleGranted",
-		inputs: [
-			{
-				name: "role",
-				type: "bytes32",
-				indexed: true,
-				internalType: "bytes32",
-			},
-			{
-				name: "account",
-				type: "address",
-				indexed: true,
-				internalType: "address",
-			},
-			{
-				name: "sender",
-				type: "address",
-				indexed: true,
-				internalType: "address",
-			},
-		],
-		anonymous: false,
-	},
-	{
-		type: "event",
-		name: "RoleRevoked",
-		inputs: [
-			{
-				name: "role",
-				type: "bytes32",
-				indexed: true,
-				internalType: "bytes32",
-			},
-			{
-				name: "account",
-				type: "address",
-				indexed: true,
-				internalType: "address",
-			},
-			{
-				name: "sender",
-				type: "address",
-				indexed: true,
-				internalType: "address",
-			},
-		],
-		anonymous: false,
 	},
 	{
 		type: "event",
 		name: "Tipped",
 		inputs: [
-			{
-				name: "fromId",
-				type: "string",
-				indexed: false,
-				internalType: "string",
-			},
-			{
-				name: "toId",
-				type: "string",
-				indexed: false,
-				internalType: "string",
-			},
-			{
-				name: "from",
-				type: "address",
-				indexed: true,
-				internalType: "address",
-			},
-			{
-				name: "to",
-				type: "address",
-				indexed: true,
-				internalType: "address",
-			},
-			{
-				name: "tokenId",
-				type: "uint256",
-				indexed: false,
-				internalType: "uint256",
-			},
-			{
-				name: "amount",
-				type: "uint256",
-				indexed: false,
-				internalType: "uint256",
-			},
-			{
-				name: "data",
-				type: "string",
-				indexed: false,
-				internalType: "string",
-			},
+			{ name: "fromId", type: "string", indexed: true, internalType: "string" },
+			{ name: "toId", type: "string", indexed: true, internalType: "string" },
+			{ name: "fromAddress", type: "address", indexed: true, internalType: "address" },
+			{ name: "toAddress", type: "address", indexed: false, internalType: "address" },
+			{ name: "amount", type: "uint256", indexed: false, internalType: "uint256" },
+			{ name: "data", type: "string", indexed: false, internalType: "string" },
+			{ name: "actionContract", type: "address", indexed: false, internalType: "address" },
 		],
 		anonymous: false,
 	},
 	{
-		type: "error",
-		name: "AccessControlBadConfirmation",
-		inputs: [],
+		type: "event",
+		name: "TipActionUpdated",
+		inputs: [
+			{ name: "oldAction", type: "address", indexed: true, internalType: "address" },
+			{ name: "newAction", type: "address", indexed: true, internalType: "address" },
+		],
+		anonymous: false,
+	},
+	{
+		type: "event",
+		name: "UserRegistryUpdated",
+		inputs: [
+			{ name: "oldRegistry", type: "address", indexed: true, internalType: "address" },
+			{ name: "newRegistry", type: "address", indexed: true, internalType: "address" },
+		],
+		anonymous: false,
+	},
+	{
+		type: "event",
+		name: "Initialized",
+		inputs: [{ name: "version", type: "uint64", indexed: false, internalType: "uint64" }],
+		anonymous: false,
 	},
 	{
 		type: "error",
-		name: "AccessControlUnauthorizedAccount",
+		name: "InsufficientAllowance",
 		inputs: [
-			{
-				name: "account",
-				type: "address",
-				internalType: "address",
-			},
-			{
-				name: "neededRole",
-				type: "bytes32",
-				internalType: "bytes32",
-			},
+			{ name: "userId", type: "string", internalType: "string" },
+			{ name: "allowance", type: "uint256", internalType: "uint256" },
+			{ name: "required", type: "uint256", internalType: "uint256" },
 		],
+	},
+	{
+		type: "error",
+		name: "UserNotFound",
+		inputs: [{ name: "userId", type: "string", internalType: "string" }],
 	},
 ] as const;
 

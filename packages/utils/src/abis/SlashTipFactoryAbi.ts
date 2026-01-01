@@ -1,0 +1,157 @@
+export const SlashTipFactoryAbi = [
+	{
+		type: "constructor",
+		inputs: [
+			{ name: "_admin", type: "address", internalType: "address" },
+			{ name: "_slashTipImpl", type: "address", internalType: "address" },
+			{ name: "_userRegistryImpl", type: "address", internalType: "address" },
+			{ name: "_tipERC1155Impl", type: "address", internalType: "address" },
+			{ name: "_tipERC20Impl", type: "address", internalType: "address" },
+			{ name: "_erc1155MintActionImpl", type: "address", internalType: "address" },
+			{ name: "_erc20MintActionImpl", type: "address", internalType: "address" },
+			{ name: "_erc20VaultActionImpl", type: "address", internalType: "address" },
+		],
+		stateMutability: "nonpayable",
+	},
+	{
+		type: "function",
+		name: "DEFAULT_ADMIN_ROLE",
+		inputs: [],
+		outputs: [{ name: "", type: "bytes32", internalType: "bytes32" }],
+		stateMutability: "view",
+	},
+	{
+		type: "function",
+		name: "FACTORY_MANAGER",
+		inputs: [],
+		outputs: [{ name: "", type: "bytes32", internalType: "bytes32" }],
+		stateMutability: "view",
+	},
+	{
+		type: "function",
+		name: "deployWithERC1155",
+		inputs: [
+			{ name: "_orgId", type: "string", internalType: "string" },
+			{ name: "_admin", type: "address", internalType: "address" },
+			{ name: "_tokenBaseURI", type: "string", internalType: "string" },
+			{ name: "_contractURI", type: "string", internalType: "string" },
+			{ name: "_tokenId", type: "uint256", internalType: "uint256" },
+		],
+		outputs: [
+			{ name: "slashTip", type: "address", internalType: "address" },
+			{ name: "userRegistry", type: "address", internalType: "address" },
+			{ name: "tipAction", type: "address", internalType: "address" },
+			{ name: "tipToken", type: "address", internalType: "address" },
+		],
+		stateMutability: "nonpayable",
+	},
+	{
+		type: "function",
+		name: "deployWithERC20",
+		inputs: [
+			{ name: "_orgId", type: "string", internalType: "string" },
+			{ name: "_admin", type: "address", internalType: "address" },
+			{ name: "_tokenName", type: "string", internalType: "string" },
+			{ name: "_tokenSymbol", type: "string", internalType: "string" },
+			{ name: "_tokenDecimals", type: "uint8", internalType: "uint8" },
+		],
+		outputs: [
+			{ name: "slashTip", type: "address", internalType: "address" },
+			{ name: "userRegistry", type: "address", internalType: "address" },
+			{ name: "tipAction", type: "address", internalType: "address" },
+			{ name: "tipToken", type: "address", internalType: "address" },
+		],
+		stateMutability: "nonpayable",
+	},
+	{
+		type: "function",
+		name: "deployWithERC20Vault",
+		inputs: [
+			{ name: "_orgId", type: "string", internalType: "string" },
+			{ name: "_admin", type: "address", internalType: "address" },
+			{ name: "_token", type: "address", internalType: "address" },
+		],
+		outputs: [
+			{ name: "slashTip", type: "address", internalType: "address" },
+			{ name: "userRegistry", type: "address", internalType: "address" },
+			{ name: "tipAction", type: "address", internalType: "address" },
+		],
+		stateMutability: "nonpayable",
+	},
+	{
+		type: "function",
+		name: "getOrg",
+		inputs: [{ name: "_orgId", type: "string", internalType: "string" }],
+		outputs: [
+			{
+				name: "",
+				type: "tuple",
+				internalType: "struct SlashTipFactory.OrgDeployment",
+				components: [
+					{ name: "slashTip", type: "address", internalType: "address" },
+					{ name: "userRegistry", type: "address", internalType: "address" },
+					{ name: "tipAction", type: "address", internalType: "address" },
+					{ name: "tipToken", type: "address", internalType: "address" },
+					{ name: "exists", type: "bool", internalType: "bool" },
+				],
+			},
+		],
+		stateMutability: "view",
+	},
+	{
+		type: "function",
+		name: "orgExists",
+		inputs: [{ name: "_orgId", type: "string", internalType: "string" }],
+		outputs: [{ name: "", type: "bool", internalType: "bool" }],
+		stateMutability: "view",
+	},
+	{
+		type: "function",
+		name: "listOrgIds",
+		inputs: [],
+		outputs: [{ name: "", type: "string[]", internalType: "string[]" }],
+		stateMutability: "view",
+	},
+	{
+		type: "function",
+		name: "orgCount",
+		inputs: [],
+		outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
+		stateMutability: "view",
+	},
+	{
+		type: "event",
+		name: "OrgDeployed",
+		inputs: [
+			{ name: "orgId", type: "string", indexed: true, internalType: "string" },
+			{ name: "admin", type: "address", indexed: true, internalType: "address" },
+			{ name: "slashTip", type: "address", indexed: false, internalType: "address" },
+			{ name: "userRegistry", type: "address", indexed: false, internalType: "address" },
+			{ name: "tipAction", type: "address", indexed: false, internalType: "address" },
+			{ name: "tipToken", type: "address", indexed: false, internalType: "address" },
+		],
+		anonymous: false,
+	},
+	{
+		type: "event",
+		name: "BeaconUpgraded",
+		inputs: [
+			{ name: "beaconName", type: "string", indexed: false, internalType: "string" },
+			{ name: "oldImpl", type: "address", indexed: true, internalType: "address" },
+			{ name: "newImpl", type: "address", indexed: true, internalType: "address" },
+		],
+		anonymous: false,
+	},
+	{
+		type: "error",
+		name: "OrgAlreadyExists",
+		inputs: [{ name: "orgId", type: "string", internalType: "string" }],
+	},
+	{
+		type: "error",
+		name: "OrgNotFound",
+		inputs: [{ name: "orgId", type: "string", internalType: "string" }],
+	},
+] as const;
+
+export default SlashTipFactoryAbi;

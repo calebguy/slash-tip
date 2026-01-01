@@ -1,23 +1,12 @@
 import { tipWithUsersToJsonSafe } from "db";
 import { Hono } from "hono";
-import { getLeaderBoard } from "../chain";
 import { db } from "../server";
 
 const app = new Hono()
 	// Legacy routes (no org filter - returns all data)
 	.get("/leaderboard", async (c) => {
-		const leaderboard = await getLeaderBoard();
-		return c.json(
-			leaderboard.map(
-				({ balance, user: { allowance, nickname, id, account } }) => ({
-					balance: balance.toString(),
-					allowance: allowance.toString(),
-					nickname,
-					id,
-					account,
-				}),
-			),
-		);
+		// No global leaderboard, each org has its own users
+		return c.json([]);
 	})
 	.get("/activity", async (c) => {
 		const tips = await db.getTips();
@@ -46,25 +35,15 @@ const app = new Hono()
 			return c.json({ error: "Organization not found" }, 404);
 		}
 
-		// Get users for this org and filter leaderboard
+		// Get users for this org from database
 		const orgUsers = await db.getUsersByOrg(org.id);
-		const orgUserIds = new Set(orgUsers.map((u) => u.id));
-
-		const leaderboard = await getLeaderBoard();
-		const filteredLeaderboard = leaderboard.filter(({ user }) =>
-			orgUserIds.has(user.id),
-		);
 
 		return c.json(
-			filteredLeaderboard.map(
-				({ balance, user: { allowance, nickname, id, account } }) => ({
-					balance: balance.toString(),
-					allowance: allowance.toString(),
-					nickname,
-					id,
-					account,
-				}),
-			),
+			orgUsers.map((user) => ({
+				nickname: user.nickname,
+				id: user.id,
+				account: user.address,
+			})),
 		);
 	})
 	.get("/:org/activity", async (c) => {

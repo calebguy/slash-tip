@@ -1,6 +1,7 @@
 // Import actions to register them
 import "./syndicateSendTransaction";
 import "./poem";
+import "./slashTip";
 
 // Re-export registry functions
 export { getAction, getAvailableActions, hasAction, registerAction } from "./registry";

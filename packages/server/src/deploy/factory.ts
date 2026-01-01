@@ -1,12 +1,14 @@
 import { SyndicateClient } from "@syndicateio/syndicate-node";
 import { waitForHash } from "@syndicateio/syndicate-node/utils";
+import { createPublicClient, http } from "viem";
+import { base } from "viem/chains";
 import { env, optionalEnv } from "../env";
 
 const syndicate = new SyndicateClient({
 	token: env.SYNDICATE_API_KEY,
 });
 
-// V2 Factory constants
+// Factory constants
 const FACTORY_ADDRESS = optionalEnv.SLASH_TIP_FACTORY_ADDRESS || "";
 const CHAIN_ID = 8453; // Base mainnet
 const PROJECT_ID = "570119ce-a49c-4245-8851-11c9d1ad74c7";
@@ -14,10 +16,81 @@ const PROJECT_ID = "570119ce-a49c-4245-8851-11c9d1ad74c7";
 // Admin address that will own deployed contracts (Syndicate relayer)
 const ADMIN_ADDRESS = optionalEnv.SLASH_TIP_ADMIN_ADDRESS || "";
 
+// Viem client for reading from contracts
+const publicClient = createPublicClient({
+	chain: base,
+	transport: http(env.BASE_RPC_URL),
+});
+
+// Factory ABI for getOrg function
+const factoryAbi = [
+	{
+		name: "getOrg",
+		type: "function",
+		stateMutability: "view",
+		inputs: [{ name: "_orgId", type: "string" }],
+		outputs: [
+			{
+				name: "",
+				type: "tuple",
+				components: [
+					{ name: "slashTip", type: "address" },
+					{ name: "userRegistry", type: "address" },
+					{ name: "tipAction", type: "address" },
+					{ name: "tipToken", type: "address" },
+					{ name: "exists", type: "bool" },
+				],
+			},
+		],
+	},
+] as const;
+
+export interface OrgAddresses {
+	slashTipAddress: string;
+	userRegistryAddress: string;
+	tipActionAddress: string;
+	tipTokenAddress: string;
+}
+
 export interface DeploymentResult {
 	success: boolean;
 	transactionHash?: string;
+	addresses?: OrgAddresses;
 	error?: string;
+}
+
+/**
+ * Query the factory contract to get deployed addresses for an org
+ */
+export async function getOrgAddresses(orgId: string): Promise<OrgAddresses | null> {
+	if (!FACTORY_ADDRESS) {
+		console.error("SLASH_TIP_FACTORY_ADDRESS not set");
+		return null;
+	}
+
+	try {
+		const result = await publicClient.readContract({
+			address: FACTORY_ADDRESS as `0x${string}`,
+			abi: factoryAbi,
+			functionName: "getOrg",
+			args: [orgId],
+		});
+
+		if (!result.exists) {
+			console.log(`Org ${orgId} not found in factory`);
+			return null;
+		}
+
+		return {
+			slashTipAddress: result.slashTip,
+			userRegistryAddress: result.userRegistry,
+			tipActionAddress: result.tipAction,
+			tipTokenAddress: result.tipToken,
+		};
+	} catch (error) {
+		console.error(`Failed to get org addresses for ${orgId}:`, error);
+		return null;
+	}
 }
 
 export interface ERC1155DeploymentConfig {

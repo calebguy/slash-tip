@@ -2,16 +2,17 @@
 pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
-import {UserRegistry} from "../src/contracts/UserRegistry.sol";
+import {DeprecatedUserRegistry} from "../src/contracts/DeprecatedUserRegistry.sol";
 import {AccessControl} from "openzeppelin/access/AccessControl.sol";
 import "forge-std/console.sol";
 
-contract UserRegistryTest is Test {
-    UserRegistry public registry;
+/// @notice Tests for the deprecated V1 UserRegistry contract
+contract DeprecatedUserRegistryTest is Test {
+    DeprecatedUserRegistry public registry;
     string description = "User registry";
 
     string public userId = "user1";
-    UserRegistry.User public user = UserRegistry.User({
+    DeprecatedUserRegistry.User public user = DeprecatedUserRegistry.User({
         id: "user1",
         nickname: "a test user",
         account: 0x18F33CEf45817C428d98C4E188A770191fDD4B79,
@@ -19,7 +20,7 @@ contract UserRegistryTest is Test {
     });
 
     function setUp() public {
-        registry = new UserRegistry(address(this), description);
+        registry = new DeprecatedUserRegistry(address(this), description);
     }
 
     function test_getDescription() public view {
@@ -43,7 +44,7 @@ contract UserRegistryTest is Test {
     
     function test_addUser() public {
         registry.addUser(userId, user);
-        UserRegistry.User memory _user = registry.getUser(userId);
+        DeprecatedUserRegistry.User memory _user = registry.getUser(userId);
         assertEq(_user.account, user.account);
         assertEq(_user.allowance, user.allowance);
         assertEq(_user.nickname, user.nickname);
@@ -63,7 +64,7 @@ contract UserRegistryTest is Test {
         registry.setUserAllowance(userId, allowance);
         assertEq(registry.getUserAllowance(userId), allowance);
 
-        UserRegistry.User memory _user = registry.getUser(userId);
+        DeprecatedUserRegistry.User memory _user = registry.getUser(userId);
         assertEq(_user.allowance, allowance);
     }
 
@@ -98,13 +99,13 @@ contract UserRegistryTest is Test {
         address account2 = 0x9a37E57d177c5Ff8817B55da36F2A2b3532CDE3F;
         string memory nickname2 = "another test";
         uint256 allowance2 = 20;
-        registry.addUser("user2", UserRegistry.User({
+        registry.addUser("user2", DeprecatedUserRegistry.User({
             id: userId2,
             nickname: nickname2,
             account: account2,
             allowance: allowance2
         }));
-        UserRegistry.User[] memory users = registry.listUsers();
+        DeprecatedUserRegistry.User[] memory users = registry.listUsers();
         assertEq(users.length, 2);
         assertEq(users[0].account, user.account);
         assertEq(users[0].allowance, user.allowance);

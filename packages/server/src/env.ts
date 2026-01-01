@@ -12,7 +12,7 @@ export const env = {
 
 // Optional env vars (checked at runtime when needed)
 export const optionalEnv = {
-	// V2 Factory deployment
+	// Factory deployment
 	SLASH_TIP_FACTORY_ADDRESS: process.env.SLASH_TIP_FACTORY_ADDRESS as string | undefined,
 	SLASH_TIP_ADMIN_ADDRESS: process.env.SLASH_TIP_ADMIN_ADDRESS as string | undefined,
 };

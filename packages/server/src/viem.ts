@@ -7,16 +7,15 @@ import {
 } from "viem";
 import { base, mainnet } from "viem/chains";
 
-import SlashTipAbi from "utils/src/abis/SlashTipAbi";
-import UserRegistryAbi from "utils/src/abis/UserRegistryAbi";
-import { SLASH_TIP_ADDRESS, USER_REGISTRY_ADDRESS } from "utils/src/constants";
+import { SlashTipAbi } from "utils/src/abis/SlashTipAbi";
+import { UserRegistryAbi } from "utils/src/abis/UserRegistryAbi";
 import { privateKeyToAccount } from "viem/accounts";
 import { normalize } from "viem/ens";
 import { env } from "./env";
 
 const rpcUrl = env.BASE_RPC_URL;
 
-const baseClient = createPublicClient({
+export const baseClient = createPublicClient({
 	chain: base,
 	transport: http(rpcUrl),
 });
@@ -33,17 +32,23 @@ export const walletClient = createWalletClient({
 	transport: http(rpcUrl),
 });
 
-export const slashTipContract = getContract({
-	address: SLASH_TIP_ADDRESS,
-	abi: SlashTipAbi,
-	client: { public: baseClient, wallet: walletClient },
-});
+// Create a SlashTip contract instance for a specific org
+export function getSlashTipContract(address: Hex) {
+	return getContract({
+		address,
+		abi: SlashTipAbi,
+		client: { public: baseClient, wallet: walletClient },
+	});
+}
 
-export const userRegistryContract = getContract({
-	address: USER_REGISTRY_ADDRESS,
-	abi: UserRegistryAbi,
-	client: { public: baseClient, wallet: walletClient },
-});
+// Create a UserRegistry contract instance for a specific org
+export function getUserRegistryContract(address: Hex) {
+	return getContract({
+		address,
+		abi: UserRegistryAbi,
+		client: { public: baseClient, wallet: walletClient },
+	});
+}
 
 export const getAddressFromENS = (ens: string): Promise<Hex | null> => {
 	return mainnetClient.getEnsAddress({

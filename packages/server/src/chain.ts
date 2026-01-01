@@ -1,11 +1,8 @@
 import { SyndicateClient } from "@syndicateio/syndicate-node";
 import { waitForHash } from "@syndicateio/syndicate-node/utils";
-
-import { SLASH_TIP_ADDRESS, USER_REGISTRY_ADDRESS } from "utils/src/constants";
 import type { Hex } from "viem";
-import { DAILY_ALLOWANCE } from "./constants";
 import { env } from "./env";
-import { slashTipContract, userRegistryContract } from "./viem";
+import { getSlashTipContract, getUserRegistryContract } from "./viem";
 
 const syndicate = new SyndicateClient({
 	token: env.SYNDICATE_API_KEY,
@@ -13,107 +10,118 @@ const syndicate = new SyndicateClient({
 
 const chainId = 8453;
 const projectId = "570119ce-a49c-4245-8851-11c9d1ad74c7";
-const tokenId = 0;
 
-export function getBalance(userId: string): Promise<bigint> {
-	return slashTipContract.read.balanceOf([userId, BigInt(tokenId)]);
+// Types for org action config (stored in organizations.actionConfig)
+export interface OrgActionConfig {
+	// Deployed contract addresses
+	slashTipAddress?: string;
+	userRegistryAddress?: string;
+	tipActionAddress?: string;
+	tipTokenAddress?: string;
+	// Deployment info
+	deploymentTxHash?: string;
+	deploymentStatus?: "pending" | "deployed";
+	// Type-specific config
+	tokenAddress?: string; // For ERC20 Vault
+	tokenName?: string; // For ERC20 Mint
+	tokenSymbol?: string; // For ERC20 Mint
+	baseUri?: string; // For ERC1155
+	contractUri?: string; // For ERC1155
+	tokenId?: number; // For ERC1155
 }
 
-export function getAllowance(userId: string) {
-	return slashTipContract.read.allowanceOf([userId]);
+// Per-org contract functions
+
+export function getAllowance(slashTipAddress: Hex, userId: string) {
+	const contract = getSlashTipContract(slashTipAddress);
+	return contract.read.allowanceOf([userId]);
 }
 
-export function getUserAddress(userId: string) {
-	return userRegistryContract.read.getUserAddress([userId]);
+export function getUserAddress(userRegistryAddress: Hex, userId: string) {
+	const contract = getUserRegistryContract(userRegistryAddress);
+	return contract.read.getUserAddress([userId]);
 }
 
-export function getUser(userId: string) {
-	return userRegistryContract.read.getUser([userId]).then((user) => ({
+export function getUser(userRegistryAddress: Hex, userId: string) {
+	const contract = getUserRegistryContract(userRegistryAddress);
+	return contract.read.getUser([userId]).then((user) => ({
 		...user,
 		id: userId,
 	}));
 }
 
-export async function getLeaderBoard() {
-	return slashTipContract.read.leaderboard([BigInt(tokenId)]);
-}
-
-export async function getUserExists(userId: string) {
+export async function getUserExists(userRegistryAddress: Hex, userId: string) {
 	try {
-		const user = await userRegistryContract.read.getUser([userId]);
+		const contract = getUserRegistryContract(userRegistryAddress);
+		const user = await contract.read.getUser([userId]);
 		return user.id === userId;
 	} catch (e) {
 		return false;
 	}
 }
 
-export function addAllowanceForAllUsers(amount: number) {
-	return slashTipContract.write.addAllowanceForAllUsers([BigInt(amount)]);
+export async function addAllowanceForAllUsers(slashTipAddress: Hex, amount: number) {
+	const contract = getSlashTipContract(slashTipAddress);
+	return contract.write.addAllowanceForAllUsers([BigInt(amount)]);
 }
 
-export async function 	mint({
-	from,
-	to,
-	amount,
-	data,
-}: { from: string; to: string; amount: number; data: string }) {
-	console.log("args", { tokenId, from, to, amount, data });
-	const { transactionId } = await syndicate.transact.sendTransaction({
-		chainId,
-		projectId,
-		contractAddress: SLASH_TIP_ADDRESS,
-		functionSignature:
-			"tip(string from, string to, uint256 tokenId, uint256 amount, string data)",
-		args: {
-			tokenId,
-			from,
-			to,
-			amount,
-			data,
-		},
-	});
-	try {
-		return await waitForHash(syndicate, {
-			projectId,
-			transactionId,
-			every: 200,
-			maxAttempts: 2,
-		});
-	} catch (e) {
-		console.error(
-			`[mint] could not get transaction hash for ${transactionId} in reasonable amount of time`,
-		);
-		return null;
-	}
+export async function setAllowanceForAllUsers(slashTipAddress: Hex, amount: number) {
+	const contract = getSlashTipContract(slashTipAddress);
+	return contract.write.setAllowanceForAllUsers([BigInt(amount)]);
 }
 
-export async function registerSyn({
+export async function register({
+	userRegistryAddress,
 	id,
 	nickname,
 	address,
-}: { id: string; nickname: string; address: string }) {
-	console.log("sending syn transaction");
-	console.log({
+	allowance,
+}: {
+	userRegistryAddress: Hex;
+	id: string;
+	nickname: string;
+	address: Hex;
+	allowance: number;
+}) {
+	const contract = getUserRegistryContract(userRegistryAddress);
+	return contract.write.addUser([
 		id,
-		nickname,
-		address,
-		projectId,
-		chainId,
-		USER_REGISTRY_ADDRESS,
-		DAILY_ALLOWANCE,
-	});
+		{
+			id,
+			nickname,
+			account: address,
+			allowance: BigInt(allowance),
+		},
+	]);
+}
+
+// Syndicate-based registration (for non-wallet transactions)
+export async function registerViaSyndicate({
+	userRegistryAddress,
+	id,
+	nickname,
+	address,
+	allowance,
+}: {
+	userRegistryAddress: string;
+	id: string;
+	nickname: string;
+	address: string;
+	allowance: number;
+}) {
 	const { transactionId } = await syndicate.transact.sendTransaction({
 		chainId,
 		projectId,
-		contractAddress: USER_REGISTRY_ADDRESS,
+		contractAddress: userRegistryAddress,
 		functionSignature:
-			"addUser(string id, (string nickname, address account, uint256 allowance) user)",
+			"addUser(string _id, (string id, string nickname, address account, uint256 allowance) _user)",
 		args: {
-			id,
-			user: {
+			_id: id,
+			_user: {
+				id,
 				nickname,
 				account: address,
-				allowance: DAILY_ALLOWANCE,
+				allowance,
 			},
 		},
 	});
@@ -121,8 +129,8 @@ export async function registerSyn({
 		return await waitForHash(syndicate, {
 			projectId,
 			transactionId,
-			every: 200,
-			maxAttempts: 3,
+			every: 500,
+			maxAttempts: 60,
 		});
 	} catch (e) {
 		console.error(
@@ -130,20 +138,4 @@ export async function registerSyn({
 		);
 		return null;
 	}
-}
-
-export function register({
-	id,
-	nickname,
-	address,
-}: { id: string; nickname: string; address: Hex }) {
-	return userRegistryContract.write.addUser([
-		id,
-		{
-			id,
-			nickname,
-			account: address,
-			allowance: BigInt(DAILY_ALLOWANCE),
-		},
-	]);
 }

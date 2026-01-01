@@ -3,6 +3,7 @@ import {
 	deployERC1155,
 	deployERC20,
 	deployERC20Vault,
+	getOrgAddresses,
 } from "../deploy/factory";
 import { db } from "../server";
 import {
@@ -12,6 +13,21 @@ import {
 	getERC20ConfigView,
 	getERC20VaultConfigView,
 } from "../slack/appHome";
+
+/**
+ * Helper to fetch org addresses with retries (for propagation delay)
+ */
+async function fetchOrgAddressesWithRetry(orgId: string, maxAttempts = 5, delayMs = 2000) {
+	for (let i = 0; i < maxAttempts; i++) {
+		const addresses = await getOrgAddresses(orgId);
+		if (addresses) {
+			return addresses;
+		}
+		console.log(`Attempt ${i + 1}/${maxAttempts}: Org not found in factory yet, waiting...`);
+		await new Promise((resolve) => setTimeout(resolve, delayMs));
+	}
+	return null;
+}
 
 interface SlackEvent {
 	type: string;
@@ -149,10 +165,18 @@ const app = new Hono()
 
 				if (!deployResult.success) {
 					console.error("ERC1155 deployment failed:", deployResult.error);
-					// Still save config for retry later
 				}
 
-				// Update org config
+				// Fetch deployed addresses from factory
+				let addresses = null;
+				if (deployResult.success) {
+					addresses = await fetchOrgAddressesWithRetry(org.id);
+					if (!addresses) {
+						console.error("Failed to fetch deployed addresses for org:", org.id);
+					}
+				}
+
+				// Update org config with addresses
 				const [updatedOrg] = await db.updateOrg(org.id, {
 					actionType: "erc1155_mint",
 					actionConfig: {
@@ -160,7 +184,11 @@ const app = new Hono()
 						contractUri,
 						tokenId: Number(tokenId),
 						deploymentTxHash: deployResult.transactionHash,
-						deploymentStatus: deployResult.success ? "deployed" : "pending",
+						deploymentStatus: addresses ? "deployed" : "pending",
+						slashTipAddress: addresses?.slashTipAddress,
+						userRegistryAddress: addresses?.userRegistryAddress,
+						tipActionAddress: addresses?.tipActionAddress,
+						tipTokenAddress: addresses?.tipTokenAddress,
 					},
 					dailyAllowance: Number(dailyAllowance),
 				});
@@ -190,10 +218,18 @@ const app = new Hono()
 
 				if (!deployResult.success) {
 					console.error("ERC20 deployment failed:", deployResult.error);
-					// Still save config for retry later
 				}
 
-				// Update org config
+				// Fetch deployed addresses from factory
+				let addresses = null;
+				if (deployResult.success) {
+					addresses = await fetchOrgAddressesWithRetry(org.id);
+					if (!addresses) {
+						console.error("Failed to fetch deployed addresses for org:", org.id);
+					}
+				}
+
+				// Update org config with addresses
 				const [updatedOrg] = await db.updateOrg(org.id, {
 					actionType: "erc20_mint",
 					actionConfig: {
@@ -201,7 +237,11 @@ const app = new Hono()
 						tokenSymbol,
 						decimals: Number(decimals),
 						deploymentTxHash: deployResult.transactionHash,
-						deploymentStatus: deployResult.success ? "deployed" : "pending",
+						deploymentStatus: addresses ? "deployed" : "pending",
+						slashTipAddress: addresses?.slashTipAddress,
+						userRegistryAddress: addresses?.userRegistryAddress,
+						tipActionAddress: addresses?.tipActionAddress,
+						tipTokenAddress: addresses?.tipTokenAddress,
 					},
 					dailyAllowance: Number(dailyAllowance),
 				});
@@ -227,16 +267,28 @@ const app = new Hono()
 
 				if (!deployResult.success) {
 					console.error("ERC20 Vault deployment failed:", deployResult.error);
-					// Still save config for retry later
 				}
 
-				// Update org config
+				// Fetch deployed addresses from factory
+				let addresses = null;
+				if (deployResult.success) {
+					addresses = await fetchOrgAddressesWithRetry(org.id);
+					if (!addresses) {
+						console.error("Failed to fetch deployed addresses for org:", org.id);
+					}
+				}
+
+				// Update org config with addresses
 				const [updatedOrg] = await db.updateOrg(org.id, {
 					actionType: "erc20_vault",
 					actionConfig: {
 						tokenAddress,
 						deploymentTxHash: deployResult.transactionHash,
-						deploymentStatus: deployResult.success ? "deployed" : "pending",
+						deploymentStatus: addresses ? "deployed" : "pending",
+						slashTipAddress: addresses?.slashTipAddress,
+						userRegistryAddress: addresses?.userRegistryAddress,
+						tipActionAddress: addresses?.tipActionAddress,
+						tipTokenAddress: addresses?.tipTokenAddress,
 					},
 					dailyAllowance: Number(dailyAllowance),
 				});
