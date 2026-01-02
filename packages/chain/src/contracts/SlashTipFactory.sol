@@ -39,7 +39,8 @@ contract SlashTipFactory is AccessControl {
     string[] public orgIds;
 
     event OrgDeployed(
-        string indexed orgId,
+        string indexed orgIdHash,
+        string orgId,
         address indexed admin,
         address slashTip,
         address userRegistry,
@@ -169,7 +170,7 @@ contract SlashTipFactory is AccessControl {
         });
         orgIds.push(_orgId);
 
-        emit OrgDeployed(_orgId, _admin, slashTip, userRegistry, tipAction, tipToken);
+        emit OrgDeployed(_orgId, _orgId, _admin, slashTip, userRegistry, tipAction, tipToken);
     }
 
     /// @notice Deploy a full SlashTip setup with a new ERC20 token
@@ -266,7 +267,7 @@ contract SlashTipFactory is AccessControl {
         });
         orgIds.push(_orgId);
 
-        emit OrgDeployed(_orgId, _admin, slashTip, userRegistry, tipAction, tipToken);
+        emit OrgDeployed(_orgId, _orgId, _admin, slashTip, userRegistry, tipAction, tipToken);
     }
 
     /// @notice Deploy a SlashTip setup with an ERC20 vault (uses existing token)
@@ -345,7 +346,7 @@ contract SlashTipFactory is AccessControl {
         });
         orgIds.push(_orgId);
 
-        emit OrgDeployed(_orgId, _admin, slashTip, userRegistry, tipAction, _token);
+        emit OrgDeployed(_orgId, _orgId, _admin, slashTip, userRegistry, tipAction, _token);
     }
 
     // ============ Beacon Upgrade Functions ============

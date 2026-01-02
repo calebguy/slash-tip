@@ -10,7 +10,7 @@ if (!process.env.DATABASE_URL) {
 
 export const publicClient = createPublicClient({
 	chain: base,
-	transport: http(process.env.PONDER_RPC_URL_1),
+	transport: http(process.env.PONDER_RPC_URL_BASE),
 });
 
 export const db = new Db(

@@ -14,7 +14,7 @@ if (!FACTORY_ADDRESS) {
 
 // OrgDeployed event signature for factory pattern
 const ORG_DEPLOYED_EVENT = parseAbiItem(
-	"event OrgDeployed(string indexed orgId, address indexed admin, address slashTip, address userRegistry, address tipAction, address tipToken)"
+	"event OrgDeployed(string indexed orgIdHash, string orgId, address indexed admin, address slashTip, address userRegistry, address tipAction, address tipToken)"
 );
 
 export default createConfig({

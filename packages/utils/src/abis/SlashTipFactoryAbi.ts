@@ -123,7 +123,8 @@ export const SlashTipFactoryAbi = [
 		type: "event",
 		name: "OrgDeployed",
 		inputs: [
-			{ name: "orgId", type: "string", indexed: true, internalType: "string" },
+			{ name: "orgIdHash", type: "string", indexed: true, internalType: "string" },
+			{ name: "orgId", type: "string", indexed: false, internalType: "string" },
 			{ name: "admin", type: "address", indexed: true, internalType: "address" },
 			{ name: "slashTip", type: "address", indexed: false, internalType: "address" },
 			{ name: "userRegistry", type: "address", indexed: false, internalType: "address" },
