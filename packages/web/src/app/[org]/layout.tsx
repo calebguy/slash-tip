@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import { Footer } from "@/components/Footer";
+import { SetupBanner } from "@/components/SetupBanner";
 import { SidebarNav } from "@/components/SidebarNav";
 import { getOrg } from "@/lib/api";
 
@@ -15,6 +17,9 @@ export default async function OrgLayout({ children, params }: Props) {
 		<div className="flex flex-col min-h-dvh">
 			<div className="grow md:grid grid-cols-2 p-8">
 				<div>
+					<Suspense fallback={null}>
+						<SetupBanner />
+					</Suspense>
 					<SidebarNav org={org} />
 				</div>
 				<div
