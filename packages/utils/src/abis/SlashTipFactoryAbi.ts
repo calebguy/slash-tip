@@ -80,6 +80,77 @@ export const SlashTipFactoryAbi = [
 	},
 	{
 		type: "function",
+		name: "createERC1155Action",
+		inputs: [
+			{ name: "_orgId", type: "string", internalType: "string" },
+			{ name: "_admin", type: "address", internalType: "address" },
+			{ name: "_tokenBaseURI", type: "string", internalType: "string" },
+			{ name: "_contractURI", type: "string", internalType: "string" },
+			{ name: "_tokenId", type: "uint256", internalType: "uint256" },
+		],
+		outputs: [
+			{ name: "tipAction", type: "address", internalType: "address" },
+			{ name: "tipToken", type: "address", internalType: "address" },
+		],
+		stateMutability: "nonpayable",
+	},
+	{
+		type: "function",
+		name: "createERC20Action",
+		inputs: [
+			{ name: "_orgId", type: "string", internalType: "string" },
+			{ name: "_admin", type: "address", internalType: "address" },
+			{ name: "_tokenName", type: "string", internalType: "string" },
+			{ name: "_tokenSymbol", type: "string", internalType: "string" },
+			{ name: "_tokenDecimals", type: "uint8", internalType: "uint8" },
+		],
+		outputs: [
+			{ name: "tipAction", type: "address", internalType: "address" },
+			{ name: "tipToken", type: "address", internalType: "address" },
+		],
+		stateMutability: "nonpayable",
+	},
+	{
+		type: "function",
+		name: "createERC20VaultAction",
+		inputs: [
+			{ name: "_orgId", type: "string", internalType: "string" },
+			{ name: "_admin", type: "address", internalType: "address" },
+			{ name: "_token", type: "address", internalType: "address" },
+		],
+		outputs: [
+			{ name: "tipAction", type: "address", internalType: "address" },
+		],
+		stateMutability: "nonpayable",
+	},
+	{
+		type: "function",
+		name: "createETHVaultAction",
+		inputs: [
+			{ name: "_orgId", type: "string", internalType: "string" },
+			{ name: "_admin", type: "address", internalType: "address" },
+		],
+		outputs: [
+			{ name: "tipAction", type: "address", internalType: "address" },
+		],
+		stateMutability: "nonpayable",
+	},
+	{
+		type: "function",
+		name: "deployWithETHVault",
+		inputs: [
+			{ name: "_orgId", type: "string", internalType: "string" },
+			{ name: "_admin", type: "address", internalType: "address" },
+		],
+		outputs: [
+			{ name: "slashTip", type: "address", internalType: "address" },
+			{ name: "userRegistry", type: "address", internalType: "address" },
+			{ name: "tipAction", type: "address", internalType: "address" },
+		],
+		stateMutability: "nonpayable",
+	},
+	{
+		type: "function",
 		name: "getOrg",
 		inputs: [{ name: "_orgId", type: "string", internalType: "string" }],
 		outputs: [
@@ -140,6 +211,18 @@ export const SlashTipFactoryAbi = [
 			{ name: "beaconName", type: "string", indexed: false, internalType: "string" },
 			{ name: "oldImpl", type: "address", indexed: true, internalType: "address" },
 			{ name: "newImpl", type: "address", indexed: true, internalType: "address" },
+		],
+		anonymous: false,
+	},
+	{
+		type: "event",
+		name: "TipActionCreated",
+		inputs: [
+			{ name: "orgIdHash", type: "string", indexed: true, internalType: "string" },
+			{ name: "orgId", type: "string", indexed: false, internalType: "string" },
+			{ name: "admin", type: "address", indexed: true, internalType: "address" },
+			{ name: "tipAction", type: "address", indexed: false, internalType: "address" },
+			{ name: "tipToken", type: "address", indexed: false, internalType: "address" },
 		],
 		anonymous: false,
 	},

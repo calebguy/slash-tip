@@ -11,6 +11,7 @@ import {TipERC20} from "./TipERC20.sol";
 import {ERC1155MintAction} from "./ERC1155MintAction.sol";
 import {ERC20MintAction} from "./ERC20MintAction.sol";
 import {ERC20VaultAction} from "./ERC20VaultAction.sol";
+import {ETHVaultAction} from "./ETHVaultAction.sol";
 
 /// @title SlashTipFactory
 /// @notice Factory contract for deploying SlashTip instances using Beacon Proxies
@@ -26,6 +27,7 @@ contract SlashTipFactory is AccessControl {
     UpgradeableBeacon public erc1155MintActionBeacon;
     UpgradeableBeacon public erc20MintActionBeacon;
     UpgradeableBeacon public erc20VaultActionBeacon;
+    UpgradeableBeacon public ethVaultActionBeacon;
 
     struct OrgDeployment {
         address slashTip;
@@ -50,6 +52,14 @@ contract SlashTipFactory is AccessControl {
 
     event BeaconUpgraded(string beaconName, address indexed oldImpl, address indexed newImpl);
 
+    event TipActionCreated(
+        string indexed orgIdHash,
+        string orgId,
+        address indexed admin,
+        address tipAction,
+        address tipToken
+    );
+
     error OrgAlreadyExists(string orgId);
     error OrgNotFound(string orgId);
 
@@ -61,7 +71,8 @@ contract SlashTipFactory is AccessControl {
         address _tipERC20Impl,
         address _erc1155MintActionImpl,
         address _erc20MintActionImpl,
-        address _erc20VaultActionImpl
+        address _erc20VaultActionImpl,
+        address _ethVaultActionImpl
     ) {
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(FACTORY_MANAGER, _admin);
@@ -74,6 +85,7 @@ contract SlashTipFactory is AccessControl {
         erc1155MintActionBeacon = new UpgradeableBeacon(_erc1155MintActionImpl, address(this));
         erc20MintActionBeacon = new UpgradeableBeacon(_erc20MintActionImpl, address(this));
         erc20VaultActionBeacon = new UpgradeableBeacon(_erc20VaultActionImpl, address(this));
+        ethVaultActionBeacon = new UpgradeableBeacon(_ethVaultActionImpl, address(this));
     }
 
     /// @notice Deploy a full SlashTip setup with a new ERC1155 token
@@ -349,6 +361,265 @@ contract SlashTipFactory is AccessControl {
         emit OrgDeployed(_orgId, _orgId, _admin, slashTip, userRegistry, tipAction, _token);
     }
 
+    /// @notice Deploy a SlashTip setup with a native ETH vault
+    /// @param _orgId Unique organization identifier
+    /// @param _admin Admin address for the deployed contracts
+    function deployWithETHVault(
+        string calldata _orgId,
+        address _admin
+    )
+        external
+        onlyRole(FACTORY_MANAGER)
+        returns (
+            address slashTip,
+            address userRegistry,
+            address tipAction
+        )
+    {
+        if (orgs[_orgId].exists) revert OrgAlreadyExists(_orgId);
+
+        // Deploy all proxies with factory as temporary admin
+        address factory = address(this);
+
+        // 1. Deploy UserRegistry proxy
+        userRegistry = address(new BeaconProxy(
+            address(userRegistryBeacon),
+            abi.encodeCall(UserRegistry.initialize, (factory, _orgId))
+        ));
+
+        // 2. Deploy ETHVaultAction proxy
+        tipAction = address(new BeaconProxy(
+            address(ethVaultActionBeacon),
+            abi.encodeCall(ETHVaultAction.initialize, (factory))
+        ));
+
+        // 3. Deploy SlashTip proxy
+        slashTip = address(new BeaconProxy(
+            address(slashTipBeacon),
+            abi.encodeCall(SlashTip.initialize, (factory, userRegistry, tipAction, _orgId))
+        ));
+
+        // 4. Grant cross-contract permissions (factory has admin, so this works)
+        UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).REGISTRY_MANAGER(), slashTip);
+
+        // 5. Transfer all roles to actual admin
+        bytes32 defaultAdmin = DEFAULT_ADMIN_ROLE;
+
+        // UserRegistry roles
+        UserRegistry(userRegistry).grantRole(defaultAdmin, _admin);
+        UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).REGISTRY_MANAGER(), _admin);
+
+        // ETHVaultAction roles
+        ETHVaultAction(payable(tipAction)).grantRole(defaultAdmin, _admin);
+        ETHVaultAction(payable(tipAction)).grantRole(ETHVaultAction(payable(tipAction)).VAULT_MANAGER(), _admin);
+
+        // SlashTip roles
+        SlashTip(slashTip).grantRole(defaultAdmin, _admin);
+        SlashTip(slashTip).grantRole(SlashTip(slashTip).TIP_MANAGER(), _admin);
+
+        // 6. Renounce factory's admin roles (must be last)
+        UserRegistry(userRegistry).renounceRole(defaultAdmin, factory);
+        UserRegistry(userRegistry).renounceRole(UserRegistry(userRegistry).REGISTRY_MANAGER(), factory);
+        ETHVaultAction(payable(tipAction)).renounceRole(defaultAdmin, factory);
+        ETHVaultAction(payable(tipAction)).renounceRole(ETHVaultAction(payable(tipAction)).VAULT_MANAGER(), factory);
+        SlashTip(slashTip).renounceRole(defaultAdmin, factory);
+        SlashTip(slashTip).renounceRole(SlashTip(slashTip).TIP_MANAGER(), factory);
+
+        // 7. Store deployment info (tipToken is address(0) for ETH vault)
+        orgs[_orgId] = OrgDeployment({
+            slashTip: slashTip,
+            userRegistry: userRegistry,
+            tipAction: tipAction,
+            tipToken: address(0),
+            exists: true
+        });
+        orgIds.push(_orgId);
+
+        emit OrgDeployed(_orgId, _orgId, _admin, slashTip, userRegistry, tipAction, address(0));
+    }
+
+    // ============ Tip Action Update Functions ============
+
+    /// @notice Create a new ERC1155 tip action for an existing org
+    /// @dev After calling this, org admin must call slashTip.setTipAction(tipAction)
+    /// @param _orgId The organization to create action for
+    /// @param _admin Admin address for the new contracts
+    /// @param _tokenBaseURI Base URI for token metadata
+    /// @param _contractURI Contract-level metadata URI
+    /// @param _tokenId The token ID to use for tips
+    function createERC1155Action(
+        string calldata _orgId,
+        address _admin,
+        string calldata _tokenBaseURI,
+        string calldata _contractURI,
+        uint256 _tokenId
+    )
+        external
+        onlyRole(FACTORY_MANAGER)
+        returns (address tipAction, address tipToken)
+    {
+        if (!orgs[_orgId].exists) revert OrgNotFound(_orgId);
+
+        address factory = address(this);
+
+        // 1. Deploy TipERC1155 proxy
+        tipToken = address(new BeaconProxy(
+            address(tipERC1155Beacon),
+            abi.encodeCall(TipERC1155.initialize, (factory, _tokenBaseURI, _contractURI))
+        ));
+
+        // 2. Deploy ERC1155MintAction proxy
+        tipAction = address(new BeaconProxy(
+            address(erc1155MintActionBeacon),
+            abi.encodeCall(ERC1155MintAction.initialize, (factory, tipToken, _tokenId))
+        ));
+
+        // 3. Grant cross-contract permissions
+        TipERC1155(tipToken).grantRole(TipERC1155(tipToken).TIP_MINTER(), tipAction);
+
+        // 4. Transfer roles to admin
+        bytes32 defaultAdmin = DEFAULT_ADMIN_ROLE;
+
+        TipERC1155(tipToken).grantRole(defaultAdmin, _admin);
+        TipERC1155(tipToken).grantRole(TipERC1155(tipToken).TIP_MINTER(), _admin);
+        ERC1155MintAction(tipAction).grantRole(defaultAdmin, _admin);
+        ERC1155MintAction(tipAction).grantRole(ERC1155MintAction(tipAction).ACTION_MANAGER(), _admin);
+
+        // 5. Renounce factory roles
+        TipERC1155(tipToken).renounceRole(defaultAdmin, factory);
+        TipERC1155(tipToken).renounceRole(TipERC1155(tipToken).TIP_MINTER(), factory);
+        ERC1155MintAction(tipAction).renounceRole(defaultAdmin, factory);
+        ERC1155MintAction(tipAction).renounceRole(ERC1155MintAction(tipAction).ACTION_MANAGER(), factory);
+
+        emit TipActionCreated(_orgId, _orgId, _admin, tipAction, tipToken);
+    }
+
+    /// @notice Create a new ERC20 tip action for an existing org
+    /// @dev After calling this, org admin must call slashTip.setTipAction(tipAction)
+    /// @param _orgId The organization to create action for
+    /// @param _admin Admin address for the new contracts
+    /// @param _tokenName Name for the ERC20 token
+    /// @param _tokenSymbol Symbol for the ERC20 token
+    /// @param _tokenDecimals Decimals for the ERC20 token
+    function createERC20Action(
+        string calldata _orgId,
+        address _admin,
+        string calldata _tokenName,
+        string calldata _tokenSymbol,
+        uint8 _tokenDecimals
+    )
+        external
+        onlyRole(FACTORY_MANAGER)
+        returns (address tipAction, address tipToken)
+    {
+        if (!orgs[_orgId].exists) revert OrgNotFound(_orgId);
+
+        address factory = address(this);
+
+        // 1. Deploy TipERC20 proxy
+        tipToken = address(new BeaconProxy(
+            address(tipERC20Beacon),
+            abi.encodeCall(TipERC20.initialize, (factory, _tokenName, _tokenSymbol, _tokenDecimals))
+        ));
+
+        // 2. Deploy ERC20MintAction proxy
+        tipAction = address(new BeaconProxy(
+            address(erc20MintActionBeacon),
+            abi.encodeCall(ERC20MintAction.initialize, (factory, tipToken))
+        ));
+
+        // 3. Grant cross-contract permissions
+        TipERC20(tipToken).grantRole(TipERC20(tipToken).TIP_MINTER(), tipAction);
+
+        // 4. Transfer roles to admin
+        bytes32 defaultAdmin = DEFAULT_ADMIN_ROLE;
+
+        TipERC20(tipToken).grantRole(defaultAdmin, _admin);
+        TipERC20(tipToken).grantRole(TipERC20(tipToken).TIP_MINTER(), _admin);
+        ERC20MintAction(tipAction).grantRole(defaultAdmin, _admin);
+        ERC20MintAction(tipAction).grantRole(ERC20MintAction(tipAction).ACTION_MANAGER(), _admin);
+
+        // 5. Renounce factory roles
+        TipERC20(tipToken).renounceRole(defaultAdmin, factory);
+        TipERC20(tipToken).renounceRole(TipERC20(tipToken).TIP_MINTER(), factory);
+        ERC20MintAction(tipAction).renounceRole(defaultAdmin, factory);
+        ERC20MintAction(tipAction).renounceRole(ERC20MintAction(tipAction).ACTION_MANAGER(), factory);
+
+        emit TipActionCreated(_orgId, _orgId, _admin, tipAction, tipToken);
+    }
+
+    /// @notice Create a new ERC20 vault tip action for an existing org
+    /// @dev After calling this, org admin must call slashTip.setTipAction(tipAction)
+    /// @param _orgId The organization to create action for
+    /// @param _admin Admin address for the new contracts
+    /// @param _token Address of the existing ERC20 token to use
+    function createERC20VaultAction(
+        string calldata _orgId,
+        address _admin,
+        address _token
+    )
+        external
+        onlyRole(FACTORY_MANAGER)
+        returns (address tipAction)
+    {
+        if (!orgs[_orgId].exists) revert OrgNotFound(_orgId);
+
+        address factory = address(this);
+
+        // 1. Deploy ERC20VaultAction proxy
+        tipAction = address(new BeaconProxy(
+            address(erc20VaultActionBeacon),
+            abi.encodeCall(ERC20VaultAction.initialize, (factory, _token))
+        ));
+
+        // 2. Transfer roles to admin
+        bytes32 defaultAdmin = DEFAULT_ADMIN_ROLE;
+
+        ERC20VaultAction(tipAction).grantRole(defaultAdmin, _admin);
+        ERC20VaultAction(tipAction).grantRole(ERC20VaultAction(tipAction).VAULT_MANAGER(), _admin);
+
+        // 3. Renounce factory roles
+        ERC20VaultAction(tipAction).renounceRole(defaultAdmin, factory);
+        ERC20VaultAction(tipAction).renounceRole(ERC20VaultAction(tipAction).VAULT_MANAGER(), factory);
+
+        emit TipActionCreated(_orgId, _orgId, _admin, tipAction, _token);
+    }
+
+    /// @notice Create a new ETH vault tip action for an existing org
+    /// @dev After calling this, org admin must call slashTip.setTipAction(tipAction)
+    /// @param _orgId The organization to create action for
+    /// @param _admin Admin address for the new contract
+    function createETHVaultAction(
+        string calldata _orgId,
+        address _admin
+    )
+        external
+        onlyRole(FACTORY_MANAGER)
+        returns (address tipAction)
+    {
+        if (!orgs[_orgId].exists) revert OrgNotFound(_orgId);
+
+        address factory = address(this);
+
+        // 1. Deploy ETHVaultAction proxy
+        tipAction = address(new BeaconProxy(
+            address(ethVaultActionBeacon),
+            abi.encodeCall(ETHVaultAction.initialize, (factory))
+        ));
+
+        // 2. Transfer roles to admin
+        bytes32 defaultAdmin = DEFAULT_ADMIN_ROLE;
+
+        ETHVaultAction(payable(tipAction)).grantRole(defaultAdmin, _admin);
+        ETHVaultAction(payable(tipAction)).grantRole(ETHVaultAction(payable(tipAction)).VAULT_MANAGER(), _admin);
+
+        // 3. Renounce factory roles
+        ETHVaultAction(payable(tipAction)).renounceRole(defaultAdmin, factory);
+        ETHVaultAction(payable(tipAction)).renounceRole(ETHVaultAction(payable(tipAction)).VAULT_MANAGER(), factory);
+
+        emit TipActionCreated(_orgId, _orgId, _admin, tipAction, address(0));
+    }
+
     // ============ Beacon Upgrade Functions ============
 
     /// @notice Upgrade the SlashTip implementation for all orgs
@@ -400,6 +671,13 @@ contract SlashTipFactory is AccessControl {
         emit BeaconUpgraded("ERC20VaultAction", oldImpl, _newImpl);
     }
 
+    /// @notice Upgrade the ETHVaultAction implementation for all orgs
+    function upgradeETHVaultAction(address _newImpl) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        address oldImpl = ethVaultActionBeacon.implementation();
+        ethVaultActionBeacon.upgradeTo(_newImpl);
+        emit BeaconUpgraded("ETHVaultAction", oldImpl, _newImpl);
+    }
+
     // ============ View Functions ============
 
     /// @notice Get deployment info for an organization
@@ -431,7 +709,8 @@ contract SlashTipFactory is AccessControl {
         address _tipERC20Beacon,
         address _erc1155MintActionBeacon,
         address _erc20MintActionBeacon,
-        address _erc20VaultActionBeacon
+        address _erc20VaultActionBeacon,
+        address _ethVaultActionBeacon
     ) {
         return (
             address(slashTipBeacon),
@@ -440,7 +719,8 @@ contract SlashTipFactory is AccessControl {
             address(tipERC20Beacon),
             address(erc1155MintActionBeacon),
             address(erc20MintActionBeacon),
-            address(erc20VaultActionBeacon)
+            address(erc20VaultActionBeacon),
+            address(ethVaultActionBeacon)
         );
     }
 
@@ -452,7 +732,8 @@ contract SlashTipFactory is AccessControl {
         address _tipERC20Impl,
         address _erc1155MintActionImpl,
         address _erc20MintActionImpl,
-        address _erc20VaultActionImpl
+        address _erc20VaultActionImpl,
+        address _ethVaultActionImpl
     ) {
         return (
             slashTipBeacon.implementation(),
@@ -461,7 +742,8 @@ contract SlashTipFactory is AccessControl {
             tipERC20Beacon.implementation(),
             erc1155MintActionBeacon.implementation(),
             erc20MintActionBeacon.implementation(),
-            erc20VaultActionBeacon.implementation()
+            erc20VaultActionBeacon.implementation(),
+            ethVaultActionBeacon.implementation()
         );
     }
 }

@@ -155,47 +155,50 @@ const app = new Hono()
 
 				console.log("Deploying ERC1155 setup:", { baseUri, contractUri, tokenId, dailyAllowance });
 
-				// Deploy contracts via Syndicate
-				const deployResult = await deployERC1155({
-					orgId: org.id,
-					baseUri,
-					contractUri,
-					tokenId: Number(tokenId),
-				});
-
-				if (!deployResult.success) {
-					console.error("ERC1155 deployment failed:", deployResult.error);
-				}
-
-				// Fetch deployed addresses from factory
-				let addresses = null;
-				if (deployResult.success) {
-					addresses = await fetchOrgAddressesWithRetry(org.id);
-					if (!addresses) {
-						console.error("Failed to fetch deployed addresses for org:", org.id);
-					}
-				}
-
-				// Update org config with addresses
-				const [updatedOrg] = await db.updateOrg(org.id, {
-					actionType: "erc1155_mint",
-					actionConfig: {
+				// Process deployment asynchronously to avoid Slack 3s timeout
+				(async () => {
+					const deployResult = await deployERC1155({
+						orgId: org.id,
 						baseUri,
 						contractUri,
 						tokenId: Number(tokenId),
-						deploymentTxHash: deployResult.transactionHash,
-						deploymentStatus: addresses ? "deployed" : "pending",
-						slashTipAddress: addresses?.slashTipAddress,
-						userRegistryAddress: addresses?.userRegistryAddress,
-						tipActionAddress: addresses?.tipActionAddress,
-						tipTokenAddress: addresses?.tipTokenAddress,
-					},
-					dailyAllowance: Number(dailyAllowance),
-				});
+					});
 
-				// Refresh app home with updated org
-				await publishAppHome(updatedOrg || org, payload.user.id);
+					if (!deployResult.success) {
+						console.error("ERC1155 deployment failed:", deployResult.error);
+					}
 
+					// Fetch deployed addresses from factory
+					let addresses = null;
+					if (deployResult.success) {
+						addresses = await fetchOrgAddressesWithRetry(org.id);
+						if (!addresses) {
+							console.error("Failed to fetch deployed addresses for org:", org.id);
+						}
+					}
+
+					// Update org config with addresses
+					const [updatedOrg] = await db.updateOrg(org.id, {
+						actionType: "erc1155_mint",
+						actionConfig: {
+							baseUri,
+							contractUri,
+							tokenId: Number(tokenId),
+							deploymentTxHash: deployResult.transactionHash,
+							deploymentStatus: addresses ? "deployed" : "pending",
+							slashTipAddress: addresses?.slashTipAddress,
+							userRegistryAddress: addresses?.userRegistryAddress,
+							tipActionAddress: addresses?.tipActionAddress,
+							tipTokenAddress: addresses?.tipTokenAddress,
+						},
+						dailyAllowance: Number(dailyAllowance),
+					});
+
+					// Refresh app home with updated org
+					await publishAppHome(updatedOrg || org, payload.user.id);
+				})();
+
+				// Return immediately to Slack (closes modal)
 				return c.body(null, 200);
 			}
 
@@ -208,47 +211,50 @@ const app = new Hono()
 
 				console.log("Deploying ERC20 setup:", { tokenName, tokenSymbol, decimals, dailyAllowance });
 
-				// Deploy contracts via Syndicate
-				const deployResult = await deployERC20({
-					orgId: org.id,
-					tokenName,
-					tokenSymbol,
-					decimals: Number(decimals),
-				});
-
-				if (!deployResult.success) {
-					console.error("ERC20 deployment failed:", deployResult.error);
-				}
-
-				// Fetch deployed addresses from factory
-				let addresses = null;
-				if (deployResult.success) {
-					addresses = await fetchOrgAddressesWithRetry(org.id);
-					if (!addresses) {
-						console.error("Failed to fetch deployed addresses for org:", org.id);
-					}
-				}
-
-				// Update org config with addresses
-				const [updatedOrg] = await db.updateOrg(org.id, {
-					actionType: "erc20_mint",
-					actionConfig: {
+				// Process deployment asynchronously to avoid Slack 3s timeout
+				(async () => {
+					const deployResult = await deployERC20({
+						orgId: org.id,
 						tokenName,
 						tokenSymbol,
 						decimals: Number(decimals),
-						deploymentTxHash: deployResult.transactionHash,
-						deploymentStatus: addresses ? "deployed" : "pending",
-						slashTipAddress: addresses?.slashTipAddress,
-						userRegistryAddress: addresses?.userRegistryAddress,
-						tipActionAddress: addresses?.tipActionAddress,
-						tipTokenAddress: addresses?.tipTokenAddress,
-					},
-					dailyAllowance: Number(dailyAllowance),
-				});
+					});
 
-				// Refresh app home with updated org
-				await publishAppHome(updatedOrg || org, payload.user.id);
+					if (!deployResult.success) {
+						console.error("ERC20 deployment failed:", deployResult.error);
+					}
 
+					// Fetch deployed addresses from factory
+					let addresses = null;
+					if (deployResult.success) {
+						addresses = await fetchOrgAddressesWithRetry(org.id);
+						if (!addresses) {
+							console.error("Failed to fetch deployed addresses for org:", org.id);
+						}
+					}
+
+					// Update org config with addresses
+					const [updatedOrg] = await db.updateOrg(org.id, {
+						actionType: "erc20_mint",
+						actionConfig: {
+							tokenName,
+							tokenSymbol,
+							decimals: Number(decimals),
+							deploymentTxHash: deployResult.transactionHash,
+							deploymentStatus: addresses ? "deployed" : "pending",
+							slashTipAddress: addresses?.slashTipAddress,
+							userRegistryAddress: addresses?.userRegistryAddress,
+							tipActionAddress: addresses?.tipActionAddress,
+							tipTokenAddress: addresses?.tipTokenAddress,
+						},
+						dailyAllowance: Number(dailyAllowance),
+					});
+
+					// Refresh app home with updated org
+					await publishAppHome(updatedOrg || org, payload.user.id);
+				})();
+
+				// Return immediately to Slack (closes modal)
 				return c.body(null, 200);
 			}
 
@@ -259,43 +265,46 @@ const app = new Hono()
 
 				console.log("Deploying ERC20 Vault setup:", { tokenAddress, dailyAllowance });
 
-				// Deploy contracts via Syndicate
-				const deployResult = await deployERC20Vault({
-					orgId: org.id,
-					tokenAddress,
-				});
-
-				if (!deployResult.success) {
-					console.error("ERC20 Vault deployment failed:", deployResult.error);
-				}
-
-				// Fetch deployed addresses from factory
-				let addresses = null;
-				if (deployResult.success) {
-					addresses = await fetchOrgAddressesWithRetry(org.id);
-					if (!addresses) {
-						console.error("Failed to fetch deployed addresses for org:", org.id);
-					}
-				}
-
-				// Update org config with addresses
-				const [updatedOrg] = await db.updateOrg(org.id, {
-					actionType: "erc20_vault",
-					actionConfig: {
+				// Process deployment asynchronously to avoid Slack 3s timeout
+				(async () => {
+					const deployResult = await deployERC20Vault({
+						orgId: org.id,
 						tokenAddress,
-						deploymentTxHash: deployResult.transactionHash,
-						deploymentStatus: addresses ? "deployed" : "pending",
-						slashTipAddress: addresses?.slashTipAddress,
-						userRegistryAddress: addresses?.userRegistryAddress,
-						tipActionAddress: addresses?.tipActionAddress,
-						tipTokenAddress: addresses?.tipTokenAddress,
-					},
-					dailyAllowance: Number(dailyAllowance),
-				});
+					});
 
-				// Refresh app home with updated org
-				await publishAppHome(updatedOrg || org, payload.user.id);
+					if (!deployResult.success) {
+						console.error("ERC20 Vault deployment failed:", deployResult.error);
+					}
 
+					// Fetch deployed addresses from factory
+					let addresses = null;
+					if (deployResult.success) {
+						addresses = await fetchOrgAddressesWithRetry(org.id);
+						if (!addresses) {
+							console.error("Failed to fetch deployed addresses for org:", org.id);
+						}
+					}
+
+					// Update org config with addresses
+					const [updatedOrg] = await db.updateOrg(org.id, {
+						actionType: "erc20_vault",
+						actionConfig: {
+							tokenAddress,
+							deploymentTxHash: deployResult.transactionHash,
+							deploymentStatus: addresses ? "deployed" : "pending",
+							slashTipAddress: addresses?.slashTipAddress,
+							userRegistryAddress: addresses?.userRegistryAddress,
+							tipActionAddress: addresses?.tipActionAddress,
+							tipTokenAddress: addresses?.tipTokenAddress,
+						},
+						dailyAllowance: Number(dailyAllowance),
+					});
+
+					// Refresh app home with updated org
+					await publishAppHome(updatedOrg || org, payload.user.id);
+				})();
+
+				// Return immediately to Slack (closes modal)
 				return c.body(null, 200);
 			}
 		}

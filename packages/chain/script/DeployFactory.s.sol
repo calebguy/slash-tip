@@ -9,6 +9,7 @@ import {TipERC20} from "../src/contracts/TipERC20.sol";
 import {ERC1155MintAction} from "../src/contracts/ERC1155MintAction.sol";
 import {ERC20MintAction} from "../src/contracts/ERC20MintAction.sol";
 import {ERC20VaultAction} from "../src/contracts/ERC20VaultAction.sol";
+import {ETHVaultAction} from "../src/contracts/ETHVaultAction.sol";
 import {SlashTipFactory} from "../src/contracts/SlashTipFactory.sol";
 
 /// @title DeploySlashTip
@@ -48,6 +49,9 @@ contract DeploySlashTip is Script {
         ERC20VaultAction erc20VaultActionImpl = new ERC20VaultAction();
         console.log("ERC20VaultAction implementation:", address(erc20VaultActionImpl));
 
+        ETHVaultAction ethVaultActionImpl = new ETHVaultAction();
+        console.log("ETHVaultAction implementation:", address(ethVaultActionImpl));
+
         // 2. Deploy factory with all implementation addresses
         console.log("\n--- Deploying Factory ---");
 
@@ -59,7 +63,8 @@ contract DeploySlashTip is Script {
             address(tipERC20Impl),
             address(erc1155MintActionImpl),
             address(erc20MintActionImpl),
-            address(erc20VaultActionImpl)
+            address(erc20VaultActionImpl),
+            address(ethVaultActionImpl)
         );
         console.log("SlashTipFactory:", address(factory));
 
@@ -76,6 +81,7 @@ contract DeploySlashTip is Script {
         console.log("  ERC1155MintAction:", address(erc1155MintActionImpl));
         console.log("  ERC20MintAction:", address(erc20MintActionImpl));
         console.log("  ERC20VaultAction:", address(erc20VaultActionImpl));
+        console.log("  ETHVaultAction:", address(ethVaultActionImpl));
         console.log("\nFactory:", address(factory));
         console.log("==========================================");
     }
@@ -83,16 +89,17 @@ contract DeploySlashTip is Script {
 
 /// @title RedeployFactory
 /// @notice Redeploy just the factory using existing implementation addresses
-/// @dev Run with: forge script script/DeployV2.s.sol:RedeployFactory --rpc-url $RPC_URL --broadcast --verify
+/// @dev Run with: forge script script/DeployFactory.s.sol:RedeployFactory --rpc-url $RPC_URL --broadcast --verify
 contract RedeployFactory is Script {
     // Existing implementation addresses on Base Mainnet
-    address constant SLASH_TIP_IMPL = 0xAF9F2C21a085712535e28c070629382Ae4F31534;
-    address constant USER_REGISTRY_IMPL = 0xB765639c781e92B20754E9ee9B749941A6d8d30f;
-    address constant TIP_ERC1155_IMPL = 0xFaed9eCde814329026dC6258674a98040A1e8903;
-    address constant TIP_ERC20_IMPL = 0xaCf41658F6Ca80021D64ff5044fC2A8F7543C1C3;
-    address constant ERC1155_MINT_ACTION_IMPL = 0x57D46C53A522901235e9F59C44b38A79b7C883F8;
-    address constant ERC20_MINT_ACTION_IMPL = 0xAC7F5dE17761e03D59D710b0396894f2eA2E7942;
-    address constant ERC20_VAULT_ACTION_IMPL = 0x4FA419c7AfBD180D6aCC9E023Ea5bb6d5D7385A9;
+    address constant SLASH_TIP_IMPL = 0x6119a521fcf788547bc9bE354Ea927c0EeEAb1E0;
+    address constant USER_REGISTRY_IMPL = 0xF3f94F39F793c69D9eD7790653f71A4Be032307a;
+    address constant TIP_ERC1155_IMPL = 0x475c5d23E1F8CBAFBA9828614Fd68e1814aFCb92;
+    address constant TIP_ERC20_IMPL = 0x7784490A60d05AcB80e4f585FE43703248221127;
+    address constant ERC1155_MINT_ACTION_IMPL = 0xe45584dB7474b9028B149C4030849a875e227F13;
+    address constant ERC20_MINT_ACTION_IMPL = 0x76036052143919730eD927699b924fBA624C758e;
+    address constant ERC20_VAULT_ACTION_IMPL = 0xEcE605766e15A1AC9Ac6C4813b3eC0C17a180F5d;
+    address constant ETH_VAULT_ACTION_IMPL = 0xf26860CEaA6af19f1D0afBBa749fb1b242044df2;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
@@ -111,7 +118,8 @@ contract RedeployFactory is Script {
             TIP_ERC20_IMPL,
             ERC1155_MINT_ACTION_IMPL,
             ERC20_MINT_ACTION_IMPL,
-            ERC20_VAULT_ACTION_IMPL
+            ERC20_VAULT_ACTION_IMPL,
+            ETH_VAULT_ACTION_IMPL
         );
 
         vm.stopBroadcast();
@@ -127,11 +135,12 @@ contract RedeployFactory is Script {
         console.log("  ERC1155MintAction:", ERC1155_MINT_ACTION_IMPL);
         console.log("  ERC20MintAction:", ERC20_MINT_ACTION_IMPL);
         console.log("  ERC20VaultAction:", ERC20_VAULT_ACTION_IMPL);
+        console.log("  ETHVaultAction:", ETH_VAULT_ACTION_IMPL);
         console.log("==========================================");
         console.log("");
         console.log("Next steps:");
         console.log("1. Update SLASH_TIP_FACTORY_ADDRESS in your server .env");
-        console.log("2. The old factory at 0x1b7f53A1f5D2951275b6e3E1cb6Ad06333c8459F can be abandoned");
+        console.log("2. Update SLASH_TIP_FACTORY_START_BLOCK in constants.ts");
     }
 }
 
@@ -194,8 +203,18 @@ contract DeployOrg is Script {
             console.log("TipAction (Vault):", tipAction);
             console.log("Existing Token:", existingToken);
 
+        } else if (keccak256(bytes(deploymentType)) == keccak256(bytes("ethvault"))) {
+            (address slashTip, address userRegistry, address tipAction) =
+                f.deployWithETHVault(orgId, orgAdmin);
+
+            console.log("\n--- ETH Vault Deployment ---");
+            console.log("SlashTip:", slashTip);
+            console.log("UserRegistry:", userRegistry);
+            console.log("TipAction (ETH Vault):", tipAction);
+            console.log("Fund the vault by sending ETH to:", tipAction);
+
         } else {
-            revert("Invalid DEPLOYMENT_TYPE. Use: erc1155, erc20, or erc20vault");
+            revert("Invalid DEPLOYMENT_TYPE. Use: erc1155, erc20, erc20vault, or ethvault");
         }
 
         vm.stopBroadcast();

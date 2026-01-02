@@ -194,6 +194,14 @@ class Db {
 			.limit(1);
 	}
 
+	updateOrgTipAction(slashTipAddress: string, tipActionAddress: string) {
+		return this.pg
+			.update(orgContracts)
+			.set({ tipActionAddress })
+			.where(eq(orgContracts.slashTipAddress, slashTipAddress))
+			.returning();
+	}
+
 	getAllOrgContracts() {
 		return this.pg.select().from(orgContracts);
 	}

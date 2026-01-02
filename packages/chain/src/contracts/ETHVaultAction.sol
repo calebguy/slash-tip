@@ -1,0 +1,88 @@
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.13;
+
+import {ITipAction} from "./ITipAction.sol";
+import {AccessControl} from "openzeppelin/access/AccessControl.sol";
+import {Initializable} from "openzeppelin/proxy/utils/Initializable.sol";
+
+/// @title ETHVaultAction
+/// @notice Tip action that transfers native ETH from a vault to recipients
+/// @dev Holds ETH and distributes it as tips. Uses Initializable for beacon proxy pattern.
+contract ETHVaultAction is Initializable, ITipAction, AccessControl {
+    bytes32 public constant VAULT_MANAGER = keccak256("VAULT_MANAGER");
+
+    event Deposit(address indexed from, uint256 amount);
+    event Withdrawal(address indexed to, uint256 amount);
+
+    error InsufficientVaultBalance(uint256 available, uint256 required);
+    error ETHTransferFailed();
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    /// @notice Initialize the contract (replaces constructor for proxy pattern)
+    /// @param _admin The admin address
+    function initialize(address _admin) external initializer {
+        _grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        _grantRole(VAULT_MANAGER, _admin);
+    }
+
+    /// @notice Receive ETH deposits
+    receive() external payable {
+        emit Deposit(msg.sender, msg.value);
+    }
+
+    /// @notice Execute the tip by transferring ETH from the vault
+    /// @param from The sender's wallet address (unused, tips come from vault)
+    /// @param to The recipient's wallet address
+    /// @param amount The amount of ETH to transfer (in wei)
+    /// @param data Unused, kept for interface compatibility
+    function execute(address from, address to, uint256 amount, bytes calldata data) external override {
+        (from, data); // Silence unused parameter warnings
+
+        uint256 balance = address(this).balance;
+        if (balance < amount) {
+            revert InsufficientVaultBalance(balance, amount);
+        }
+
+        (bool success, ) = to.call{value: amount}("");
+        if (!success) {
+            revert ETHTransferFailed();
+        }
+    }
+
+    /// @notice Deposit ETH into the vault
+    function deposit() external payable {
+        emit Deposit(msg.sender, msg.value);
+    }
+
+    /// @notice Withdraw ETH from the vault (admin only)
+    /// @param _to The address to send ETH to
+    /// @param _amount The amount to withdraw (in wei)
+    function withdraw(address _to, uint256 _amount) external onlyRole(VAULT_MANAGER) {
+        (bool success, ) = _to.call{value: _amount}("");
+        if (!success) {
+            revert ETHTransferFailed();
+        }
+        emit Withdrawal(_to, _amount);
+    }
+
+    /// @notice Get the current vault balance
+    /// @return The ETH balance of the vault (in wei)
+    function vaultBalance() external view returns (uint256) {
+        return address(this).balance;
+    }
+
+    /// @notice Rescue ERC20 tokens accidentally sent to this contract
+    /// @param _token The token to rescue
+    /// @param _to The address to send tokens to
+    /// @param _amount The amount to rescue
+    function rescueTokens(address _token, address _to, uint256 _amount) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        (bool success, bytes memory data) = _token.call(
+            abi.encodeWithSignature("transfer(address,uint256)", _to, _amount)
+        );
+        require(success && (data.length == 0 || abi.decode(data, (bool))), "Token transfer failed");
+    }
+}

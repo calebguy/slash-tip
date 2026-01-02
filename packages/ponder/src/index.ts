@@ -86,3 +86,19 @@ ponder.on("UserRegistry:UserRemoved", async ({ event }) => {
 
 	await db.removeUser(id);
 });
+
+// Handle tip action updates from any SlashTip instance
+ponder.on("SlashTip:TipActionUpdated", async ({ event }) => {
+	const slashTipAddress = event.log.address;
+	const { oldAction, newAction } = event.args;
+
+	console.log(`TipActionUpdated: ${oldAction} -> ${newAction}`, {
+		slashTipAddress,
+	});
+
+	// Update the org's tip action address
+	const result = await db.updateOrgTipAction(slashTipAddress, newAction);
+	if (result.length === 0) {
+		console.warn(`No org found for SlashTip contract ${slashTipAddress}`);
+	}
+});
