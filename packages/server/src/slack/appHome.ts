@@ -1,4 +1,6 @@
 import type { Organization } from "db";
+import { baseClient } from "../viem";
+import { erc20Abi, formatUnits, type Hex } from "viem";
 
 const SLACK_API = "https://slack.com/api";
 
@@ -31,6 +33,63 @@ async function slackApi<T extends SlackApiResponse>(
 }
 
 /**
+ * Fetch ERC20 token details (name, symbol, decimals) and vault balance
+ */
+async function getVaultTokenInfo(
+	tokenAddress: Hex,
+	vaultAddress: Hex,
+): Promise<{
+	name: string;
+	symbol: string;
+	decimals: number;
+	balance: string;
+	rawBalance: bigint;
+}> {
+	try {
+		const [name, symbol, decimals, rawBalance] = await Promise.all([
+			baseClient.readContract({
+				address: tokenAddress,
+				abi: erc20Abi,
+				functionName: "name",
+			}),
+			baseClient.readContract({
+				address: tokenAddress,
+				abi: erc20Abi,
+				functionName: "symbol",
+			}),
+			baseClient.readContract({
+				address: tokenAddress,
+				abi: erc20Abi,
+				functionName: "decimals",
+			}),
+			baseClient.readContract({
+				address: tokenAddress,
+				abi: erc20Abi,
+				functionName: "balanceOf",
+				args: [vaultAddress],
+			}),
+		]);
+
+		return {
+			name,
+			symbol,
+			decimals,
+			balance: formatUnits(rawBalance, decimals),
+			rawBalance,
+		};
+	} catch (error) {
+		console.error("Failed to fetch token info:", error);
+		return {
+			name: "Unknown",
+			symbol: "???",
+			decimals: 18,
+			balance: "0",
+			rawBalance: 0n,
+		};
+	}
+}
+
+/**
  * Publish the App Home view for a user
  */
 export async function publishAppHome(
@@ -39,7 +98,7 @@ export async function publishAppHome(
 ): Promise<void> {
 	const isConfigured = org.actionType !== null;
 	const view = isConfigured
-		? getConfiguredHomeView(org)
+		? await getConfiguredHomeView(org)
 		: getUnconfiguredHomeView(org);
 
 	await slackApi("views.publish", org.slackBotToken, {
@@ -100,16 +159,98 @@ function getUnconfiguredHomeView(org: Organization) {
 /**
  * App Home view for configured orgs
  */
-function getConfiguredHomeView(org: Organization) {
+async function getConfiguredHomeView(org: Organization) {
 	const config = org.actionConfig as Record<string, unknown>;
 
 	let configDetails = "";
+	let contractSection: object[] = [];
+
 	if (org.actionType === "erc1155_mint") {
+		const tipTokenAddress = config.tipTokenAddress as Hex | undefined;
 		configDetails = `*Type:* ERC1155 (NFT-style tips)\n*Token ID:* ${config.tokenId || 0}`;
+
+		if (tipTokenAddress) {
+			contractSection = [
+				{
+					type: "divider",
+				},
+				{
+					type: "section",
+					text: {
+						type: "mrkdwn",
+						text: `*Contract Details*\n*Token Address:* \`${tipTokenAddress}\``,
+					},
+				},
+				{
+					type: "context",
+					elements: [
+						{
+							type: "mrkdwn",
+							text: `<https://basescan.org/address/${tipTokenAddress}|View on BaseScan> | Tips are minted as NFTs when sent.`,
+						},
+					],
+				},
+			];
+		}
 	} else if (org.actionType === "erc20_mint") {
+		const tipTokenAddress = config.tipTokenAddress as Hex | undefined;
 		configDetails = `*Type:* ERC20\n*Token:* ${config.tokenName || ""} (${config.tokenSymbol || ""})`;
+
+		if (tipTokenAddress) {
+			contractSection = [
+				{
+					type: "divider",
+				},
+				{
+					type: "section",
+					text: {
+						type: "mrkdwn",
+						text: `*Contract Details*\n*Token Address:* \`${tipTokenAddress}\``,
+					},
+				},
+				{
+					type: "context",
+					elements: [
+						{
+							type: "mrkdwn",
+							text: `<https://basescan.org/address/${tipTokenAddress}|View on BaseScan> | Tokens are minted when tips are sent.`,
+						},
+					],
+				},
+			];
+		}
 	} else if (org.actionType === "erc20_vault") {
-		configDetails = `*Type:* ERC20 Vault\n*Token:* ${config.tokenAddress || ""}`;
+		const tokenAddress = config.tokenAddress as Hex | undefined;
+		const vaultAddress = config.tipActionAddress as Hex | undefined;
+
+		if (tokenAddress && vaultAddress) {
+			const tokenInfo = await getVaultTokenInfo(tokenAddress, vaultAddress);
+			configDetails = `*Type:* ERC20 Vault\n*Token:* ${tokenInfo.name} (${tokenInfo.symbol})`;
+
+			contractSection = [
+				{
+					type: "divider",
+				},
+				{
+					type: "section",
+					text: {
+						type: "mrkdwn",
+						text: `*Vault Details*\n*Vault Address:* \`${vaultAddress}\`\n*Balance:* ${tokenInfo.balance} ${tokenInfo.symbol}`,
+					},
+				},
+				{
+					type: "context",
+					elements: [
+						{
+							type: "mrkdwn",
+							text: `<https://basescan.org/address/${vaultAddress}|View on BaseScan> | To deposit, transfer ${tokenInfo.symbol} to the vault address on Base.`,
+						},
+					],
+				},
+			];
+		} else {
+			configDetails = `*Type:* ERC20 Vault\n*Token:* ${tokenAddress || "Not configured"}`;
+		}
 	}
 
 	return {
@@ -139,6 +280,7 @@ function getConfiguredHomeView(org: Organization) {
 					text: `*Configuration*\n${configDetails}\n*Daily Allowance:* ${org.dailyAllowance} tips per user`,
 				},
 			},
+			...contractSection,
 			{
 				type: "divider",
 			},

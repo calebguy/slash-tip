@@ -18,6 +18,9 @@ export default async function BalancePage({ params }: Props) {
 				<p className="text-paper/40 font-thin text-lg mt-2">
 					Use /tip in Slack to get started
 				</p>
+				<p className="text-paper/30 font-thin text-sm mt-4">
+					Register your wallet with /register 0x... to receive tips onchain
+				</p>
 			</div>
 		);
 	}

@@ -198,8 +198,8 @@ const app = new Hono()
 					await publishAppHome(updatedOrg || org, payload.user.id);
 				})();
 
-				// Return immediately to Slack (closes modal)
-				return c.body(null, 200);
+				// Clear entire modal stack (not just top modal)
+				return c.json({ response_action: "clear" });
 			}
 
 			// ERC20 config submission
@@ -254,8 +254,8 @@ const app = new Hono()
 					await publishAppHome(updatedOrg || org, payload.user.id);
 				})();
 
-				// Return immediately to Slack (closes modal)
-				return c.body(null, 200);
+				// Clear entire modal stack (not just top modal)
+				return c.json({ response_action: "clear" });
 			}
 
 			// ERC20 Vault config submission
@@ -304,8 +304,8 @@ const app = new Hono()
 					await publishAppHome(updatedOrg || org, payload.user.id);
 				})();
 
-				// Return immediately to Slack (closes modal)
-				return c.body(null, 200);
+				// Clear entire modal stack (not just top modal)
+				return c.json({ response_action: "clear" });
 			}
 		}
 
