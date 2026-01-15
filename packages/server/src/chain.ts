@@ -137,7 +137,7 @@ export async function registerViaSyndicate({
 		return await waitForHash(syndicate, {
 			projectId,
 			transactionId,
-			every: 500,
+			every: 250,
 			maxAttempts: 2,
 		});
 	} catch (e) {
