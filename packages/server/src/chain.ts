@@ -62,12 +62,18 @@ export async function getUserExists(userRegistryAddress: Hex, userId: string) {
 	}
 }
 
-export async function addAllowanceForAllUsers(userRegistryAddress: Hex, amount: number) {
+export async function addAllowanceForAllUsers(
+	userRegistryAddress: Hex,
+	amount: number,
+) {
 	const contract = getUserRegistryContract(userRegistryAddress);
 	return contract.write.addAllowanceForAllUsers([BigInt(amount)]);
 }
 
-export async function setAllowanceForAllUsers(userRegistryAddress: Hex, amount: number) {
+export async function setAllowanceForAllUsers(
+	userRegistryAddress: Hex,
+	amount: number,
+) {
 	const contract = getUserRegistryContract(userRegistryAddress);
 	return contract.write.setAllowanceForAllUsers([BigInt(amount)]);
 }
@@ -132,7 +138,7 @@ export async function registerViaSyndicate({
 			projectId,
 			transactionId,
 			every: 500,
-			maxAttempts: 60,
+			maxAttempts: 2,
 		});
 	} catch (e) {
 		console.error(
