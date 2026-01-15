@@ -9,7 +9,9 @@ import {Initializable} from "openzeppelin/proxy/utils/Initializable.sol";
 /// @notice ERC20 token representing tips
 /// @dev Uses Initializable for beacon proxy pattern
 contract TipERC20 is Initializable, ERC20, AccessControl {
-    bytes32 public constant TIP_MINTER = keccak256("TIP_MINTER");
+    // ============ INTERNAL ROLES ============
+    /// @notice Role for minting/burning tokens (granted to action contract)
+    bytes32 public constant MINTER = keccak256("MINTER");
 
     uint8 private _decimals;
     string private _tokenName;
@@ -32,7 +34,6 @@ contract TipERC20 is Initializable, ERC20, AccessControl {
         uint8 decimals_
     ) external initializer {
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
-        _grantRole(TIP_MINTER, _admin);
 
         _tokenName = name_;
         _tokenSymbol = symbol_;
@@ -57,14 +58,14 @@ contract TipERC20 is Initializable, ERC20, AccessControl {
     /// @notice Mint tokens to an address
     /// @param _to The recipient address
     /// @param _amount The amount to mint
-    function mint(address _to, uint256 _amount) external onlyRole(TIP_MINTER) {
+    function mint(address _to, uint256 _amount) external onlyRole(MINTER) {
         _mint(_to, _amount);
     }
 
     /// @notice Burn tokens from an address (requires approval)
     /// @param _from The address to burn from
     /// @param _amount The amount to burn
-    function burn(address _from, uint256 _amount) external onlyRole(TIP_MINTER) {
+    function burn(address _from, uint256 _amount) external onlyRole(MINTER) {
         _burn(_from, _amount);
     }
 

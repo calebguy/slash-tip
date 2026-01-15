@@ -4,11 +4,18 @@ pragma solidity ^0.8.13;
 import {ITipAction} from "./ITipAction.sol";
 import {AccessControl} from "openzeppelin/access/AccessControl.sol";
 import {Initializable} from "openzeppelin/proxy/utils/Initializable.sol";
+import {ReentrancyGuard} from "openzeppelin/utils/ReentrancyGuard.sol";
 
 /// @title ETHVaultAction
 /// @notice Tip action that transfers native ETH from a vault to recipients
 /// @dev Holds ETH and distributes it as tips. Uses Initializable for beacon proxy pattern.
-contract ETHVaultAction is Initializable, ITipAction, AccessControl {
+contract ETHVaultAction is Initializable, ITipAction, AccessControl, ReentrancyGuard {
+    // ============ INTERNAL ROLES ============
+    /// @notice Role for executing tips (granted to SlashTip contract)
+    bytes32 public constant EXECUTOR = keccak256("EXECUTOR");
+
+    // ============ MANAGEMENT ROLES ============
+    /// @notice Role for managing vault funds (withdraw, rescue)
     bytes32 public constant VAULT_MANAGER = keccak256("VAULT_MANAGER");
 
     event Deposit(address indexed from, uint256 amount);
@@ -35,11 +42,12 @@ contract ETHVaultAction is Initializable, ITipAction, AccessControl {
     }
 
     /// @notice Execute the tip by transferring ETH from the vault
+    /// @dev Only callable by addresses with EXECUTOR role (SlashTip contract)
     /// @param from The sender's wallet address (unused, tips come from vault)
     /// @param to The recipient's wallet address
     /// @param amount The amount of ETH to transfer (in wei)
     /// @param data Unused, kept for interface compatibility
-    function execute(address from, address to, uint256 amount, bytes calldata data) external override {
+    function execute(address from, address to, uint256 amount, bytes calldata data) external override onlyRole(EXECUTOR) nonReentrant {
         (from, data); // Silence unused parameter warnings
 
         uint256 balance = address(this).balance;
@@ -79,7 +87,7 @@ contract ETHVaultAction is Initializable, ITipAction, AccessControl {
     /// @param _token The token to rescue
     /// @param _to The address to send tokens to
     /// @param _amount The amount to rescue
-    function rescueTokens(address _token, address _to, uint256 _amount) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function rescueTokens(address _token, address _to, uint256 _amount) external onlyRole(VAULT_MANAGER) {
         (bool success, bytes memory data) = _token.call(
             abi.encodeWithSignature("transfer(address,uint256)", _to, _amount)
         );

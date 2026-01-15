@@ -8,7 +8,16 @@ import {Initializable} from "openzeppelin/proxy/utils/Initializable.sol";
 /// @notice Maps external user IDs (e.g., Slack IDs) to wallet addresses and manages allowances
 /// @dev Uses Initializable for beacon proxy pattern
 contract UserRegistry is Initializable, AccessControl {
-    bytes32 public constant REGISTRY_MANAGER = keccak256("REGISTRY_MANAGER");
+    // ============ OPERATIONAL ROLES ============
+    /// @notice Role for adding/removing users (granted to backend service)
+    bytes32 public constant USER_MANAGER = keccak256("USER_MANAGER");
+
+    /// @notice Role for managing individual user allowances (granted to backend service and SlashTip)
+    bytes32 public constant ALLOWANCE_MANAGER = keccak256("ALLOWANCE_MANAGER");
+
+    // ============ MANAGEMENT ROLES ============
+    /// @notice Role for bulk allowance operations (granted to cron service, separate from backend)
+    bytes32 public constant ALLOWANCE_ADMIN = keccak256("ALLOWANCE_ADMIN");
 
     struct User {
         string id;
@@ -21,9 +30,9 @@ contract UserRegistry is Initializable, AccessControl {
     mapping(string => User) public users;
     string[] public userIds;
 
-    event UserAdded(string indexed id, string nickname, address indexed account);
-    event UserRemoved(string indexed id);
-    event AllowanceUpdated(string indexed id, uint256 oldAllowance, uint256 newAllowance);
+    event UserAdded(string indexed idHash, string id, string nickname, address indexed account);
+    event UserRemoved(string indexed idHash, string id);
+    event AllowanceUpdated(string indexed idHash, string id, uint256 oldAllowance, uint256 newAllowance);
 
     error UserNotFound(string id);
     error UserAlreadyExists(string id);
@@ -39,7 +48,6 @@ contract UserRegistry is Initializable, AccessControl {
     /// @param _orgId The organization ID
     function initialize(address _admin, string memory _orgId) external initializer {
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
-        _grantRole(REGISTRY_MANAGER, _admin);
         orgId = _orgId;
     }
 
@@ -64,7 +72,7 @@ contract UserRegistry is Initializable, AccessControl {
     /// @notice Add a new user
     /// @param _id The external user ID
     /// @param _user The user data
-    function addUser(string memory _id, User calldata _user) external onlyRole(REGISTRY_MANAGER) {
+    function addUser(string memory _id, User calldata _user) external onlyRole(USER_MANAGER) {
         if (_user.account == address(0)) revert InvalidUser();
         if (bytes(_user.nickname).length == 0) revert InvalidUser();
         if (users[_id].account != address(0)) revert UserAlreadyExists(_id);
@@ -72,12 +80,12 @@ contract UserRegistry is Initializable, AccessControl {
         users[_id] = _user;
         userIds.push(_id);
 
-        emit UserAdded(_id, _user.nickname, _user.account);
+        emit UserAdded(_id, _id, _user.nickname, _user.account);
     }
 
     /// @notice Remove a user
     /// @param _id The external user ID
-    function removeUser(string memory _id) external onlyRole(REGISTRY_MANAGER) {
+    function removeUser(string memory _id) external onlyRole(USER_MANAGER) {
         if (users[_id].account == address(0)) revert UserNotFound(_id);
 
         delete users[_id];
@@ -91,7 +99,7 @@ contract UserRegistry is Initializable, AccessControl {
             }
         }
 
-        emit UserRemoved(_id);
+        emit UserRemoved(_id, _id);
     }
 
     /// @notice List all users
@@ -131,33 +139,33 @@ contract UserRegistry is Initializable, AccessControl {
     /// @notice Set a user's allowance
     /// @param _id The external user ID
     /// @param _allowance The new allowance
-    function setUserAllowance(string memory _id, uint256 _allowance) external onlyRole(REGISTRY_MANAGER) {
+    function setUserAllowance(string memory _id, uint256 _allowance) external onlyRole(ALLOWANCE_MANAGER) {
         User storage user = users[_id];
         if (user.account == address(0)) revert UserNotFound(_id);
 
         uint256 oldAllowance = user.allowance;
         user.allowance = _allowance;
 
-        emit AllowanceUpdated(_id, oldAllowance, _allowance);
+        emit AllowanceUpdated(_id, _id, oldAllowance, _allowance);
     }
 
     /// @notice Add to a user's allowance
     /// @param _id The external user ID
     /// @param _amount The amount to add
-    function addUserAllowance(string memory _id, uint256 _amount) external onlyRole(REGISTRY_MANAGER) {
+    function addUserAllowance(string memory _id, uint256 _amount) external onlyRole(ALLOWANCE_MANAGER) {
         User storage user = users[_id];
         if (user.account == address(0)) revert UserNotFound(_id);
 
         uint256 oldAllowance = user.allowance;
         user.allowance += _amount;
 
-        emit AllowanceUpdated(_id, oldAllowance, user.allowance);
+        emit AllowanceUpdated(_id, _id, oldAllowance, user.allowance);
     }
 
     /// @notice Subtract from a user's allowance
     /// @param _id The external user ID
     /// @param _amount The amount to subtract
-    function subUserAllowance(string memory _id, uint256 _amount) external onlyRole(REGISTRY_MANAGER) {
+    function subUserAllowance(string memory _id, uint256 _amount) external onlyRole(ALLOWANCE_MANAGER) {
         User storage user = users[_id];
         if (user.account == address(0)) revert UserNotFound(_id);
 
@@ -165,6 +173,30 @@ contract UserRegistry is Initializable, AccessControl {
         require(user.allowance >= _amount, "Insufficient allowance");
         user.allowance -= _amount;
 
-        emit AllowanceUpdated(_id, oldAllowance, user.allowance);
+        emit AllowanceUpdated(_id, _id, oldAllowance, user.allowance);
+    }
+
+    /// @notice Set allowance for all users
+    /// @param _amount The allowance amount to set
+    /// @dev Warning: O(n) gas cost, may hit block gas limit with many users
+    function setAllowanceForAllUsers(uint256 _amount) external onlyRole(ALLOWANCE_ADMIN) {
+        for (uint256 i = 0; i < userIds.length; i++) {
+            User storage user = users[userIds[i]];
+            uint256 oldAllowance = user.allowance;
+            user.allowance = _amount;
+            emit AllowanceUpdated(userIds[i], userIds[i], oldAllowance, _amount);
+        }
+    }
+
+    /// @notice Add allowance for all users
+    /// @param _amount The allowance amount to add
+    /// @dev Warning: O(n) gas cost, may hit block gas limit with many users
+    function addAllowanceForAllUsers(uint256 _amount) external onlyRole(ALLOWANCE_ADMIN) {
+        for (uint256 i = 0; i < userIds.length; i++) {
+            User storage user = users[userIds[i]];
+            uint256 oldAllowance = user.allowance;
+            user.allowance += _amount;
+            emit AllowanceUpdated(userIds[i], userIds[i], oldAllowance, user.allowance);
+        }
     }
 }

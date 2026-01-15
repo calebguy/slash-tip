@@ -222,10 +222,15 @@ async function getConfiguredHomeView(org: Organization) {
 	} else if (org.actionType === "erc20_vault") {
 		const tokenAddress = config.tokenAddress as Hex | undefined;
 		const vaultAddress = config.tipActionAddress as Hex | undefined;
+		const vaultManagerAddress = config.vaultManagerAddress as string | undefined;
 
 		if (tokenAddress && vaultAddress) {
 			const tokenInfo = await getVaultTokenInfo(tokenAddress, vaultAddress);
 			configDetails = `*Type:* ERC20 Vault\n*Token:* ${tokenInfo.name} (${tokenInfo.symbol})`;
+
+			const vaultManagerInfo = vaultManagerAddress
+				? `\n*Vault Manager:* \`${vaultManagerAddress.slice(0, 6)}...${vaultManagerAddress.slice(-4)}\``
+				: "";
 
 			contractSection = [
 				{
@@ -235,7 +240,7 @@ async function getConfiguredHomeView(org: Organization) {
 					type: "section",
 					text: {
 						type: "mrkdwn",
-						text: `*Vault Details*\n*Vault Address:* \`${vaultAddress}\`\n*Balance:* ${tokenInfo.balance} ${tokenInfo.symbol}`,
+						text: `*Vault Details*\n*Vault Address:* \`${vaultAddress}\`\n*Balance:* ${tokenInfo.balance} ${tokenInfo.symbol}${vaultManagerInfo}`,
 					},
 				},
 				{
@@ -619,6 +624,26 @@ export function getERC20VaultConfigView() {
 				label: {
 					type: "plain_text",
 					text: "Token Contract Address",
+				},
+			},
+			{
+				type: "input",
+				block_id: "admin_wallet",
+				element: {
+					type: "plain_text_input",
+					action_id: "admin_wallet_input",
+					placeholder: {
+						type: "plain_text",
+						text: "0x...",
+					},
+				},
+				label: {
+					type: "plain_text",
+					text: "Vault Manager Wallet",
+				},
+				hint: {
+					type: "plain_text",
+					text: "This wallet can withdraw funds from the vault for fund recovery.",
 				},
 			},
 			{

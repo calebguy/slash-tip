@@ -4,15 +4,22 @@ pragma solidity ^0.8.13;
 import {ITipAction} from "./ITipAction.sol";
 import {AccessControl} from "openzeppelin/access/AccessControl.sol";
 import {Initializable} from "openzeppelin/proxy/utils/Initializable.sol";
+import {ReentrancyGuard} from "openzeppelin/utils/ReentrancyGuard.sol";
 import {IERC20} from "openzeppelin/token/ERC20/IERC20.sol";
 import {SafeERC20} from "openzeppelin/token/ERC20/utils/SafeERC20.sol";
 
 /// @title ERC20VaultAction
 /// @notice Tip action that transfers ERC20 tokens from a vault to recipients
 /// @dev Holds ERC20 tokens and distributes them as tips. Uses Initializable for beacon proxy pattern.
-contract ERC20VaultAction is Initializable, ITipAction, AccessControl {
+contract ERC20VaultAction is Initializable, ITipAction, AccessControl, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
+    // ============ INTERNAL ROLES ============
+    /// @notice Role for executing tips (granted to SlashTip contract)
+    bytes32 public constant EXECUTOR = keccak256("EXECUTOR");
+
+    // ============ MANAGEMENT ROLES ============
+    /// @notice Role for managing vault funds (withdraw, rescue, set token)
     bytes32 public constant VAULT_MANAGER = keccak256("VAULT_MANAGER");
 
     IERC20 public token;
@@ -39,11 +46,12 @@ contract ERC20VaultAction is Initializable, ITipAction, AccessControl {
     }
 
     /// @notice Execute the tip by transferring ERC20 tokens from the vault
+    /// @dev Only callable by addresses with EXECUTOR role (SlashTip contract)
     /// @param from The sender's wallet address (unused, tips come from vault)
     /// @param to The recipient's wallet address
     /// @param amount The number of tokens to transfer
     /// @param data Unused, kept for interface compatibility
-    function execute(address from, address to, uint256 amount, bytes calldata data) external override {
+    function execute(address from, address to, uint256 amount, bytes calldata data) external override onlyRole(EXECUTOR) nonReentrant {
         (from, data); // Silence unused parameter warnings
 
         uint256 balance = token.balanceOf(address(this));
@@ -87,7 +95,7 @@ contract ERC20VaultAction is Initializable, ITipAction, AccessControl {
     /// @param _token The token to rescue (can be different from vault token)
     /// @param _to The address to send tokens to
     /// @param _amount The amount to rescue
-    function rescueTokens(address _token, address _to, uint256 _amount) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function rescueTokens(address _token, address _to, uint256 _amount) external onlyRole(VAULT_MANAGER) {
         IERC20(_token).safeTransfer(_to, _amount);
     }
 }

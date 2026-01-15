@@ -51,12 +51,24 @@ class SlashTipAction implements TipAction {
 		const { org, fromUserId, toUserId, amount, message } = params;
 		const config = org.actionConfig as OrgActionConfig;
 
+		// Scale amount by decimals for ERC20 tokens
+		// ERC1155 doesn't use decimals, ERC20 defaults to 18
+		let scaledAmount: bigint;
+		if (org.actionType === "erc1155_mint") {
+			scaledAmount = BigInt(amount);
+		} else {
+			const decimals = config.decimals ?? 18;
+			scaledAmount = BigInt(amount) * BigInt(10 ** decimals);
+		}
+
 		console.log("SlashTip execution:", {
 			orgId: org.id,
 			slashTipAddress: config.slashTipAddress,
 			fromUserId,
 			toUserId,
 			amount,
+			scaledAmount: scaledAmount.toString(),
+			decimals: config.decimals,
 			message,
 		});
 
@@ -69,7 +81,7 @@ class SlashTipAction implements TipAction {
 				args: {
 					_fromId: fromUserId,
 					_toId: toUserId,
-					_amount: amount,
+					_amount: scaledAmount.toString(),
 					_data: message || "",
 				},
 			});

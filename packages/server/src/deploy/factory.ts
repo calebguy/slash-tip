@@ -1,8 +1,9 @@
 import { SyndicateClient } from "@syndicateio/syndicate-node";
 import { waitForHash } from "@syndicateio/syndicate-node/utils";
-import { createPublicClient, http } from "viem";
+import { createPublicClient, http, parseEventLogs, type Hex } from "viem";
 import { base } from "viem/chains";
 import { env, optionalEnv } from "../env";
+import { SlashTipFactoryAbi } from "utils/src/abis/SlashTipFactoryAbi";
 
 const syndicate = new SyndicateClient({
 	token: env.SYNDICATE_API_KEY,
@@ -16,34 +17,14 @@ const PROJECT_ID = "570119ce-a49c-4245-8851-11c9d1ad74c7";
 // Admin address that will own deployed contracts (Syndicate relayer)
 const ADMIN_ADDRESS = optionalEnv.SLASH_TIP_ADMIN_ADDRESS || "";
 
+// Operator address (backend service that can execute tips, manage users, etc.)
+const OPERATOR_ADDRESS = optionalEnv.SLASH_TIP_OPERATOR_ADDRESS || ADMIN_ADDRESS;
+
 // Viem client for reading from contracts
 const publicClient = createPublicClient({
 	chain: base,
 	transport: http(env.BASE_RPC_URL),
 });
-
-// Factory ABI for getOrg function
-const factoryAbi = [
-	{
-		name: "getOrg",
-		type: "function",
-		stateMutability: "view",
-		inputs: [{ name: "_orgId", type: "string" }],
-		outputs: [
-			{
-				name: "",
-				type: "tuple",
-				components: [
-					{ name: "slashTip", type: "address" },
-					{ name: "userRegistry", type: "address" },
-					{ name: "tipAction", type: "address" },
-					{ name: "tipToken", type: "address" },
-					{ name: "exists", type: "bool" },
-				],
-			},
-		],
-	},
-] as const;
 
 export interface OrgAddresses {
 	slashTipAddress: string;
@@ -55,40 +36,39 @@ export interface OrgAddresses {
 export interface DeploymentResult {
 	success: boolean;
 	transactionHash?: string;
-	addresses?: OrgAddresses;
 	error?: string;
 }
 
 /**
- * Query the factory contract to get deployed addresses for an org
+ * Parse deployed addresses from a deployment transaction receipt
+ * Extracts addresses from the OrgDeployed event
  */
-export async function getOrgAddresses(orgId: string): Promise<OrgAddresses | null> {
-	if (!FACTORY_ADDRESS) {
-		console.error("SLASH_TIP_FACTORY_ADDRESS not set");
-		return null;
-	}
-
+export async function getOrgAddressesFromTx(txHash: string): Promise<OrgAddresses | null> {
 	try {
-		const result = await publicClient.readContract({
-			address: FACTORY_ADDRESS as `0x${string}`,
-			abi: factoryAbi,
-			functionName: "getOrg",
-			args: [orgId],
+		const receipt = await publicClient.getTransactionReceipt({
+			hash: txHash as Hex,
 		});
 
-		if (!result.exists) {
-			console.log(`Org ${orgId} not found in factory`);
+		const logs = parseEventLogs({
+			abi: SlashTipFactoryAbi,
+			logs: receipt.logs,
+			eventName: "OrgDeployed",
+		});
+
+		if (logs.length === 0) {
+			console.error("No OrgDeployed event found in transaction");
 			return null;
 		}
 
+		const event = logs[0];
 		return {
-			slashTipAddress: result.slashTip,
-			userRegistryAddress: result.userRegistry,
-			tipActionAddress: result.tipAction,
-			tipTokenAddress: result.tipToken,
+			slashTipAddress: event.args.slashTip,
+			userRegistryAddress: event.args.userRegistry,
+			tipActionAddress: event.args.tipAction,
+			tipTokenAddress: event.args.tipToken,
 		};
 	} catch (error) {
-		console.error(`Failed to get org addresses for ${orgId}:`, error);
+		console.error("Failed to parse OrgDeployed event:", error);
 		return null;
 	}
 }
@@ -110,6 +90,7 @@ export interface ERC20DeploymentConfig {
 export interface ERC20VaultDeploymentConfig {
 	orgId: string;
 	tokenAddress: string;
+	vaultManagerAddress: string; // Required: address that can withdraw funds from the vault
 }
 
 /**
@@ -136,10 +117,11 @@ export async function deployERC1155(
 			projectId: PROJECT_ID,
 			contractAddress: FACTORY_ADDRESS,
 			functionSignature:
-				"deployWithERC1155(string _orgId, address _admin, string _tokenBaseURI, string _contractURI, uint256 _tokenId)",
+				"deployWithERC1155(string _orgId, address _admin, address[] _operators, string _tokenBaseURI, string _contractURI, uint256 _tokenId)",
 			args: {
 				_orgId: config.orgId,
 				_admin: ADMIN_ADDRESS,
+				_operators: [OPERATOR_ADDRESS],
 				_tokenBaseURI: config.baseUri || "",
 				_contractURI: config.contractUri || "",
 				_tokenId: config.tokenId,
@@ -192,10 +174,11 @@ export async function deployERC20(
 			projectId: PROJECT_ID,
 			contractAddress: FACTORY_ADDRESS,
 			functionSignature:
-				"deployWithERC20(string _orgId, address _admin, string _tokenName, string _tokenSymbol, uint8 _tokenDecimals)",
+				"deployWithERC20(string _orgId, address _admin, address[] _operators, string _tokenName, string _tokenSymbol, uint8 _tokenDecimals)",
 			args: {
 				_orgId: config.orgId,
 				_admin: ADMIN_ADDRESS,
+				_operators: [OPERATOR_ADDRESS],
 				_tokenName: config.tokenName,
 				_tokenSymbol: config.tokenSymbol,
 				_tokenDecimals: config.decimals,
@@ -240,7 +223,12 @@ export async function deployERC20Vault(
 		return { success: false, error: "Admin address not configured" };
 	}
 
-	console.log("Deploying ERC20 Vault setup:", config);
+	console.log("Deploying ERC20 Vault setup:", {
+		orgId: config.orgId,
+		admin: ADMIN_ADDRESS,
+		vaultManager: config.vaultManagerAddress,
+		token: config.tokenAddress,
+	});
 
 	try {
 		const { transactionId } = await syndicate.transact.sendTransaction({
@@ -248,10 +236,12 @@ export async function deployERC20Vault(
 			projectId: PROJECT_ID,
 			contractAddress: FACTORY_ADDRESS,
 			functionSignature:
-				"deployWithERC20Vault(string _orgId, address _admin, address _token)",
+				"deployWithERC20Vault(string _orgId, address _admin, address[] _operators, address _vaultManager, address _token)",
 			args: {
 				_orgId: config.orgId,
 				_admin: ADMIN_ADDRESS,
+				_operators: [OPERATOR_ADDRESS],
+				_vaultManager: config.vaultManagerAddress,
 				_token: config.tokenAddress,
 			},
 		});

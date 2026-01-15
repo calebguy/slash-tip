@@ -13,7 +13,7 @@ async function main() {
 		const config = org.actionConfig as OrgActionConfig | null;
 
 		// Skip orgs that aren't fully deployed
-		if (!config?.slashTipAddress || config.deploymentStatus !== "deployed") {
+		if (!config?.userRegistryAddress || config.deploymentStatus !== "deployed") {
 			console.log(`[${org.slug}] Skipping - not deployed`);
 			continue;
 		}
@@ -24,7 +24,7 @@ async function main() {
 
 		try {
 			await addAllowanceForAllUsers(
-				config.slashTipAddress as Hex,
+				config.userRegistryAddress as Hex,
 				org.dailyAllowance,
 			);
 			console.log(`[${org.slug}] Successfully added allowance`);

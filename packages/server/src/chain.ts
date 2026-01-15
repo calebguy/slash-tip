@@ -25,9 +25,11 @@ export interface OrgActionConfig {
 	tokenAddress?: string; // For ERC20 Vault
 	tokenName?: string; // For ERC20 Mint
 	tokenSymbol?: string; // For ERC20 Mint
+	decimals?: number; // For ERC20 Mint and ERC20 Vault
 	baseUri?: string; // For ERC1155
 	contractUri?: string; // For ERC1155
 	tokenId?: number; // For ERC1155
+	vaultManagerAddress?: string; // Address that can withdraw funds from vault
 }
 
 // Per-org contract functions
@@ -60,13 +62,13 @@ export async function getUserExists(userRegistryAddress: Hex, userId: string) {
 	}
 }
 
-export async function addAllowanceForAllUsers(slashTipAddress: Hex, amount: number) {
-	const contract = getSlashTipContract(slashTipAddress);
+export async function addAllowanceForAllUsers(userRegistryAddress: Hex, amount: number) {
+	const contract = getUserRegistryContract(userRegistryAddress);
 	return contract.write.addAllowanceForAllUsers([BigInt(amount)]);
 }
 
-export async function setAllowanceForAllUsers(slashTipAddress: Hex, amount: number) {
-	const contract = getSlashTipContract(slashTipAddress);
+export async function setAllowanceForAllUsers(userRegistryAddress: Hex, amount: number) {
+	const contract = getUserRegistryContract(userRegistryAddress);
 	return contract.write.setAllowanceForAllUsers([BigInt(amount)]);
 }
 

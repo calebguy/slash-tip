@@ -12,7 +12,13 @@ import {Strings} from "openzeppelin/utils/Strings.sol";
 contract TipERC1155 is Initializable, ERC1155, AccessControl {
     using Strings for uint256;
 
-    bytes32 public constant TIP_MINTER = keccak256("TIP_MINTER");
+    // ============ INTERNAL ROLES ============
+    /// @notice Role for minting tokens (granted to action contract)
+    bytes32 public constant MINTER = keccak256("MINTER");
+
+    // ============ MANAGEMENT ROLES ============
+    /// @notice Role for updating token metadata URIs
+    bytes32 public constant METADATA_MANAGER = keccak256("METADATA_MANAGER");
 
     string public baseURI;
     string public contractURI;
@@ -35,7 +41,6 @@ contract TipERC1155 is Initializable, ERC1155, AccessControl {
         string memory _contractURI
     ) external initializer {
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
-        _grantRole(TIP_MINTER, _admin);
 
         baseURI = _baseURI;
         contractURI = _contractURI;
@@ -60,7 +65,7 @@ contract TipERC1155 is Initializable, ERC1155, AccessControl {
         uint256 _id,
         uint256 _amount,
         bytes memory _data
-    ) external onlyRole(TIP_MINTER) {
+    ) external onlyRole(MINTER) {
         _mint(_to, _id, _amount, _data);
     }
 
@@ -74,13 +79,13 @@ contract TipERC1155 is Initializable, ERC1155, AccessControl {
         uint256[] memory _ids,
         uint256[] memory _amounts,
         bytes memory _data
-    ) external onlyRole(TIP_MINTER) {
+    ) external onlyRole(MINTER) {
         _batchMint(_to, _ids, _amounts, _data);
     }
 
     /// @notice Update the base URI
     /// @param _baseURI The new base URI
-    function setBaseURI(string memory _baseURI) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setBaseURI(string memory _baseURI) external onlyRole(METADATA_MANAGER) {
         string memory oldURI = baseURI;
         baseURI = _baseURI;
         emit BaseURIUpdated(oldURI, _baseURI);
@@ -88,7 +93,7 @@ contract TipERC1155 is Initializable, ERC1155, AccessControl {
 
     /// @notice Update the contract URI (collection-level metadata)
     /// @param _contractURI The new contract URI
-    function setContractURI(string memory _contractURI) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setContractURI(string memory _contractURI) external onlyRole(METADATA_MANAGER) {
         string memory oldURI = contractURI;
         contractURI = _contractURI;
         emit ContractURIUpdated(oldURI, _contractURI);

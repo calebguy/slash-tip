@@ -3,23 +3,32 @@ pragma solidity ^0.8.13;
 
 import {AccessControl} from "openzeppelin/access/AccessControl.sol";
 import {Initializable} from "openzeppelin/proxy/utils/Initializable.sol";
+import {Pausable} from "openzeppelin/utils/Pausable.sol";
 import {UserRegistry} from "./UserRegistry.sol";
 import {ITipAction} from "./ITipAction.sol";
 
 /// @title SlashTip
 /// @notice Orchestrates tipping by validating allowances and executing tip actions
 /// @dev Uses Initializable for beacon proxy pattern
-contract SlashTip is Initializable, AccessControl {
-    bytes32 public constant TIP_MANAGER = keccak256("TIP_MANAGER");
+contract SlashTip is Initializable, AccessControl, Pausable {
+    // ============ OPERATIONAL ROLES ============
+    /// @notice Role for executing tips (granted to backend service)
+    bytes32 public constant TIPPER = keccak256("TIPPER");
+
+    // ============ ADMIN ROLES ============
+    /// @notice Role for pausing/unpausing the contract (granted to multisig or security key)
+    bytes32 public constant PAUSER = keccak256("PAUSER");
 
     string public orgId;
     UserRegistry public userRegistry;
     ITipAction public tipAction;
 
     event Tipped(
-        string indexed fromId,
-        string indexed toId,
+        string indexed fromIdHash,
+        string indexed toIdHash,
         address indexed fromAddress,
+        string fromId,
+        string toId,
         address toAddress,
         uint256 amount,
         string data,
@@ -49,7 +58,6 @@ contract SlashTip is Initializable, AccessControl {
         string memory _orgId
     ) external initializer {
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
-        _grantRole(TIP_MANAGER, _admin);
 
         userRegistry = UserRegistry(_userRegistry);
         tipAction = ITipAction(_tipAction);
@@ -66,7 +74,7 @@ contract SlashTip is Initializable, AccessControl {
         string memory _toId,
         uint256 _amount,
         string memory _data
-    ) external onlyRole(TIP_MANAGER) {
+    ) external onlyRole(TIPPER) whenNotPaused {
         // Validate sender exists and has sufficient allowance
         UserRegistry.User memory fromUser = userRegistry.getUser(_fromId);
         if (fromUser.allowance < _amount) {
@@ -86,6 +94,8 @@ contract SlashTip is Initializable, AccessControl {
             _fromId,
             _toId,
             fromUser.account,
+            _fromId,
+            _toId,
             toUser.account,
             _amount,
             _data,
@@ -98,24 +108,6 @@ contract SlashTip is Initializable, AccessControl {
     /// @return The user's allowance
     function allowanceOf(string memory _userId) external view returns (uint256) {
         return userRegistry.getUser(_userId).allowance;
-    }
-
-    /// @notice Set allowance for all users
-    /// @param _amount The allowance amount to set
-    function setAllowanceForAllUsers(uint256 _amount) external onlyRole(TIP_MANAGER) {
-        UserRegistry.User[] memory users = userRegistry.listUsers();
-        for (uint256 i = 0; i < users.length; i++) {
-            userRegistry.setUserAllowance(users[i].id, _amount);
-        }
-    }
-
-    /// @notice Add allowance for all users
-    /// @param _amount The allowance amount to add
-    function addAllowanceForAllUsers(uint256 _amount) external onlyRole(TIP_MANAGER) {
-        UserRegistry.User[] memory users = userRegistry.listUsers();
-        for (uint256 i = 0; i < users.length; i++) {
-            userRegistry.addUserAllowance(users[i].id, _amount);
-        }
     }
 
     /// @notice Update the tip action contract
@@ -132,5 +124,17 @@ contract SlashTip is Initializable, AccessControl {
         address oldRegistry = address(userRegistry);
         userRegistry = UserRegistry(_userRegistry);
         emit UserRegistryUpdated(oldRegistry, _userRegistry);
+    }
+
+    // ============ PAUSE FUNCTIONS ============
+
+    /// @notice Pause the contract (emergency stop)
+    function pause() external onlyRole(PAUSER) {
+        _pause();
+    }
+
+    /// @notice Unpause the contract
+    function unpause() external onlyRole(PAUSER) {
+        _unpause();
     }
 }

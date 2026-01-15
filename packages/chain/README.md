@@ -23,7 +23,94 @@ This allows upgrading all organizations simultaneously by updating a beacon.
 | `ERC1155MintAction` | Mints ERC1155 tokens on tip |
 | `ERC20MintAction` | Mints ERC20 tokens on tip |
 | `ERC20VaultAction` | Transfers existing ERC20 from vault on tip |
+| `ETHVaultAction` | Transfers native ETH from vault on tip |
 | `SlashTipFactory` | Deploys org instances, manages beacons & upgrades |
+
+## Access Control
+
+All contracts use OpenZeppelin's `AccessControl` for role-based permissions. Roles are designed following the principle of least privilege.
+
+### Role Categories
+
+| Category | Purpose |
+|----------|---------|
+| **Internal Roles** | Cross-contract communication (granted to contracts only) |
+| **Operational Roles** | Day-to-day operations (granted to backend services) |
+| **Management Roles** | Periodic/sensitive operations (granted to trusted operators) |
+| **Admin Roles** | Full control and emergency actions (granted to multisig) |
+
+### Roles by Contract
+
+#### SlashTip
+
+| Role | Purpose |
+|------|---------|
+| `DEFAULT_ADMIN_ROLE` | Full control, can change tip action and registry |
+| `PAUSER` | Emergency pause/unpause (protects against exploits) |
+| `TIPPER` | Execute tips (granted to backend service) |
+
+#### UserRegistry
+
+| Role | Purpose |
+|------|---------|
+| `DEFAULT_ADMIN_ROLE` | Full control, role management |
+| `USER_MANAGER` | Add/remove users |
+| `ALLOWANCE_MANAGER` | Set individual user allowances |
+| `ALLOWANCE_ADMIN` | Bulk allowance operations (weekly resets) |
+
+#### TipERC1155
+
+| Role | Purpose |
+|------|---------|
+| `DEFAULT_ADMIN_ROLE` | Full control, role management |
+| `MINTER` | Mint tokens (internal: granted to action contract) |
+| `METADATA_MANAGER` | Update base URI and contract URI |
+
+#### TipERC20
+
+| Role | Purpose |
+|------|---------|
+| `DEFAULT_ADMIN_ROLE` | Full control, role management |
+| `MINTER` | Mint/burn tokens (internal: granted to action contract) |
+
+#### Action Contracts (ERC1155MintAction, ERC20MintAction)
+
+| Role | Purpose |
+|------|---------|
+| `DEFAULT_ADMIN_ROLE` | Full control, role management |
+| `EXECUTOR` | Execute tip action (internal: granted to SlashTip) |
+| `CONFIG_MANAGER` | Update token configuration |
+
+#### Vault Contracts (ERC20VaultAction, ETHVaultAction)
+
+| Role | Purpose |
+|------|---------|
+| `DEFAULT_ADMIN_ROLE` | Full control, role management |
+| `EXECUTOR` | Execute tip action (internal: granted to SlashTip) |
+| `VAULT_MANAGER` | Withdraw funds, rescue tokens |
+
+### Typical Deployment Configuration
+
+```
+Org Admin (Multisig)
+├── DEFAULT_ADMIN_ROLE on all contracts
+└── PAUSER on SlashTip
+
+Backend Service (Hot wallet)
+├── TIPPER on SlashTip
+├── USER_MANAGER on UserRegistry
+└── ALLOWANCE_MANAGER on UserRegistry
+
+Cron Service (Separate key)
+└── ALLOWANCE_ADMIN on UserRegistry
+
+Treasury (Multisig)
+└── VAULT_MANAGER on vault actions
+
+SlashTip Contract (Internal)
+├── EXECUTOR on tip action
+└── ALLOWANCE_MANAGER on UserRegistry
+```
 
 ## Deployed Addresses (Base Mainnet)
 
@@ -33,19 +120,29 @@ This allows upgrading all organizations simultaneously by updating a beacon.
 
 | Contract | Address |
 |----------|---------|
-| SlashTipFactory | `0x1b7f53A1f5D2951275b6e3E1cb6Ad06333c8459F` |
+| SlashTipFactory | `0xf9E749524902a90BFF13ceEde494C60b7658cb4A` |
 
 ### Implementations
 
 | Contract | Address |
 |----------|---------|
-| SlashTip | `0xAF9F2C21a085712535e28c070629382Ae4F31534` |
-| UserRegistry | `0xB765639c781e92B20754E9ee9B749941A6d8d30f` |
-| TipERC1155 | `0xFaed9eCde814329026dC6258674a98040A1e8903` |
-| TipERC20 | `0xaCf41658F6Ca80021D64ff5044fC2A8F7543C1C3` |
-| ERC1155MintAction | `0x57D46C53A522901235e9F59C44b38A79b7C883F8` |
-| ERC20MintAction | `0xAC7F5dE17761e03D59D710b0396894f2eA2E7942` |
-| ERC20VaultAction | `0x4FA419c7AfBD180D6aCC9E023Ea5bb6d5D7385A9` |
+| SlashTip | `0x20951a1BF3dC958F78912D72D0919DdaD11A8b5d` |
+| UserRegistry | `0xD9A1843BcF0D6283b1f8e213Eb3baecFC79914f4` |
+| TipERC1155 | `0x3c64970A0ADDFa2F29a717bd2c8e11452654F725` |
+| TipERC20 | `0x4fE83003fA7b5967b69FAFc96124885b4477E830` |
+| ERC1155MintAction | `0x812341337c3a8D5cF04DA58970fFbABBea1b182e` |
+| ERC20MintAction | `0xD96f1C315Daa52C15F9494159ac02F1820e4fA69` |
+| ERC20VaultAction | `0xe1A481e129d6aA7562b89452C75C84439d5b535F` |
+| ETHVaultAction | `0x4f5422Ab6151bA60593F38505ee95a01343F7E48` |
+
+> **Note:** These addresses will be updated after redeployment with the new role structure.
+
+## Security Features
+
+- **Pausability**: SlashTip can be paused in emergencies
+- **Reentrancy Protection**: Vault actions use OpenZeppelin's ReentrancyGuard
+- **Role Separation**: Operational roles are separated from admin roles
+- **Upgradeable**: Beacon proxy pattern allows safe upgrades
 
 ## Development
 
@@ -56,12 +153,15 @@ forge build
 # Test
 forge test
 
+# Test with verbosity
+forge test -vvv
+
 # Check sizes
 forge build --sizes
 
 # Lint
-forge lint
+forge fmt --check
 
-# Deploy (see script/DeployV2.s.sol)
-forge script script/DeployV2.s.sol:DeployV2 --rpc-url $BASE_RPC_URL --broadcast --verify
+# Deploy factory
+forge script script/DeployFactory.s.sol --rpc-url base --broadcast --verify
 ```

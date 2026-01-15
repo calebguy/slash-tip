@@ -15,6 +15,7 @@ export const optionalEnv = {
 	// Factory deployment
 	SLASH_TIP_FACTORY_ADDRESS: process.env.SLASH_TIP_FACTORY_ADDRESS as string | undefined,
 	SLASH_TIP_ADMIN_ADDRESS: process.env.SLASH_TIP_ADMIN_ADDRESS as string | undefined,
+	SLASH_TIP_OPERATOR_ADDRESS: process.env.SLASH_TIP_OPERATOR_ADDRESS as string | undefined,
 };
 
 for (const key in env) {

@@ -1,9 +1,10 @@
 import { Hono } from "hono";
+import { erc20Abi, type Hex } from "viem";
 import {
 	deployERC1155,
 	deployERC20,
 	deployERC20Vault,
-	getOrgAddresses,
+	getOrgAddressesFromTx,
 } from "../deploy/factory";
 import { db } from "../server";
 import {
@@ -13,17 +14,18 @@ import {
 	getERC20ConfigView,
 	getERC20VaultConfigView,
 } from "../slack/appHome";
+import { baseClient } from "../viem";
 
 /**
- * Helper to fetch org addresses with retries (for propagation delay)
+ * Helper to fetch org addresses from tx with retries (for propagation delay)
  */
-async function fetchOrgAddressesWithRetry(orgId: string, maxAttempts = 5, delayMs = 2000) {
+async function fetchOrgAddressesWithRetry(txHash: string, maxAttempts = 5, delayMs = 2000) {
 	for (let i = 0; i < maxAttempts; i++) {
-		const addresses = await getOrgAddresses(orgId);
+		const addresses = await getOrgAddressesFromTx(txHash);
 		if (addresses) {
 			return addresses;
 		}
-		console.log(`Attempt ${i + 1}/${maxAttempts}: Org not found in factory yet, waiting...`);
+		console.log(`Attempt ${i + 1}/${maxAttempts}: Transaction not confirmed yet, waiting...`);
 		await new Promise((resolve) => setTimeout(resolve, delayMs));
 	}
 	return null;
@@ -168,12 +170,12 @@ const app = new Hono()
 						console.error("ERC1155 deployment failed:", deployResult.error);
 					}
 
-					// Fetch deployed addresses from factory
+					// Fetch deployed addresses from transaction receipt
 					let addresses = null;
-					if (deployResult.success) {
-						addresses = await fetchOrgAddressesWithRetry(org.id);
+					if (deployResult.success && deployResult.transactionHash) {
+						addresses = await fetchOrgAddressesWithRetry(deployResult.transactionHash);
 						if (!addresses) {
-							console.error("Failed to fetch deployed addresses for org:", org.id);
+							console.error("Failed to fetch deployed addresses from tx:", deployResult.transactionHash);
 						}
 					}
 
@@ -224,12 +226,12 @@ const app = new Hono()
 						console.error("ERC20 deployment failed:", deployResult.error);
 					}
 
-					// Fetch deployed addresses from factory
+					// Fetch deployed addresses from transaction receipt
 					let addresses = null;
-					if (deployResult.success) {
-						addresses = await fetchOrgAddressesWithRetry(org.id);
+					if (deployResult.success && deployResult.transactionHash) {
+						addresses = await fetchOrgAddressesWithRetry(deployResult.transactionHash);
 						if (!addresses) {
-							console.error("Failed to fetch deployed addresses for org:", org.id);
+							console.error("Failed to fetch deployed addresses from tx:", deployResult.transactionHash);
 						}
 					}
 
@@ -261,27 +263,51 @@ const app = new Hono()
 			// ERC20 Vault config submission
 			if (callbackId === "erc20_vault_config") {
 				const tokenAddress = values.token_address?.token_address_input?.value || "";
+				const vaultManagerWallet = values.admin_wallet?.admin_wallet_input?.value || "";
 				const dailyAllowance = values.daily_allowance?.daily_allowance_input?.value || "3";
 
-				console.log("Deploying ERC20 Vault setup:", { tokenAddress, dailyAllowance });
+				// Validate vault manager address is provided
+				if (!vaultManagerWallet) {
+					return c.json({
+						response_action: "errors",
+						errors: {
+							admin_wallet: "A vault manager wallet address is required for fund recovery",
+						},
+					});
+				}
+
+				console.log("Deploying ERC20 Vault setup:", { tokenAddress, vaultManagerWallet, dailyAllowance });
 
 				// Process deployment asynchronously to avoid Slack 3s timeout
 				(async () => {
+					// Fetch token decimals from the ERC20 contract
+					let decimals = 18;
+					try {
+						decimals = await baseClient.readContract({
+							address: tokenAddress as Hex,
+							abi: erc20Abi,
+							functionName: "decimals",
+						});
+					} catch (e) {
+						console.error("Failed to fetch token decimals, defaulting to 18:", e);
+					}
+
 					const deployResult = await deployERC20Vault({
 						orgId: org.id,
 						tokenAddress,
+						vaultManagerAddress: vaultManagerWallet,
 					});
 
 					if (!deployResult.success) {
 						console.error("ERC20 Vault deployment failed:", deployResult.error);
 					}
 
-					// Fetch deployed addresses from factory
+					// Fetch deployed addresses from transaction receipt
 					let addresses = null;
-					if (deployResult.success) {
-						addresses = await fetchOrgAddressesWithRetry(org.id);
+					if (deployResult.success && deployResult.transactionHash) {
+						addresses = await fetchOrgAddressesWithRetry(deployResult.transactionHash);
 						if (!addresses) {
-							console.error("Failed to fetch deployed addresses for org:", org.id);
+							console.error("Failed to fetch deployed addresses from tx:", deployResult.transactionHash);
 						}
 					}
 
@@ -290,6 +316,8 @@ const app = new Hono()
 						actionType: "erc20_vault",
 						actionConfig: {
 							tokenAddress,
+							decimals,
+							vaultManagerAddress: vaultManagerWallet,
 							deploymentTxHash: deployResult.transactionHash,
 							deploymentStatus: addresses ? "deployed" : "pending",
 							slashTipAddress: addresses?.slashTipAddress,

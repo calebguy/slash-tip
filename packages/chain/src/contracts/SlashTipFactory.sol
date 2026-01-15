@@ -17,7 +17,6 @@ import {ETHVaultAction} from "./ETHVaultAction.sol";
 /// @notice Factory contract for deploying SlashTip instances using Beacon Proxies
 /// @dev Uses UpgradeableBeacon pattern for upgradeable multi-tenant deployments
 contract SlashTipFactory is AccessControl {
-    bytes32 public constant FACTORY_MANAGER = keccak256("FACTORY_MANAGER");
 
     // Beacons for each contract type
     UpgradeableBeacon public slashTipBeacon;
@@ -28,17 +27,6 @@ contract SlashTipFactory is AccessControl {
     UpgradeableBeacon public erc20MintActionBeacon;
     UpgradeableBeacon public erc20VaultActionBeacon;
     UpgradeableBeacon public ethVaultActionBeacon;
-
-    struct OrgDeployment {
-        address slashTip;
-        address userRegistry;
-        address tipAction;
-        address tipToken; // address(0) if using vault action
-        bool exists;
-    }
-
-    mapping(string => OrgDeployment) public orgs;
-    string[] public orgIds;
 
     event OrgDeployed(
         string indexed orgIdHash,
@@ -53,15 +41,13 @@ contract SlashTipFactory is AccessControl {
     event BeaconUpgraded(string beaconName, address indexed oldImpl, address indexed newImpl);
 
     event TipActionCreated(
-        string indexed orgIdHash,
-        string orgId,
+        address indexed slashTip,
         address indexed admin,
         address tipAction,
         address tipToken
     );
 
-    error OrgAlreadyExists(string orgId);
-    error OrgNotFound(string orgId);
+    error InvalidAddress();
 
     constructor(
         address _admin,
@@ -74,8 +60,17 @@ contract SlashTipFactory is AccessControl {
         address _erc20VaultActionImpl,
         address _ethVaultActionImpl
     ) {
+        if (_admin == address(0)) revert InvalidAddress();
+        if (_slashTipImpl == address(0)) revert InvalidAddress();
+        if (_userRegistryImpl == address(0)) revert InvalidAddress();
+        if (_tipERC1155Impl == address(0)) revert InvalidAddress();
+        if (_tipERC20Impl == address(0)) revert InvalidAddress();
+        if (_erc1155MintActionImpl == address(0)) revert InvalidAddress();
+        if (_erc20MintActionImpl == address(0)) revert InvalidAddress();
+        if (_erc20VaultActionImpl == address(0)) revert InvalidAddress();
+        if (_ethVaultActionImpl == address(0)) revert InvalidAddress();
+
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
-        _grantRole(FACTORY_MANAGER, _admin);
 
         // Create beacons pointing to implementation contracts
         slashTipBeacon = new UpgradeableBeacon(_slashTipImpl, address(this));
@@ -90,19 +85,21 @@ contract SlashTipFactory is AccessControl {
 
     /// @notice Deploy a full SlashTip setup with a new ERC1155 token
     /// @param _orgId Unique organization identifier
-    /// @param _admin Admin address for the deployed contracts
+    /// @param _admin Admin address for role management (gets DEFAULT_ADMIN_ROLE, PAUSER)
+    /// @param _operators Operator addresses for daily operations (each gets operational roles)
     /// @param _tokenBaseURI Base URI for token metadata
     /// @param _contractURI Contract-level metadata URI
     /// @param _tokenId The token ID to use for tips
     function deployWithERC1155(
         string calldata _orgId,
         address _admin,
+        address[] calldata _operators,
         string calldata _tokenBaseURI,
         string calldata _contractURI,
         uint256 _tokenId
     )
         external
-        onlyRole(FACTORY_MANAGER)
+        onlyRole(DEFAULT_ADMIN_ROLE)
         returns (
             address slashTip,
             address userRegistry,
@@ -110,7 +107,8 @@ contract SlashTipFactory is AccessControl {
             address tipToken
         )
     {
-        if (orgs[_orgId].exists) revert OrgAlreadyExists(_orgId);
+        if (_admin == address(0)) revert InvalidAddress();
+        if (_operators.length == 0) revert InvalidAddress();
 
         // Deploy all proxies with factory as temporary admin
         address factory = address(this);
@@ -139,67 +137,59 @@ contract SlashTipFactory is AccessControl {
             abi.encodeCall(SlashTip.initialize, (factory, userRegistry, tipAction, _orgId))
         ));
 
-        // 5. Grant cross-contract permissions (factory has admin, so this works)
-        TipERC1155(tipToken).grantRole(TipERC1155(tipToken).TIP_MINTER(), tipAction);
-        UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).REGISTRY_MANAGER(), slashTip);
+        // 5. Grant cross-contract permissions (internal roles)
+        TipERC1155(tipToken).grantRole(TipERC1155(tipToken).MINTER(), tipAction);
+        UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).ALLOWANCE_MANAGER(), slashTip); // SlashTip needs to call subUserAllowance
+        ERC1155MintAction(tipAction).grantRole(ERC1155MintAction(tipAction).EXECUTOR(), slashTip);
 
-        // 6. Transfer all roles to actual admin
-        bytes32 defaultAdmin = DEFAULT_ADMIN_ROLE;
+        // 6. Grant admin roles to _admin
+        UserRegistry(userRegistry).grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        TipERC1155(tipToken).grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        ERC1155MintAction(tipAction).grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        SlashTip(slashTip).grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        SlashTip(slashTip).grantRole(SlashTip(slashTip).PAUSER(), _admin);
 
-        // UserRegistry roles
-        UserRegistry(userRegistry).grantRole(defaultAdmin, _admin);
-        UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).REGISTRY_MANAGER(), _admin);
+        // 7. Grant operational roles to each operator
+        for (uint256 i = 0; i < _operators.length; i++) {
+            if (_operators[i] == address(0)) revert InvalidAddress();
+            // UserRegistry roles
+            UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).USER_MANAGER(), _operators[i]);
+            UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).ALLOWANCE_MANAGER(), _operators[i]);
+            UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).ALLOWANCE_ADMIN(), _operators[i]);
+            // Token roles
+            TipERC1155(tipToken).grantRole(TipERC1155(tipToken).METADATA_MANAGER(), _operators[i]);
+            // Action roles
+            ERC1155MintAction(tipAction).grantRole(ERC1155MintAction(tipAction).CONFIG_MANAGER(), _operators[i]);
+            // SlashTip roles
+            SlashTip(slashTip).grantRole(SlashTip(slashTip).TIPPER(), _operators[i]);
+        }
 
-        // TipERC1155 roles
-        TipERC1155(tipToken).grantRole(defaultAdmin, _admin);
-        TipERC1155(tipToken).grantRole(TipERC1155(tipToken).TIP_MINTER(), _admin);
-
-        // ERC1155MintAction roles
-        ERC1155MintAction(tipAction).grantRole(defaultAdmin, _admin);
-        ERC1155MintAction(tipAction).grantRole(ERC1155MintAction(tipAction).ACTION_MANAGER(), _admin);
-
-        // SlashTip roles
-        SlashTip(slashTip).grantRole(defaultAdmin, _admin);
-        SlashTip(slashTip).grantRole(SlashTip(slashTip).TIP_MANAGER(), _admin);
-
-        // 7. Renounce factory's admin roles (must be last)
-        UserRegistry(userRegistry).renounceRole(defaultAdmin, factory);
-        UserRegistry(userRegistry).renounceRole(UserRegistry(userRegistry).REGISTRY_MANAGER(), factory);
-        TipERC1155(tipToken).renounceRole(defaultAdmin, factory);
-        TipERC1155(tipToken).renounceRole(TipERC1155(tipToken).TIP_MINTER(), factory);
-        ERC1155MintAction(tipAction).renounceRole(defaultAdmin, factory);
-        ERC1155MintAction(tipAction).renounceRole(ERC1155MintAction(tipAction).ACTION_MANAGER(), factory);
-        SlashTip(slashTip).renounceRole(defaultAdmin, factory);
-        SlashTip(slashTip).renounceRole(SlashTip(slashTip).TIP_MANAGER(), factory);
-
-        // 8. Store deployment info
-        orgs[_orgId] = OrgDeployment({
-            slashTip: slashTip,
-            userRegistry: userRegistry,
-            tipAction: tipAction,
-            tipToken: tipToken,
-            exists: true
-        });
-        orgIds.push(_orgId);
+        // 8. Renounce factory's admin roles
+        UserRegistry(userRegistry).renounceRole(DEFAULT_ADMIN_ROLE, factory);
+        TipERC1155(tipToken).renounceRole(DEFAULT_ADMIN_ROLE, factory);
+        ERC1155MintAction(tipAction).renounceRole(DEFAULT_ADMIN_ROLE, factory);
+        SlashTip(slashTip).renounceRole(DEFAULT_ADMIN_ROLE, factory);
 
         emit OrgDeployed(_orgId, _orgId, _admin, slashTip, userRegistry, tipAction, tipToken);
     }
 
     /// @notice Deploy a full SlashTip setup with a new ERC20 token
     /// @param _orgId Unique organization identifier
-    /// @param _admin Admin address for the deployed contracts
+    /// @param _admin Admin address for role management (gets DEFAULT_ADMIN_ROLE, PAUSER)
+    /// @param _operators Operator addresses for daily operations (each gets operational roles)
     /// @param _tokenName Name for the ERC20 token
     /// @param _tokenSymbol Symbol for the ERC20 token
     /// @param _tokenDecimals Decimals for the ERC20 token
     function deployWithERC20(
         string calldata _orgId,
         address _admin,
+        address[] calldata _operators,
         string calldata _tokenName,
         string calldata _tokenSymbol,
         uint8 _tokenDecimals
     )
         external
-        onlyRole(FACTORY_MANAGER)
+        onlyRole(DEFAULT_ADMIN_ROLE)
         returns (
             address slashTip,
             address userRegistry,
@@ -207,7 +197,8 @@ contract SlashTipFactory is AccessControl {
             address tipToken
         )
     {
-        if (orgs[_orgId].exists) revert OrgAlreadyExists(_orgId);
+        if (_admin == address(0)) revert InvalidAddress();
+        if (_operators.length == 0) revert InvalidAddress();
 
         // Deploy all proxies with factory as temporary admin
         address factory = address(this);
@@ -236,70 +227,65 @@ contract SlashTipFactory is AccessControl {
             abi.encodeCall(SlashTip.initialize, (factory, userRegistry, tipAction, _orgId))
         ));
 
-        // 5. Grant cross-contract permissions (factory has admin, so this works)
-        TipERC20(tipToken).grantRole(TipERC20(tipToken).TIP_MINTER(), tipAction);
-        UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).REGISTRY_MANAGER(), slashTip);
+        // 5. Grant cross-contract permissions (internal roles)
+        TipERC20(tipToken).grantRole(TipERC20(tipToken).MINTER(), tipAction);
+        UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).ALLOWANCE_MANAGER(), slashTip); // SlashTip needs to call subUserAllowance
+        ERC20MintAction(tipAction).grantRole(ERC20MintAction(tipAction).EXECUTOR(), slashTip);
 
-        // 6. Transfer all roles to actual admin
-        bytes32 defaultAdmin = DEFAULT_ADMIN_ROLE;
+        // 6. Grant admin roles to _admin
+        UserRegistry(userRegistry).grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        TipERC20(tipToken).grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        ERC20MintAction(tipAction).grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        SlashTip(slashTip).grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        SlashTip(slashTip).grantRole(SlashTip(slashTip).PAUSER(), _admin);
 
-        // UserRegistry roles
-        UserRegistry(userRegistry).grantRole(defaultAdmin, _admin);
-        UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).REGISTRY_MANAGER(), _admin);
+        // 7. Grant operational roles to each operator
+        for (uint256 i = 0; i < _operators.length; i++) {
+            if (_operators[i] == address(0)) revert InvalidAddress();
+            // UserRegistry roles
+            UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).USER_MANAGER(), _operators[i]);
+            UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).ALLOWANCE_MANAGER(), _operators[i]);
+            UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).ALLOWANCE_ADMIN(), _operators[i]);
+            // Action roles
+            ERC20MintAction(tipAction).grantRole(ERC20MintAction(tipAction).CONFIG_MANAGER(), _operators[i]);
+            // SlashTip roles
+            SlashTip(slashTip).grantRole(SlashTip(slashTip).TIPPER(), _operators[i]);
+        }
 
-        // TipERC20 roles
-        TipERC20(tipToken).grantRole(defaultAdmin, _admin);
-        TipERC20(tipToken).grantRole(TipERC20(tipToken).TIP_MINTER(), _admin);
-
-        // ERC20MintAction roles
-        ERC20MintAction(tipAction).grantRole(defaultAdmin, _admin);
-        ERC20MintAction(tipAction).grantRole(ERC20MintAction(tipAction).ACTION_MANAGER(), _admin);
-
-        // SlashTip roles
-        SlashTip(slashTip).grantRole(defaultAdmin, _admin);
-        SlashTip(slashTip).grantRole(SlashTip(slashTip).TIP_MANAGER(), _admin);
-
-        // 7. Renounce factory's admin roles (must be last)
-        UserRegistry(userRegistry).renounceRole(defaultAdmin, factory);
-        UserRegistry(userRegistry).renounceRole(UserRegistry(userRegistry).REGISTRY_MANAGER(), factory);
-        TipERC20(tipToken).renounceRole(defaultAdmin, factory);
-        TipERC20(tipToken).renounceRole(TipERC20(tipToken).TIP_MINTER(), factory);
-        ERC20MintAction(tipAction).renounceRole(defaultAdmin, factory);
-        ERC20MintAction(tipAction).renounceRole(ERC20MintAction(tipAction).ACTION_MANAGER(), factory);
-        SlashTip(slashTip).renounceRole(defaultAdmin, factory);
-        SlashTip(slashTip).renounceRole(SlashTip(slashTip).TIP_MANAGER(), factory);
-
-        // 8. Store deployment info
-        orgs[_orgId] = OrgDeployment({
-            slashTip: slashTip,
-            userRegistry: userRegistry,
-            tipAction: tipAction,
-            tipToken: tipToken,
-            exists: true
-        });
-        orgIds.push(_orgId);
+        // 8. Renounce factory's admin roles
+        UserRegistry(userRegistry).renounceRole(DEFAULT_ADMIN_ROLE, factory);
+        TipERC20(tipToken).renounceRole(DEFAULT_ADMIN_ROLE, factory);
+        ERC20MintAction(tipAction).renounceRole(DEFAULT_ADMIN_ROLE, factory);
+        SlashTip(slashTip).renounceRole(DEFAULT_ADMIN_ROLE, factory);
 
         emit OrgDeployed(_orgId, _orgId, _admin, slashTip, userRegistry, tipAction, tipToken);
     }
 
     /// @notice Deploy a SlashTip setup with an ERC20 vault (uses existing token)
     /// @param _orgId Unique organization identifier
-    /// @param _admin Admin address for the deployed contracts
+    /// @param _admin Admin address for role management (gets DEFAULT_ADMIN_ROLE, PAUSER)
+    /// @param _operators Operator addresses for daily operations (each gets operational roles)
+    /// @param _vaultManager Address that can withdraw funds from the vault (gets VAULT_MANAGER)
     /// @param _token Address of the existing ERC20 token to use
     function deployWithERC20Vault(
         string calldata _orgId,
         address _admin,
+        address[] calldata _operators,
+        address _vaultManager,
         address _token
     )
         external
-        onlyRole(FACTORY_MANAGER)
+        onlyRole(DEFAULT_ADMIN_ROLE)
         returns (
             address slashTip,
             address userRegistry,
             address tipAction
         )
     {
-        if (orgs[_orgId].exists) revert OrgAlreadyExists(_orgId);
+        if (_admin == address(0)) revert InvalidAddress();
+        if (_operators.length == 0) revert InvalidAddress();
+        if (_vaultManager == address(0)) revert InvalidAddress();
+        if (_token == address(0)) revert InvalidAddress();
 
         // Deploy all proxies with factory as temporary admin
         address factory = address(this);
@@ -322,61 +308,58 @@ contract SlashTipFactory is AccessControl {
             abi.encodeCall(SlashTip.initialize, (factory, userRegistry, tipAction, _orgId))
         ));
 
-        // 4. Grant cross-contract permissions (factory has admin, so this works)
-        UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).REGISTRY_MANAGER(), slashTip);
+        // 4. Grant cross-contract permissions (internal roles)
+        UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).ALLOWANCE_MANAGER(), slashTip); // SlashTip needs to call subUserAllowance
+        ERC20VaultAction(tipAction).grantRole(ERC20VaultAction(tipAction).EXECUTOR(), slashTip);
 
-        // 5. Transfer all roles to actual admin
-        bytes32 defaultAdmin = DEFAULT_ADMIN_ROLE;
+        // 5. Grant admin roles to _admin, vault manager role to _vaultManager
+        UserRegistry(userRegistry).grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        ERC20VaultAction(tipAction).grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        ERC20VaultAction(tipAction).grantRole(ERC20VaultAction(tipAction).VAULT_MANAGER(), _vaultManager);
+        SlashTip(slashTip).grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        SlashTip(slashTip).grantRole(SlashTip(slashTip).PAUSER(), _admin);
 
-        // UserRegistry roles
-        UserRegistry(userRegistry).grantRole(defaultAdmin, _admin);
-        UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).REGISTRY_MANAGER(), _admin);
+        // 6. Grant operational roles to each operator
+        for (uint256 i = 0; i < _operators.length; i++) {
+            if (_operators[i] == address(0)) revert InvalidAddress();
+            // UserRegistry roles
+            UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).USER_MANAGER(), _operators[i]);
+            UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).ALLOWANCE_MANAGER(), _operators[i]);
+            UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).ALLOWANCE_ADMIN(), _operators[i]);
+            // SlashTip roles
+            SlashTip(slashTip).grantRole(SlashTip(slashTip).TIPPER(), _operators[i]);
+        }
 
-        // ERC20VaultAction roles
-        ERC20VaultAction(tipAction).grantRole(defaultAdmin, _admin);
-        ERC20VaultAction(tipAction).grantRole(ERC20VaultAction(tipAction).VAULT_MANAGER(), _admin);
-
-        // SlashTip roles
-        SlashTip(slashTip).grantRole(defaultAdmin, _admin);
-        SlashTip(slashTip).grantRole(SlashTip(slashTip).TIP_MANAGER(), _admin);
-
-        // 6. Renounce factory's admin roles (must be last)
-        UserRegistry(userRegistry).renounceRole(defaultAdmin, factory);
-        UserRegistry(userRegistry).renounceRole(UserRegistry(userRegistry).REGISTRY_MANAGER(), factory);
-        ERC20VaultAction(tipAction).renounceRole(defaultAdmin, factory);
-        ERC20VaultAction(tipAction).renounceRole(ERC20VaultAction(tipAction).VAULT_MANAGER(), factory);
-        SlashTip(slashTip).renounceRole(defaultAdmin, factory);
-        SlashTip(slashTip).renounceRole(SlashTip(slashTip).TIP_MANAGER(), factory);
-
-        // 7. Store deployment info (tipToken is the existing token for reference)
-        orgs[_orgId] = OrgDeployment({
-            slashTip: slashTip,
-            userRegistry: userRegistry,
-            tipAction: tipAction,
-            tipToken: _token,
-            exists: true
-        });
-        orgIds.push(_orgId);
+        // 7. Renounce factory's admin roles
+        UserRegistry(userRegistry).renounceRole(DEFAULT_ADMIN_ROLE, factory);
+        ERC20VaultAction(tipAction).renounceRole(DEFAULT_ADMIN_ROLE, factory);
+        SlashTip(slashTip).renounceRole(DEFAULT_ADMIN_ROLE, factory);
 
         emit OrgDeployed(_orgId, _orgId, _admin, slashTip, userRegistry, tipAction, _token);
     }
 
     /// @notice Deploy a SlashTip setup with a native ETH vault
     /// @param _orgId Unique organization identifier
-    /// @param _admin Admin address for the deployed contracts
+    /// @param _admin Admin address for role management (gets DEFAULT_ADMIN_ROLE, PAUSER)
+    /// @param _operators Operator addresses for daily operations (each gets operational roles)
+    /// @param _vaultManager Address that can withdraw funds from the vault (gets VAULT_MANAGER)
     function deployWithETHVault(
         string calldata _orgId,
-        address _admin
+        address _admin,
+        address[] calldata _operators,
+        address _vaultManager
     )
         external
-        onlyRole(FACTORY_MANAGER)
+        onlyRole(DEFAULT_ADMIN_ROLE)
         returns (
             address slashTip,
             address userRegistry,
             address tipAction
         )
     {
-        if (orgs[_orgId].exists) revert OrgAlreadyExists(_orgId);
+        if (_admin == address(0)) revert InvalidAddress();
+        if (_operators.length == 0) revert InvalidAddress();
+        if (_vaultManager == address(0)) revert InvalidAddress();
 
         // Deploy all proxies with factory as temporary admin
         address factory = address(this);
@@ -399,66 +382,61 @@ contract SlashTipFactory is AccessControl {
             abi.encodeCall(SlashTip.initialize, (factory, userRegistry, tipAction, _orgId))
         ));
 
-        // 4. Grant cross-contract permissions (factory has admin, so this works)
-        UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).REGISTRY_MANAGER(), slashTip);
+        // 4. Grant cross-contract permissions (internal roles)
+        UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).ALLOWANCE_MANAGER(), slashTip); // SlashTip needs to call subUserAllowance
+        ETHVaultAction(payable(tipAction)).grantRole(ETHVaultAction(payable(tipAction)).EXECUTOR(), slashTip);
 
-        // 5. Transfer all roles to actual admin
-        bytes32 defaultAdmin = DEFAULT_ADMIN_ROLE;
+        // 5. Grant admin roles to _admin, vault manager role to _vaultManager
+        UserRegistry(userRegistry).grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        ETHVaultAction(payable(tipAction)).grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        ETHVaultAction(payable(tipAction)).grantRole(ETHVaultAction(payable(tipAction)).VAULT_MANAGER(), _vaultManager);
+        SlashTip(slashTip).grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        SlashTip(slashTip).grantRole(SlashTip(slashTip).PAUSER(), _admin);
 
-        // UserRegistry roles
-        UserRegistry(userRegistry).grantRole(defaultAdmin, _admin);
-        UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).REGISTRY_MANAGER(), _admin);
+        // 6. Grant operational roles to each operator
+        for (uint256 i = 0; i < _operators.length; i++) {
+            if (_operators[i] == address(0)) revert InvalidAddress();
+            // UserRegistry roles
+            UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).USER_MANAGER(), _operators[i]);
+            UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).ALLOWANCE_MANAGER(), _operators[i]);
+            UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).ALLOWANCE_ADMIN(), _operators[i]);
+            // SlashTip roles
+            SlashTip(slashTip).grantRole(SlashTip(slashTip).TIPPER(), _operators[i]);
+        }
 
-        // ETHVaultAction roles
-        ETHVaultAction(payable(tipAction)).grantRole(defaultAdmin, _admin);
-        ETHVaultAction(payable(tipAction)).grantRole(ETHVaultAction(payable(tipAction)).VAULT_MANAGER(), _admin);
-
-        // SlashTip roles
-        SlashTip(slashTip).grantRole(defaultAdmin, _admin);
-        SlashTip(slashTip).grantRole(SlashTip(slashTip).TIP_MANAGER(), _admin);
-
-        // 6. Renounce factory's admin roles (must be last)
-        UserRegistry(userRegistry).renounceRole(defaultAdmin, factory);
-        UserRegistry(userRegistry).renounceRole(UserRegistry(userRegistry).REGISTRY_MANAGER(), factory);
-        ETHVaultAction(payable(tipAction)).renounceRole(defaultAdmin, factory);
-        ETHVaultAction(payable(tipAction)).renounceRole(ETHVaultAction(payable(tipAction)).VAULT_MANAGER(), factory);
-        SlashTip(slashTip).renounceRole(defaultAdmin, factory);
-        SlashTip(slashTip).renounceRole(SlashTip(slashTip).TIP_MANAGER(), factory);
-
-        // 7. Store deployment info (tipToken is address(0) for ETH vault)
-        orgs[_orgId] = OrgDeployment({
-            slashTip: slashTip,
-            userRegistry: userRegistry,
-            tipAction: tipAction,
-            tipToken: address(0),
-            exists: true
-        });
-        orgIds.push(_orgId);
+        // 7. Renounce factory's admin roles
+        UserRegistry(userRegistry).renounceRole(DEFAULT_ADMIN_ROLE, factory);
+        ETHVaultAction(payable(tipAction)).renounceRole(DEFAULT_ADMIN_ROLE, factory);
+        SlashTip(slashTip).renounceRole(DEFAULT_ADMIN_ROLE, factory);
 
         emit OrgDeployed(_orgId, _orgId, _admin, slashTip, userRegistry, tipAction, address(0));
     }
 
     // ============ Tip Action Update Functions ============
 
-    /// @notice Create a new ERC1155 tip action for an existing org
+    /// @notice Create a new ERC1155 tip action
     /// @dev After calling this, org admin must call slashTip.setTipAction(tipAction)
-    /// @param _orgId The organization to create action for
-    /// @param _admin Admin address for the new contracts
+    /// @param _slashTip The SlashTip contract to grant EXECUTOR role to
+    /// @param _admin Admin address for role management (gets DEFAULT_ADMIN_ROLE)
+    /// @param _operators Operator addresses for daily operations (each gets operational roles)
     /// @param _tokenBaseURI Base URI for token metadata
     /// @param _contractURI Contract-level metadata URI
     /// @param _tokenId The token ID to use for tips
     function createERC1155Action(
-        string calldata _orgId,
+        address _slashTip,
         address _admin,
+        address[] calldata _operators,
         string calldata _tokenBaseURI,
         string calldata _contractURI,
         uint256 _tokenId
     )
         external
-        onlyRole(FACTORY_MANAGER)
+        onlyRole(DEFAULT_ADMIN_ROLE)
         returns (address tipAction, address tipToken)
     {
-        if (!orgs[_orgId].exists) revert OrgNotFound(_orgId);
+        if (_slashTip == address(0)) revert InvalidAddress();
+        if (_admin == address(0)) revert InvalidAddress();
+        if (_operators.length == 0) revert InvalidAddress();
 
         address factory = address(this);
 
@@ -474,45 +452,51 @@ contract SlashTipFactory is AccessControl {
             abi.encodeCall(ERC1155MintAction.initialize, (factory, tipToken, _tokenId))
         ));
 
-        // 3. Grant cross-contract permissions
-        TipERC1155(tipToken).grantRole(TipERC1155(tipToken).TIP_MINTER(), tipAction);
+        // 3. Grant cross-contract permissions (internal roles)
+        TipERC1155(tipToken).grantRole(TipERC1155(tipToken).MINTER(), tipAction);
+        ERC1155MintAction(tipAction).grantRole(ERC1155MintAction(tipAction).EXECUTOR(), _slashTip);
 
-        // 4. Transfer roles to admin
-        bytes32 defaultAdmin = DEFAULT_ADMIN_ROLE;
+        // 4. Grant admin roles to _admin
+        TipERC1155(tipToken).grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        ERC1155MintAction(tipAction).grantRole(DEFAULT_ADMIN_ROLE, _admin);
 
-        TipERC1155(tipToken).grantRole(defaultAdmin, _admin);
-        TipERC1155(tipToken).grantRole(TipERC1155(tipToken).TIP_MINTER(), _admin);
-        ERC1155MintAction(tipAction).grantRole(defaultAdmin, _admin);
-        ERC1155MintAction(tipAction).grantRole(ERC1155MintAction(tipAction).ACTION_MANAGER(), _admin);
+        // 5. Grant operational roles to each operator
+        for (uint256 i = 0; i < _operators.length; i++) {
+            if (_operators[i] == address(0)) revert InvalidAddress();
+            TipERC1155(tipToken).grantRole(TipERC1155(tipToken).METADATA_MANAGER(), _operators[i]);
+            ERC1155MintAction(tipAction).grantRole(ERC1155MintAction(tipAction).CONFIG_MANAGER(), _operators[i]);
+        }
 
-        // 5. Renounce factory roles
-        TipERC1155(tipToken).renounceRole(defaultAdmin, factory);
-        TipERC1155(tipToken).renounceRole(TipERC1155(tipToken).TIP_MINTER(), factory);
-        ERC1155MintAction(tipAction).renounceRole(defaultAdmin, factory);
-        ERC1155MintAction(tipAction).renounceRole(ERC1155MintAction(tipAction).ACTION_MANAGER(), factory);
+        // 6. Renounce factory's admin roles
+        TipERC1155(tipToken).renounceRole(DEFAULT_ADMIN_ROLE, factory);
+        ERC1155MintAction(tipAction).renounceRole(DEFAULT_ADMIN_ROLE, factory);
 
-        emit TipActionCreated(_orgId, _orgId, _admin, tipAction, tipToken);
+        emit TipActionCreated(_slashTip, _admin, tipAction, tipToken);
     }
 
-    /// @notice Create a new ERC20 tip action for an existing org
+    /// @notice Create a new ERC20 tip action
     /// @dev After calling this, org admin must call slashTip.setTipAction(tipAction)
-    /// @param _orgId The organization to create action for
-    /// @param _admin Admin address for the new contracts
+    /// @param _slashTip The SlashTip contract to grant EXECUTOR role to
+    /// @param _admin Admin address for role management (gets DEFAULT_ADMIN_ROLE)
+    /// @param _operators Operator addresses for daily operations (each gets operational roles)
     /// @param _tokenName Name for the ERC20 token
     /// @param _tokenSymbol Symbol for the ERC20 token
     /// @param _tokenDecimals Decimals for the ERC20 token
     function createERC20Action(
-        string calldata _orgId,
+        address _slashTip,
         address _admin,
+        address[] calldata _operators,
         string calldata _tokenName,
         string calldata _tokenSymbol,
         uint8 _tokenDecimals
     )
         external
-        onlyRole(FACTORY_MANAGER)
+        onlyRole(DEFAULT_ADMIN_ROLE)
         returns (address tipAction, address tipToken)
     {
-        if (!orgs[_orgId].exists) revert OrgNotFound(_orgId);
+        if (_slashTip == address(0)) revert InvalidAddress();
+        if (_admin == address(0)) revert InvalidAddress();
+        if (_operators.length == 0) revert InvalidAddress();
 
         address factory = address(this);
 
@@ -528,41 +512,47 @@ contract SlashTipFactory is AccessControl {
             abi.encodeCall(ERC20MintAction.initialize, (factory, tipToken))
         ));
 
-        // 3. Grant cross-contract permissions
-        TipERC20(tipToken).grantRole(TipERC20(tipToken).TIP_MINTER(), tipAction);
+        // 3. Grant cross-contract permissions (internal roles)
+        TipERC20(tipToken).grantRole(TipERC20(tipToken).MINTER(), tipAction);
+        ERC20MintAction(tipAction).grantRole(ERC20MintAction(tipAction).EXECUTOR(), _slashTip);
 
-        // 4. Transfer roles to admin
-        bytes32 defaultAdmin = DEFAULT_ADMIN_ROLE;
+        // 4. Grant admin roles to _admin
+        TipERC20(tipToken).grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        ERC20MintAction(tipAction).grantRole(DEFAULT_ADMIN_ROLE, _admin);
 
-        TipERC20(tipToken).grantRole(defaultAdmin, _admin);
-        TipERC20(tipToken).grantRole(TipERC20(tipToken).TIP_MINTER(), _admin);
-        ERC20MintAction(tipAction).grantRole(defaultAdmin, _admin);
-        ERC20MintAction(tipAction).grantRole(ERC20MintAction(tipAction).ACTION_MANAGER(), _admin);
+        // 5. Grant operational roles to each operator
+        for (uint256 i = 0; i < _operators.length; i++) {
+            if (_operators[i] == address(0)) revert InvalidAddress();
+            ERC20MintAction(tipAction).grantRole(ERC20MintAction(tipAction).CONFIG_MANAGER(), _operators[i]);
+        }
 
-        // 5. Renounce factory roles
-        TipERC20(tipToken).renounceRole(defaultAdmin, factory);
-        TipERC20(tipToken).renounceRole(TipERC20(tipToken).TIP_MINTER(), factory);
-        ERC20MintAction(tipAction).renounceRole(defaultAdmin, factory);
-        ERC20MintAction(tipAction).renounceRole(ERC20MintAction(tipAction).ACTION_MANAGER(), factory);
+        // 6. Renounce factory's admin roles
+        TipERC20(tipToken).renounceRole(DEFAULT_ADMIN_ROLE, factory);
+        ERC20MintAction(tipAction).renounceRole(DEFAULT_ADMIN_ROLE, factory);
 
-        emit TipActionCreated(_orgId, _orgId, _admin, tipAction, tipToken);
+        emit TipActionCreated(_slashTip, _admin, tipAction, tipToken);
     }
 
-    /// @notice Create a new ERC20 vault tip action for an existing org
+    /// @notice Create a new ERC20 vault tip action
     /// @dev After calling this, org admin must call slashTip.setTipAction(tipAction)
-    /// @param _orgId The organization to create action for
+    /// @param _slashTip The SlashTip contract to grant EXECUTOR role to
     /// @param _admin Admin address for the new contracts
+    /// @param _vaultManager Address that can withdraw funds from the vault
     /// @param _token Address of the existing ERC20 token to use
     function createERC20VaultAction(
-        string calldata _orgId,
+        address _slashTip,
         address _admin,
+        address _vaultManager,
         address _token
     )
         external
-        onlyRole(FACTORY_MANAGER)
+        onlyRole(DEFAULT_ADMIN_ROLE)
         returns (address tipAction)
     {
-        if (!orgs[_orgId].exists) revert OrgNotFound(_orgId);
+        if (_slashTip == address(0)) revert InvalidAddress();
+        if (_admin == address(0)) revert InvalidAddress();
+        if (_vaultManager == address(0)) revert InvalidAddress();
+        if (_token == address(0)) revert InvalidAddress();
 
         address factory = address(this);
 
@@ -572,32 +562,36 @@ contract SlashTipFactory is AccessControl {
             abi.encodeCall(ERC20VaultAction.initialize, (factory, _token))
         ));
 
-        // 2. Transfer roles to admin
-        bytes32 defaultAdmin = DEFAULT_ADMIN_ROLE;
+        // 2. Grant EXECUTOR to SlashTip
+        ERC20VaultAction(tipAction).grantRole(ERC20VaultAction(tipAction).EXECUTOR(), _slashTip);
 
-        ERC20VaultAction(tipAction).grantRole(defaultAdmin, _admin);
-        ERC20VaultAction(tipAction).grantRole(ERC20VaultAction(tipAction).VAULT_MANAGER(), _admin);
+        // 3. Transfer roles - admin for management, vaultManager for withdrawals
+        ERC20VaultAction(tipAction).grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        ERC20VaultAction(tipAction).grantRole(ERC20VaultAction(tipAction).VAULT_MANAGER(), _vaultManager);
 
-        // 3. Renounce factory roles
-        ERC20VaultAction(tipAction).renounceRole(defaultAdmin, factory);
-        ERC20VaultAction(tipAction).renounceRole(ERC20VaultAction(tipAction).VAULT_MANAGER(), factory);
+        // 4. Renounce factory roles
+        ERC20VaultAction(tipAction).renounceRole(DEFAULT_ADMIN_ROLE, factory);
 
-        emit TipActionCreated(_orgId, _orgId, _admin, tipAction, _token);
+        emit TipActionCreated(_slashTip, _admin, tipAction, _token);
     }
 
-    /// @notice Create a new ETH vault tip action for an existing org
+    /// @notice Create a new ETH vault tip action
     /// @dev After calling this, org admin must call slashTip.setTipAction(tipAction)
-    /// @param _orgId The organization to create action for
+    /// @param _slashTip The SlashTip contract to grant EXECUTOR role to
     /// @param _admin Admin address for the new contract
+    /// @param _vaultManager Address that can withdraw funds from the vault
     function createETHVaultAction(
-        string calldata _orgId,
-        address _admin
+        address _slashTip,
+        address _admin,
+        address _vaultManager
     )
         external
-        onlyRole(FACTORY_MANAGER)
+        onlyRole(DEFAULT_ADMIN_ROLE)
         returns (address tipAction)
     {
-        if (!orgs[_orgId].exists) revert OrgNotFound(_orgId);
+        if (_slashTip == address(0)) revert InvalidAddress();
+        if (_admin == address(0)) revert InvalidAddress();
+        if (_vaultManager == address(0)) revert InvalidAddress();
 
         address factory = address(this);
 
@@ -607,17 +601,17 @@ contract SlashTipFactory is AccessControl {
             abi.encodeCall(ETHVaultAction.initialize, (factory))
         ));
 
-        // 2. Transfer roles to admin
-        bytes32 defaultAdmin = DEFAULT_ADMIN_ROLE;
+        // 2. Grant EXECUTOR to SlashTip
+        ETHVaultAction(payable(tipAction)).grantRole(ETHVaultAction(payable(tipAction)).EXECUTOR(), _slashTip);
 
-        ETHVaultAction(payable(tipAction)).grantRole(defaultAdmin, _admin);
-        ETHVaultAction(payable(tipAction)).grantRole(ETHVaultAction(payable(tipAction)).VAULT_MANAGER(), _admin);
+        // 3. Transfer roles - admin for management, vaultManager for withdrawals
+        ETHVaultAction(payable(tipAction)).grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        ETHVaultAction(payable(tipAction)).grantRole(ETHVaultAction(payable(tipAction)).VAULT_MANAGER(), _vaultManager);
 
-        // 3. Renounce factory roles
-        ETHVaultAction(payable(tipAction)).renounceRole(defaultAdmin, factory);
-        ETHVaultAction(payable(tipAction)).renounceRole(ETHVaultAction(payable(tipAction)).VAULT_MANAGER(), factory);
+        // 4. Renounce factory roles
+        ETHVaultAction(payable(tipAction)).renounceRole(DEFAULT_ADMIN_ROLE, factory);
 
-        emit TipActionCreated(_orgId, _orgId, _admin, tipAction, address(0));
+        emit TipActionCreated(_slashTip, _admin, tipAction, address(0));
     }
 
     // ============ Beacon Upgrade Functions ============
@@ -679,27 +673,6 @@ contract SlashTipFactory is AccessControl {
     }
 
     // ============ View Functions ============
-
-    /// @notice Get deployment info for an organization
-    function getOrg(string calldata _orgId) external view returns (OrgDeployment memory) {
-        if (!orgs[_orgId].exists) revert OrgNotFound(_orgId);
-        return orgs[_orgId];
-    }
-
-    /// @notice Check if an organization exists
-    function orgExists(string calldata _orgId) external view returns (bool) {
-        return orgs[_orgId].exists;
-    }
-
-    /// @notice Get the total number of deployed organizations
-    function orgCount() external view returns (uint256) {
-        return orgIds.length;
-    }
-
-    /// @notice Get all organization IDs
-    function listOrgIds() external view returns (string[] memory) {
-        return orgIds;
-    }
 
     /// @notice Get all beacon addresses
     function getBeacons() external view returns (

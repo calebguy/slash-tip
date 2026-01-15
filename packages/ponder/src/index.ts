@@ -56,6 +56,7 @@ ponder.on("SlashTip:Tipped", async ({ event }) => {
 // Handle user registration from any UserRegistry instance
 ponder.on("UserRegistry:UserAdded", async ({ event }) => {
 	const contractAddress = event.log.address;
+	// Use 'id' (non-indexed) instead of 'idHash' (indexed/hashed) to get actual user ID
 	const { id, nickname, account } = event.args;
 
 	// Look up which org this UserRegistry belongs to
@@ -80,6 +81,7 @@ ponder.on("UserRegistry:UserAdded", async ({ event }) => {
 
 // Handle user removal from any UserRegistry instance
 ponder.on("UserRegistry:UserRemoved", async ({ event }) => {
+	// Use 'id' (non-indexed) instead of 'idHash' (indexed/hashed) to get actual user ID
 	const { id } = event.args;
 
 	console.log(`UserRemoved: ${id}`);
