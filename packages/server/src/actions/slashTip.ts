@@ -4,6 +4,8 @@ import { type OrgActionConfig } from "../chain";
 import { env } from "../env";
 import { registerAction } from "./registry";
 import type { TipAction, TipParams, TipResult, ValidationResult } from "./types";
+import { baseClient } from "../viem";
+import { UserRegistryAbi } from "utils/src/abis/UserRegistryAbi";
 
 const syndicate = new SyndicateClient({
 	token: env.SYNDICATE_API_KEY,
@@ -21,7 +23,7 @@ const PROJECT_ID = "570119ce-a49c-4245-8851-11c9d1ad74c7";
 class SlashTipAction implements TipAction {
 	constructor(public readonly type: string) {}
 
-	async validate({ org, toUserId, amount }: TipParams): Promise<ValidationResult> {
+	async validate({ org, fromUserId, toUserId, amount }: TipParams): Promise<ValidationResult> {
 		const config = org.actionConfig as OrgActionConfig | null;
 
 		if (!config) {
@@ -36,12 +38,36 @@ class SlashTipAction implements TipAction {
 			return { valid: false, error: "SlashTip contract address not configured" };
 		}
 
+		if (!config.userRegistryAddress) {
+			return { valid: false, error: "UserRegistry contract address not configured" };
+		}
+
 		if (amount <= 0) {
 			return { valid: false, error: "Amount must be greater than 0" };
 		}
 
 		if (!toUserId) {
 			return { valid: false, error: "Recipient not specified" };
+		}
+
+		// Check sender's on-chain allowance
+		try {
+			const allowance = await baseClient.readContract({
+				address: config.userRegistryAddress as `0x${string}`,
+				abi: UserRegistryAbi,
+				functionName: "getUserAllowance",
+				args: [fromUserId],
+			});
+
+			if (allowance < BigInt(amount)) {
+				return {
+					valid: false,
+					error: `Insufficient allowance. You have ${allowance} tips remaining, but tried to send ${amount}.`,
+				};
+			}
+		} catch (error) {
+			// User might not exist in registry yet - let the contract handle it
+			console.log(`Could not check allowance for ${fromUserId}:`, error);
 		}
 
 		return { valid: true };
