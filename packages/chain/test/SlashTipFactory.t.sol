@@ -50,9 +50,11 @@ contract SlashTipFactoryTest is Test {
         erc20VaultActionImpl = new ERC20VaultAction();
         ethVaultActionImpl = new ETHVaultAction();
 
-        // Deploy factory
+        // Deploy factory with empty deployers array
+        address[] memory deployers = new address[](0);
         factory = new SlashTipFactory(
             admin,
+            deployers,
             address(slashTipImpl),
             address(userRegistryImpl),
             address(tipERC1155Impl),
@@ -79,6 +81,100 @@ contract SlashTipFactoryTest is Test {
 
     function test_constructor() public view {
         assertTrue(factory.hasRole(factory.DEFAULT_ADMIN_ROLE(), admin));
+        assertTrue(factory.hasRole(factory.DEPLOYER(), admin));
+    }
+
+    function test_constructor_withDeployers() public {
+        // Create deployers array
+        address deployer1 = address(0xD001);
+        address deployer2 = address(0xD002);
+        address[] memory deployers = new address[](2);
+        deployers[0] = deployer1;
+        deployers[1] = deployer2;
+
+        // Deploy factory with deployers
+        SlashTipFactory factoryWithDeployers = new SlashTipFactory(
+            admin,
+            deployers,
+            address(slashTipImpl),
+            address(userRegistryImpl),
+            address(tipERC1155Impl),
+            address(tipERC20Impl),
+            address(erc1155MintActionImpl),
+            address(erc20MintActionImpl),
+            address(erc20VaultActionImpl),
+            address(ethVaultActionImpl)
+        );
+
+        // Verify admin has both roles
+        assertTrue(factoryWithDeployers.hasRole(factoryWithDeployers.DEFAULT_ADMIN_ROLE(), admin));
+        assertTrue(factoryWithDeployers.hasRole(factoryWithDeployers.DEPLOYER(), admin));
+
+        // Verify deployers have DEPLOYER role but NOT DEFAULT_ADMIN_ROLE
+        assertTrue(factoryWithDeployers.hasRole(factoryWithDeployers.DEPLOYER(), deployer1));
+        assertTrue(factoryWithDeployers.hasRole(factoryWithDeployers.DEPLOYER(), deployer2));
+        assertFalse(factoryWithDeployers.hasRole(factoryWithDeployers.DEFAULT_ADMIN_ROLE(), deployer1));
+        assertFalse(factoryWithDeployers.hasRole(factoryWithDeployers.DEFAULT_ADMIN_ROLE(), deployer2));
+    }
+
+    function test_deployer_canDeploy() public {
+        // Create a deployer
+        address deployer = address(0xD003);
+        address[] memory deployers = new address[](1);
+        deployers[0] = deployer;
+
+        // Deploy factory with deployer
+        SlashTipFactory factoryWithDeployer = new SlashTipFactory(
+            admin,
+            deployers,
+            address(slashTipImpl),
+            address(userRegistryImpl),
+            address(tipERC1155Impl),
+            address(tipERC20Impl),
+            address(erc1155MintActionImpl),
+            address(erc20MintActionImpl),
+            address(erc20VaultActionImpl),
+            address(ethVaultActionImpl)
+        );
+
+        // Deployer can deploy an org
+        vm.prank(deployer);
+        (address slashTip,,,) = factoryWithDeployer.deployWithERC1155(
+            "deployer-test-org",
+            address(0xAAA1),
+            _operators(),
+            "",
+            "",
+            0
+        );
+        assertTrue(slashTip != address(0));
+    }
+
+    function test_deployer_cannotUpgrade() public {
+        // Create a deployer
+        address deployer = address(0xD004);
+        address[] memory deployers = new address[](1);
+        deployers[0] = deployer;
+
+        // Deploy factory with deployer
+        SlashTipFactory factoryWithDeployer = new SlashTipFactory(
+            admin,
+            deployers,
+            address(slashTipImpl),
+            address(userRegistryImpl),
+            address(tipERC1155Impl),
+            address(tipERC20Impl),
+            address(erc1155MintActionImpl),
+            address(erc20MintActionImpl),
+            address(erc20VaultActionImpl),
+            address(ethVaultActionImpl)
+        );
+
+        // Deployer cannot upgrade (only admin can)
+        SlashTip newImpl = new SlashTip();
+        vm.prank(deployer);
+        vm.expectRevert();
+        factoryWithDeployer.upgradeSlashTip(address(newImpl));
     }
 
     function test_getBeacons() public view {

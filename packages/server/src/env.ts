@@ -7,15 +7,9 @@ export const env = {
 	SLACK_CLIENT_ID: process.env.SLACK_CLIENT_ID as string,
 	SLACK_CLIENT_SECRET: process.env.SLACK_CLIENT_SECRET as string,
 	DATABASE_URL: process.env.DATABASE_URL as string,
+	SLASH_TIP_FACTORY_ADDRESS: process.env.SLASH_TIP_FACTORY_ADDRESS as string,
+	SLASH_TIP_ADMIN_ADDRESS: process.env.SLASH_TIP_ADMIN_ADDRESS as string,
 	PORT: process.env.PORT || "4000",
-};
-
-// Optional env vars (checked at runtime when needed)
-export const optionalEnv = {
-	// Factory deployment
-	SLASH_TIP_FACTORY_ADDRESS: process.env.SLASH_TIP_FACTORY_ADDRESS as string | undefined,
-	SLASH_TIP_ADMIN_ADDRESS: process.env.SLASH_TIP_ADMIN_ADDRESS as string | undefined,
-	SLASH_TIP_OPERATOR_ADDRESS: process.env.SLASH_TIP_OPERATOR_ADDRESS as string | undefined,
 };
 
 for (const key in env) {

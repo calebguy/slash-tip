@@ -17,6 +17,9 @@ import {ETHVaultAction} from "./ETHVaultAction.sol";
 /// @notice Factory contract for deploying SlashTip instances using Beacon Proxies
 /// @dev Uses UpgradeableBeacon pattern for upgradeable multi-tenant deployments
 contract SlashTipFactory is AccessControl {
+    /// @notice Role for deploying new orgs and creating actions
+    /// @dev Granted to relayer accounts that can deploy on behalf of users
+    bytes32 public constant DEPLOYER = keccak256("DEPLOYER");
 
     // Beacons for each contract type
     UpgradeableBeacon public slashTipBeacon;
@@ -51,6 +54,7 @@ contract SlashTipFactory is AccessControl {
 
     constructor(
         address _admin,
+        address[] memory _deployers,
         address _slashTipImpl,
         address _userRegistryImpl,
         address _tipERC1155Impl,
@@ -71,6 +75,14 @@ contract SlashTipFactory is AccessControl {
         if (_ethVaultActionImpl == address(0)) revert InvalidAddress();
 
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        _grantRole(DEPLOYER, _admin); // Admin can also deploy
+
+        // Grant DEPLOYER role to all provided deployer addresses
+        for (uint256 i = 0; i < _deployers.length; i++) {
+            if (_deployers[i] != address(0)) {
+                _grantRole(DEPLOYER, _deployers[i]);
+            }
+        }
 
         // Create beacons pointing to implementation contracts
         slashTipBeacon = new UpgradeableBeacon(_slashTipImpl, address(this));
@@ -99,7 +111,7 @@ contract SlashTipFactory is AccessControl {
         uint256 _tokenId
     )
         external
-        onlyRole(DEFAULT_ADMIN_ROLE)
+        onlyRole(DEPLOYER)
         returns (
             address slashTip,
             address userRegistry,
@@ -189,7 +201,7 @@ contract SlashTipFactory is AccessControl {
         uint8 _tokenDecimals
     )
         external
-        onlyRole(DEFAULT_ADMIN_ROLE)
+        onlyRole(DEPLOYER)
         returns (
             address slashTip,
             address userRegistry,
@@ -275,7 +287,7 @@ contract SlashTipFactory is AccessControl {
         address _token
     )
         external
-        onlyRole(DEFAULT_ADMIN_ROLE)
+        onlyRole(DEPLOYER)
         returns (
             address slashTip,
             address userRegistry,
@@ -350,7 +362,7 @@ contract SlashTipFactory is AccessControl {
         address _vaultManager
     )
         external
-        onlyRole(DEFAULT_ADMIN_ROLE)
+        onlyRole(DEPLOYER)
         returns (
             address slashTip,
             address userRegistry,
@@ -431,7 +443,7 @@ contract SlashTipFactory is AccessControl {
         uint256 _tokenId
     )
         external
-        onlyRole(DEFAULT_ADMIN_ROLE)
+        onlyRole(DEPLOYER)
         returns (address tipAction, address tipToken)
     {
         if (_slashTip == address(0)) revert InvalidAddress();
@@ -491,7 +503,7 @@ contract SlashTipFactory is AccessControl {
         uint8 _tokenDecimals
     )
         external
-        onlyRole(DEFAULT_ADMIN_ROLE)
+        onlyRole(DEPLOYER)
         returns (address tipAction, address tipToken)
     {
         if (_slashTip == address(0)) revert InvalidAddress();
@@ -546,7 +558,7 @@ contract SlashTipFactory is AccessControl {
         address _token
     )
         external
-        onlyRole(DEFAULT_ADMIN_ROLE)
+        onlyRole(DEPLOYER)
         returns (address tipAction)
     {
         if (_slashTip == address(0)) revert InvalidAddress();
@@ -586,7 +598,7 @@ contract SlashTipFactory is AccessControl {
         address _vaultManager
     )
         external
-        onlyRole(DEFAULT_ADMIN_ROLE)
+        onlyRole(DEPLOYER)
         returns (address tipAction)
     {
         if (_slashTip == address(0)) revert InvalidAddress();

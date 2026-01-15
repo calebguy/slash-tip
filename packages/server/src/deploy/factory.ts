@@ -1,24 +1,27 @@
 import { SyndicateClient } from "@syndicateio/syndicate-node";
 import { waitForHash } from "@syndicateio/syndicate-node/utils";
+import { SlashTipFactoryAbi } from "utils/src/abis/SlashTipFactoryAbi";
 import { createPublicClient, http, parseEventLogs, type Hex } from "viem";
 import { base } from "viem/chains";
-import { env, optionalEnv } from "../env";
-import { SlashTipFactoryAbi } from "utils/src/abis/SlashTipFactoryAbi";
+import { env } from "../env";
 
 const syndicate = new SyndicateClient({
 	token: env.SYNDICATE_API_KEY,
 });
 
 // Factory constants
-const FACTORY_ADDRESS = optionalEnv.SLASH_TIP_FACTORY_ADDRESS || "";
+const FACTORY_ADDRESS = env.SLASH_TIP_FACTORY_ADDRESS || "";
 const CHAIN_ID = 8453; // Base mainnet
 const PROJECT_ID = "570119ce-a49c-4245-8851-11c9d1ad74c7";
 
-// Admin address that will own deployed contracts (Syndicate relayer)
-const ADMIN_ADDRESS = optionalEnv.SLASH_TIP_ADMIN_ADDRESS || "";
+const ADMIN_ADDRESS = "0x18F33CEf45817C428d98C4E188A770191fDD4B79";
 
-// Operator address (backend service that can execute tips, manage users, etc.)
-const OPERATOR_ADDRESS = optionalEnv.SLASH_TIP_OPERATOR_ADDRESS || ADMIN_ADDRESS;
+// Operator addresses (Syndicate relayers that can execute tips, manage users, etc.)
+const OPERATOR_ADDRESSES = [
+	"0xE7129298AE18FD2f4862E9a25D40CE333b11c583",
+	"0x8f9B71d1a895e4Fb4906D3e01F3B39FB983E33e0",
+	"0xDd73C6Adea961820981b4e65b514F7D00A195c07",
+];
 
 // Viem client for reading from contracts
 const publicClient = createPublicClient({
@@ -43,7 +46,9 @@ export interface DeploymentResult {
  * Parse deployed addresses from a deployment transaction receipt
  * Extracts addresses from the OrgDeployed event
  */
-export async function getOrgAddressesFromTx(txHash: string): Promise<OrgAddresses | null> {
+export async function getOrgAddressesFromTx(
+	txHash: string,
+): Promise<OrgAddresses | null> {
 	try {
 		const receipt = await publicClient.getTransactionReceipt({
 			hash: txHash as Hex,
@@ -121,7 +126,7 @@ export async function deployERC1155(
 			args: {
 				_orgId: config.orgId,
 				_admin: ADMIN_ADDRESS,
-				_operators: [OPERATOR_ADDRESS],
+				_operators: OPERATOR_ADDRESSES,
 				_tokenBaseURI: config.baseUri || "",
 				_contractURI: config.contractUri || "",
 				_tokenId: config.tokenId,
@@ -178,7 +183,7 @@ export async function deployERC20(
 			args: {
 				_orgId: config.orgId,
 				_admin: ADMIN_ADDRESS,
-				_operators: [OPERATOR_ADDRESS],
+				_operators: OPERATOR_ADDRESSES,
 				_tokenName: config.tokenName,
 				_tokenSymbol: config.tokenSymbol,
 				_tokenDecimals: config.decimals,
@@ -240,7 +245,7 @@ export async function deployERC20Vault(
 			args: {
 				_orgId: config.orgId,
 				_admin: ADMIN_ADDRESS,
-				_operators: [OPERATOR_ADDRESS],
+				_operators: OPERATOR_ADDRESSES,
 				_vaultManager: config.vaultManagerAddress,
 				_token: config.tokenAddress,
 			},

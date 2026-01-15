@@ -20,8 +20,18 @@ contract DeploySlashTip is Script {
         uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
         address admin = vm.envAddress("ADMIN_ADDRESS");
 
+        // Hardcoded deployer addresses (Syndicate relayers)
+        address[] memory deployers = new address[](3);
+        deployers[0] = 0xE7129298AE18FD2f4862E9a25D40CE333b11c583;
+        deployers[1] = 0x8f9B71d1a895e4Fb4906D3e01F3B39FB983E33e0;
+        deployers[2] = 0xDd73C6Adea961820981b4e65b514F7D00A195c07;
+
         console.log("Deploying SlashTip contracts...");
         console.log("Admin address:", admin);
+        console.log("Deployers:");
+        console.log("  Deployer 0:", deployers[0]);
+        console.log("  Deployer 1:", deployers[1]);
+        console.log("  Deployer 2:", deployers[2]);
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -57,6 +67,7 @@ contract DeploySlashTip is Script {
 
         SlashTipFactory factory = new SlashTipFactory(
             admin,
+            deployers,
             address(slashTipImpl),
             address(userRegistryImpl),
             address(tipERC1155Impl),
@@ -90,28 +101,39 @@ contract DeploySlashTip is Script {
 /// @title RedeployFactory
 /// @notice Redeploy just the factory using existing implementation addresses
 /// @dev Run with: forge script script/DeployFactory.s.sol:RedeployFactory --rpc-url $RPC_URL --broadcast --verify
-contract RedeployFactory is Script {
+contract DeployFactory is Script {
     // Existing implementation addresses on Base Mainnet
-    address constant SLASH_TIP_IMPL = 0x20951a1BF3dC958F78912D72D0919DdaD11A8b5d;
-    address constant USER_REGISTRY_IMPL = 0xD9A1843BcF0D6283b1f8e213Eb3baecFC79914f4;
-    address constant TIP_ERC1155_IMPL = 0x3c64970A0ADDFa2F29a717bd2c8e11452654F725;
-    address constant TIP_ERC20_IMPL = 0x4fE83003fA7b5967b69FAFc96124885b4477E830;
-    address constant ERC1155_MINT_ACTION_IMPL = 0x812341337c3a8D5cF04DA58970fFbABBea1b182e;
-    address constant ERC20_MINT_ACTION_IMPL = 0xD96f1C315Daa52C15F9494159ac02F1820e4fA69;
-    address constant ERC20_VAULT_ACTION_IMPL = 0xe1A481e129d6aA7562b89452C75C84439d5b535F;
-    address constant ETH_VAULT_ACTION_IMPL = 0x4f5422Ab6151bA60593F38505ee95a01343F7E48;
+    address constant SLASH_TIP_IMPL = 0x8c92aD60EF9e8f3E6DaF8b4649b310ca09d26A5d;
+    address constant USER_REGISTRY_IMPL = 0x4035d0E432bfD35a603c296F2052a42044e2306c;
+    address constant TIP_ERC1155_IMPL = 0x8E53CE2fC7Ae2053b5c2Aa8A09E3645F61f689d5;
+    address constant TIP_ERC20_IMPL = 0xB523B0C2547A982D770fE6c4c7F22A016921ADe2;
+    address constant ERC1155_MINT_ACTION_IMPL = 0x5cF2b7Db45634643160EA8cc74Ce5023826FbB63;
+    address constant ERC20_MINT_ACTION_IMPL = 0x89d0A0c19CFc0089320cA53DeA85df9Bd0DAA8d6;
+    address constant ERC20_VAULT_ACTION_IMPL = 0x64AeCC54738159fee816390b011eCb4c54461528;
+    address constant ETH_VAULT_ACTION_IMPL = 0xdE7fdADc2a1409a32e95521D611C86F607405f2D;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
         address admin = vm.envAddress("ADMIN_ADDRESS");
 
+        // Hardcoded deployer addresses (Syndicate relayers)
+        address[] memory deployers = new address[](3);
+        deployers[0] = 0xE7129298AE18FD2f4862E9a25D40CE333b11c583;
+        deployers[1] = 0x8f9B71d1a895e4Fb4906D3e01F3B39FB983E33e0;
+        deployers[2] = 0xDd73C6Adea961820981b4e65b514F7D00A195c07;
+
         console.log("Redeploying factory with existing implementations...");
         console.log("Admin address:", admin);
+        console.log("Deployers:");
+        console.log("  Deployer 0:", deployers[0]);
+        console.log("  Deployer 1:", deployers[1]);
+        console.log("  Deployer 2:", deployers[2]);
 
         vm.startBroadcast(deployerPrivateKey);
 
         SlashTipFactory factory = new SlashTipFactory(
             admin,
+            deployers,
             SLASH_TIP_IMPL,
             USER_REGISTRY_IMPL,
             TIP_ERC1155_IMPL,
@@ -126,6 +148,11 @@ contract RedeployFactory is Script {
 
         console.log("\n========== FACTORY REDEPLOYMENT ==========");
         console.log("New SlashTipFactory:", address(factory));
+        console.log("");
+        console.log("Deployers with DEPLOYER role:");
+        console.log("  ", deployers[0]);
+        console.log("  ", deployers[1]);
+        console.log("  ", deployers[2]);
         console.log("");
         console.log("Using existing implementations:");
         console.log("  SlashTip:", SLASH_TIP_IMPL);
@@ -144,92 +171,3 @@ contract RedeployFactory is Script {
     }
 }
 
-/// @title DeployOrg
-/// @notice Deploy a new organization using the factory
-/// @dev Run with: forge script script/DeployV2.s.sol:DeployOrg --rpc-url $RPC_URL --broadcast
-contract DeployOrg is Script {
-    function run() external {
-        uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
-        address factory = vm.envAddress("FACTORY_ADDRESS");
-        address orgAdmin = vm.envAddress("ORG_ADMIN_ADDRESS");
-        string memory orgId = vm.envString("ORG_ID");
-        string memory deploymentType = vm.envString("DEPLOYMENT_TYPE"); // "erc1155", "erc20", "erc20vault", or "ethvault"
-
-        // Parse operator addresses (comma-separated)
-        address[] memory operators = vm.envAddress("OPERATOR_ADDRESSES", ",");
-        require(operators.length > 0, "At least one operator address required");
-
-        console.log("Deploying org:", orgId);
-        console.log("Deployment type:", deploymentType);
-        console.log("Org admin:", orgAdmin);
-        console.log("Operators count:", operators.length);
-        for (uint i = 0; i < operators.length; i++) {
-            console.log("  Operator", i, ":", operators[i]);
-        }
-
-        vm.startBroadcast(deployerPrivateKey);
-
-        SlashTipFactory f = SlashTipFactory(factory);
-
-        if (keccak256(bytes(deploymentType)) == keccak256(bytes("erc1155"))) {
-            string memory baseUri = vm.envOr("TOKEN_BASE_URI", string(""));
-            string memory contractUri = vm.envOr("CONTRACT_URI", string(""));
-            uint256 tokenId = vm.envOr("TOKEN_ID", uint256(0));
-
-            (address slashTip, address userRegistry, address tipAction, address tipToken) =
-                f.deployWithERC1155(orgId, orgAdmin, operators, baseUri, contractUri, tokenId);
-
-            console.log("\n--- ERC1155 Deployment ---");
-            console.log("SlashTip:", slashTip);
-            console.log("UserRegistry:", userRegistry);
-            console.log("TipAction:", tipAction);
-            console.log("TipToken:", tipToken);
-
-        } else if (keccak256(bytes(deploymentType)) == keccak256(bytes("erc20"))) {
-            string memory tokenName = vm.envString("TOKEN_NAME");
-            string memory tokenSymbol = vm.envString("TOKEN_SYMBOL");
-            uint8 tokenDecimals = uint8(vm.envOr("TOKEN_DECIMALS", uint256(18)));
-
-            (address slashTip, address userRegistry, address tipAction, address tipToken) =
-                f.deployWithERC20(orgId, orgAdmin, operators, tokenName, tokenSymbol, tokenDecimals);
-
-            console.log("\n--- ERC20 Deployment ---");
-            console.log("SlashTip:", slashTip);
-            console.log("UserRegistry:", userRegistry);
-            console.log("TipAction:", tipAction);
-            console.log("TipToken:", tipToken);
-
-        } else if (keccak256(bytes(deploymentType)) == keccak256(bytes("erc20vault"))) {
-            address existingToken = vm.envAddress("EXISTING_TOKEN_ADDRESS");
-            address vaultManager = vm.envAddress("VAULT_MANAGER_ADDRESS");
-
-            (address slashTip, address userRegistry, address tipAction) =
-                f.deployWithERC20Vault(orgId, orgAdmin, operators, vaultManager, existingToken);
-
-            console.log("\n--- ERC20 Vault Deployment ---");
-            console.log("SlashTip:", slashTip);
-            console.log("UserRegistry:", userRegistry);
-            console.log("TipAction (Vault):", tipAction);
-            console.log("Existing Token:", existingToken);
-            console.log("Vault Manager:", vaultManager);
-
-        } else if (keccak256(bytes(deploymentType)) == keccak256(bytes("ethvault"))) {
-            address vaultManager = vm.envAddress("VAULT_MANAGER_ADDRESS");
-
-            (address slashTip, address userRegistry, address tipAction) =
-                f.deployWithETHVault(orgId, orgAdmin, operators, vaultManager);
-
-            console.log("\n--- ETH Vault Deployment ---");
-            console.log("SlashTip:", slashTip);
-            console.log("UserRegistry:", userRegistry);
-            console.log("TipAction (ETH Vault):", tipAction);
-            console.log("Fund the vault by sending ETH to:", tipAction);
-            console.log("Vault Manager:", vaultManager);
-
-        } else {
-            revert("Invalid DEPLOYMENT_TYPE. Use: erc1155, erc20, erc20vault, or ethvault");
-        }
-
-        vm.stopBroadcast();
-    }
-}

@@ -114,28 +114,31 @@ SlashTip Contract (Internal)
 
 ## Deployed Addresses (Base Mainnet)
 
-**Admin:** `0xE7129298AE18FD2f4862E9a25D40CE333b11c583`
+**Admin:** `0x18F33CEf45817C428d98C4E188A770191fDD4B79`
+
+**Deployers (Syndicate relayers):**
+- `0xE7129298AE18FD2f4862E9a25D40CE333b11c583`
+- `0x8f9B71d1a895e4Fb4906D3e01F3B39FB983E33e0`
+- `0xDd73C6Adea961820981b4e65b514F7D00A195c07`
 
 ### Factory
 
 | Contract | Address |
 |----------|---------|
-| SlashTipFactory | `0xf9E749524902a90BFF13ceEde494C60b7658cb4A` |
+| SlashTipFactory | `0x20ca42bEDE1a937F020d348eEd5939a8A953294c` |
 
 ### Implementations
 
 | Contract | Address |
 |----------|---------|
-| SlashTip | `0x20951a1BF3dC958F78912D72D0919DdaD11A8b5d` |
-| UserRegistry | `0xD9A1843BcF0D6283b1f8e213Eb3baecFC79914f4` |
-| TipERC1155 | `0x3c64970A0ADDFa2F29a717bd2c8e11452654F725` |
-| TipERC20 | `0x4fE83003fA7b5967b69FAFc96124885b4477E830` |
-| ERC1155MintAction | `0x812341337c3a8D5cF04DA58970fFbABBea1b182e` |
-| ERC20MintAction | `0xD96f1C315Daa52C15F9494159ac02F1820e4fA69` |
-| ERC20VaultAction | `0xe1A481e129d6aA7562b89452C75C84439d5b535F` |
-| ETHVaultAction | `0x4f5422Ab6151bA60593F38505ee95a01343F7E48` |
-
-> **Note:** These addresses will be updated after redeployment with the new role structure.
+| SlashTip | `0x8c92aD60EF9e8f3E6DaF8b4649b310ca09d26A5d` |
+| UserRegistry | `0x4035d0E432bfD35a603c296F2052a42044e2306c` |
+| TipERC1155 | `0x8E53CE2fC7Ae2053b5c2Aa8A09E3645F61f689d5` |
+| TipERC20 | `0xB523B0C2547A982D770fE6c4c7F22A016921ADe2` |
+| ERC1155MintAction | `0x5cF2b7Db45634643160EA8cc74Ce5023826FbB63` |
+| ERC20MintAction | `0x89d0A0c19CFc0089320cA53DeA85df9Bd0DAA8d6` |
+| ERC20VaultAction | `0x64AeCC54738159fee816390b011eCb4c54461528` |
+| ETHVaultAction | `0xdE7fdADc2a1409a32e95521D611C86F607405f2D` |
 
 ## Security Features
 
