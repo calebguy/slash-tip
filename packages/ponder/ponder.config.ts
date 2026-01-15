@@ -1,9 +1,10 @@
 import { createConfig, factory } from "ponder";
-import { http, parseAbiItem } from "viem";
-import { SlashTipFactoryAbi } from "utils/src/abis/SlashTipFactoryAbi";
 import { SlashTipAbi } from "utils/src/abis/SlashTipAbi";
+import { SlashTipFactoryAbi } from "utils/src/abis/SlashTipFactoryAbi";
 import { UserRegistryAbi } from "utils/src/abis/UserRegistryAbi";
-import { SLASH_TIP_FACTORY_START_BLOCK } from "utils/src/constants";
+import { http, parseAbiItem } from "viem";
+
+export const SLASH_TIP_FACTORY_START_BLOCK = 40850000;
 
 // Factory address from environment
 const FACTORY_ADDRESS = process.env.SLASH_TIP_FACTORY_ADDRESS as `0x${string}`;
@@ -14,7 +15,7 @@ if (!FACTORY_ADDRESS) {
 
 // OrgDeployed event signature for factory pattern
 const ORG_DEPLOYED_EVENT = parseAbiItem(
-	"event OrgDeployed(string indexed orgIdHash, string orgId, address indexed admin, address slashTip, address userRegistry, address tipAction, address tipToken)"
+	"event OrgDeployed(string indexed orgIdHash, string orgId, address indexed admin, address slashTip, address userRegistry, address tipAction, address tipToken)",
 );
 
 export default createConfig({
