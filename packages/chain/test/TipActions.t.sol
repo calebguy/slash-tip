@@ -171,10 +171,11 @@ contract ERC20MintActionTest is Test {
     }
 
     function test_execute() public {
-        uint256 amount = 1000 * 10 ** 18;
+        uint256 amount = 1000; // Unscaled (1000 tokens)
+        uint256 scaledAmount = amount * 10 ** 18;
         action.execute(sender, recipient, amount, "");
 
-        assertEq(token.balanceOf(recipient), amount);
+        assertEq(token.balanceOf(recipient), scaledAmount);
     }
 
     function test_setToken() public {
@@ -260,22 +261,24 @@ contract ERC20VaultActionTest is Test {
         action.deposit(depositAmount);
         vm.stopPrank();
 
-        // Execute tip
-        uint256 tipAmount = 100 * 10 ** 18;
+        // Execute tip (amount is unscaled, e.g., 100 = 100 tokens)
+        uint256 tipAmount = 100;
+        uint256 scaledTipAmount = tipAmount * 10 ** 18;
         action.execute(sender, recipient, tipAmount, "");
 
-        assertEq(token.balanceOf(recipient), tipAmount);
-        assertEq(action.vaultBalance(), depositAmount - tipAmount);
+        assertEq(token.balanceOf(recipient), scaledTipAmount);
+        assertEq(action.vaultBalance(), depositAmount - scaledTipAmount);
     }
 
     function test_execute_revertIfInsufficientBalance() public {
-        uint256 tipAmount = 100 * 10 ** 18;
+        uint256 tipAmount = 100; // Unscaled
+        uint256 scaledTipAmount = tipAmount * 10 ** 18;
 
         vm.expectRevert(
             abi.encodeWithSelector(
                 ERC20VaultAction.InsufficientVaultBalance.selector,
                 0,
-                tipAmount
+                scaledTipAmount
             )
         );
         action.execute(sender, recipient, tipAmount, "");
@@ -375,24 +378,26 @@ contract ETHVaultActionTest is Test {
         uint256 depositAmount = 10 ether;
         action.deposit{value: depositAmount}();
 
-        // Execute tip
-        uint256 tipAmount = 1 ether;
+        // Execute tip (amount is unscaled, e.g., 1 = 1 ETH)
+        uint256 tipAmount = 1;
+        uint256 scaledTipAmount = tipAmount * 1e18;
         uint256 recipientBalanceBefore = recipient.balance;
 
         action.execute(sender, recipient, tipAmount, "");
 
-        assertEq(recipient.balance, recipientBalanceBefore + tipAmount);
-        assertEq(action.vaultBalance(), depositAmount - tipAmount);
+        assertEq(recipient.balance, recipientBalanceBefore + scaledTipAmount);
+        assertEq(action.vaultBalance(), depositAmount - scaledTipAmount);
     }
 
     function test_execute_revertIfInsufficientBalance() public {
-        uint256 tipAmount = 1 ether;
+        uint256 tipAmount = 1; // Unscaled
+        uint256 scaledTipAmount = tipAmount * 1e18;
 
         vm.expectRevert(
             abi.encodeWithSelector(
                 ETHVaultAction.InsufficientVaultBalance.selector,
                 0,
-                tipAmount
+                scaledTipAmount
             )
         );
         action.execute(sender, recipient, tipAmount, "");

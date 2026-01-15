@@ -171,3 +171,55 @@ contract DeployFactory is Script {
     }
 }
 
+/// @title UpgradeActions
+/// @notice Deploy new action implementations and upgrade beacons
+/// @dev Run with: forge script script/DeployFactory.s.sol:UpgradeActions --rpc-url base --broadcast --verify
+contract UpgradeActions is Script {
+    // Factory address on Base Mainnet
+    address constant FACTORY_ADDRESS = 0x20ca42bEDE1a937F020d348eEd5939a8A953294c;
+
+    function run() external {
+        uint256 adminPrivateKey = vm.envUint("ADMIN_PRIVATE_KEY");
+
+        console.log("Upgrading action implementations...");
+        console.log("Factory:", FACTORY_ADDRESS);
+
+        vm.startBroadcast(adminPrivateKey);
+
+        // Deploy new implementations
+        console.log("\n--- Deploying New Implementations ---");
+
+        ERC20MintAction erc20MintActionImpl = new ERC20MintAction();
+        console.log("ERC20MintAction:", address(erc20MintActionImpl));
+
+        ERC20VaultAction erc20VaultActionImpl = new ERC20VaultAction();
+        console.log("ERC20VaultAction:", address(erc20VaultActionImpl));
+
+        ETHVaultAction ethVaultActionImpl = new ETHVaultAction();
+        console.log("ETHVaultAction:", address(ethVaultActionImpl));
+
+        // Upgrade beacons via factory
+        console.log("\n--- Upgrading Beacons ---");
+
+        SlashTipFactory factory = SlashTipFactory(FACTORY_ADDRESS);
+
+        factory.upgradeERC20MintAction(address(erc20MintActionImpl));
+        console.log("Upgraded ERC20MintAction beacon");
+
+        factory.upgradeERC20VaultAction(address(erc20VaultActionImpl));
+        console.log("Upgraded ERC20VaultAction beacon");
+
+        factory.upgradeETHVaultAction(address(ethVaultActionImpl));
+        console.log("Upgraded ETHVaultAction beacon");
+
+        vm.stopBroadcast();
+
+        console.log("\n========== UPGRADE COMPLETE ==========");
+        console.log("New implementations:");
+        console.log("  ERC20MintAction:", address(erc20MintActionImpl));
+        console.log("  ERC20VaultAction:", address(erc20VaultActionImpl));
+        console.log("  ETHVaultAction:", address(ethVaultActionImpl));
+        console.log("=======================================");
+    }
+}
+

@@ -4,6 +4,7 @@ pragma solidity ^0.8.13;
 import {ITipAction} from "./ITipAction.sol";
 import {AccessControl} from "openzeppelin/access/AccessControl.sol";
 import {Initializable} from "openzeppelin/proxy/utils/Initializable.sol";
+import {IERC20Metadata} from "openzeppelin/token/ERC20/extensions/IERC20Metadata.sol";
 
 /// @notice Interface for mintable ERC20 tokens
 interface IERC20Mintable {
@@ -42,13 +43,19 @@ contract ERC20MintAction is Initializable, ITipAction, AccessControl {
 
     /// @notice Execute the tip by minting ERC20 tokens
     /// @dev Only callable by addresses with EXECUTOR role (SlashTip contract)
+    /// @dev Amount is in human-readable units (e.g., 1 for 1 token) and scaled by token decimals
     /// @param from The sender's wallet address (unused for minting)
     /// @param to The recipient's wallet address
-    /// @param amount The number of tokens to mint
+    /// @param amount The number of tokens to mint (unscaled, e.g., 1 = 1 token)
     /// @param data Unused, kept for interface compatibility
     function execute(address from, address to, uint256 amount, bytes calldata data) external override onlyRole(EXECUTOR) {
         (from, data); // Silence unused parameter warnings
-        token.mint(to, amount);
+
+        // Scale amount by token decimals (e.g., 1 becomes 1e18 for 18-decimal token)
+        uint8 decimals = IERC20Metadata(address(token)).decimals();
+        uint256 scaledAmount = amount * (10 ** decimals);
+
+        token.mint(to, scaledAmount);
     }
 
     /// @notice Update the token contract

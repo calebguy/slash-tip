@@ -43,19 +43,23 @@ contract ETHVaultAction is Initializable, ITipAction, AccessControl, ReentrancyG
 
     /// @notice Execute the tip by transferring ETH from the vault
     /// @dev Only callable by addresses with EXECUTOR role (SlashTip contract)
+    /// @dev Amount is in human-readable units (e.g., 1 for 1 ETH) and scaled to wei
     /// @param from The sender's wallet address (unused, tips come from vault)
     /// @param to The recipient's wallet address
-    /// @param amount The amount of ETH to transfer (in wei)
+    /// @param amount The amount of ETH to transfer (unscaled, e.g., 1 = 1 ETH)
     /// @param data Unused, kept for interface compatibility
     function execute(address from, address to, uint256 amount, bytes calldata data) external override onlyRole(EXECUTOR) nonReentrant {
         (from, data); // Silence unused parameter warnings
 
+        // Scale amount to wei (1 ETH = 1e18 wei)
+        uint256 scaledAmount = amount * 1e18;
+
         uint256 balance = address(this).balance;
-        if (balance < amount) {
-            revert InsufficientVaultBalance(balance, amount);
+        if (balance < scaledAmount) {
+            revert InsufficientVaultBalance(balance, scaledAmount);
         }
 
-        (bool success, ) = to.call{value: amount}("");
+        (bool success, ) = to.call{value: scaledAmount}("");
         if (!success) {
             revert ETHTransferFailed();
         }

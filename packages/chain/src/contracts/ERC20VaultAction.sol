@@ -6,6 +6,7 @@ import {AccessControl} from "openzeppelin/access/AccessControl.sol";
 import {Initializable} from "openzeppelin/proxy/utils/Initializable.sol";
 import {ReentrancyGuard} from "openzeppelin/utils/ReentrancyGuard.sol";
 import {IERC20} from "openzeppelin/token/ERC20/IERC20.sol";
+import {IERC20Metadata} from "openzeppelin/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "openzeppelin/token/ERC20/utils/SafeERC20.sol";
 
 /// @title ERC20VaultAction
@@ -47,19 +48,24 @@ contract ERC20VaultAction is Initializable, ITipAction, AccessControl, Reentranc
 
     /// @notice Execute the tip by transferring ERC20 tokens from the vault
     /// @dev Only callable by addresses with EXECUTOR role (SlashTip contract)
+    /// @dev Amount is in human-readable units (e.g., 1 for 1 token) and scaled by token decimals
     /// @param from The sender's wallet address (unused, tips come from vault)
     /// @param to The recipient's wallet address
-    /// @param amount The number of tokens to transfer
+    /// @param amount The number of tokens to transfer (unscaled, e.g., 1 = 1 token)
     /// @param data Unused, kept for interface compatibility
     function execute(address from, address to, uint256 amount, bytes calldata data) external override onlyRole(EXECUTOR) nonReentrant {
         (from, data); // Silence unused parameter warnings
 
+        // Scale amount by token decimals (e.g., 1 becomes 1e18 for 18-decimal token)
+        uint8 decimals = IERC20Metadata(address(token)).decimals();
+        uint256 scaledAmount = amount * (10 ** decimals);
+
         uint256 balance = token.balanceOf(address(this));
-        if (balance < amount) {
-            revert InsufficientVaultBalance(balance, amount);
+        if (balance < scaledAmount) {
+            revert InsufficientVaultBalance(balance, scaledAmount);
         }
 
-        token.safeTransfer(to, amount);
+        token.safeTransfer(to, scaledAmount);
     }
 
     /// @notice Deposit ERC20 tokens into the vault
