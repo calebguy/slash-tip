@@ -1,5 +1,4 @@
-import type { Hex } from "viem";
-import { addAllowanceForAllUsers, type OrgActionConfig } from "./chain";
+import { addAllowanceForAllUsersViaSyndicate, type OrgActionConfig } from "./chain";
 import { db } from "./server";
 
 async function main() {
@@ -23,11 +22,15 @@ async function main() {
 		);
 
 		try {
-			await addAllowanceForAllUsers(
-				config.userRegistryAddress as Hex,
+			const txHash = await addAllowanceForAllUsersViaSyndicate(
+				config.userRegistryAddress,
 				org.dailyAllowance,
 			);
-			console.log(`[${org.slug}] Successfully added allowance`);
+			if (txHash) {
+				console.log(`[${org.slug}] Successfully added allowance (tx: ${txHash})`);
+			} else {
+				console.log(`[${org.slug}] Allowance transaction submitted (hash not yet available)`);
+			}
 		} catch (e) {
 			console.error(`[${org.slug}] Failed to add allowance:`, e);
 		}

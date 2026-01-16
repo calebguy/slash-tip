@@ -103,6 +103,35 @@ export async function register({
 	]);
 }
 
+// Syndicate-based allowance functions (for non-wallet transactions)
+export async function addAllowanceForAllUsersViaSyndicate(
+	userRegistryAddress: string,
+	amount: number,
+) {
+	const { transactionId } = await syndicate.transact.sendTransaction({
+		chainId,
+		projectId,
+		contractAddress: userRegistryAddress,
+		functionSignature: "addAllowanceForAllUsers(uint256 _amount)",
+		args: {
+			_amount: amount,
+		},
+	});
+	try {
+		return await waitForHash(syndicate, {
+			projectId,
+			transactionId,
+			every: 250,
+			maxAttempts: 4,
+		});
+	} catch (e) {
+		console.error(
+			`[add-allowance] could not get transaction hash for ${transactionId} in reasonable amount of time`,
+		);
+		return null;
+	}
+}
+
 // Syndicate-based registration (for non-wallet transactions)
 export async function registerViaSyndicate({
 	userRegistryAddress,
