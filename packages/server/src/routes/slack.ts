@@ -267,11 +267,11 @@ const app = new Hono<Env>()
 		const org = c.get("org");
 		console.log(`Fetching activity for org ${org.slug}`);
 		const activity = await db.getTipsByOrg(org.id, 6);
-		const blocks = activity.map(({ fromUser, toUser, amount }) => ({
+		const blocks = activity.map(({ fromUser, toUser, amount, message }) => ({
 			type: "section",
 			text: {
 				type: "mrkdwn",
-				text: `${fromUser?.nickname} ->-> ${toUser?.nickname}: ${amount.toString()}`,
+				text: `${fromUser?.nickname} -> ${toUser?.nickname}: ${amount.toString()}${message ? ` - "${message}"` : ""}`,
 			},
 		}));
 		return c.json({
