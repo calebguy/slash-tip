@@ -9,6 +9,7 @@ export const env = {
 	DATABASE_URL: process.env.DATABASE_URL as string,
 	SLASH_TIP_FACTORY_ADDRESS: process.env.SLASH_TIP_FACTORY_ADDRESS as string,
 	SLASH_TIP_ADMIN_ADDRESS: process.env.SLASH_TIP_ADMIN_ADDRESS as string,
+	CRON_SECRET: process.env.CRON_SECRET as string,
 	PORT: process.env.PORT || "4000",
 };
 
