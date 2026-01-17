@@ -35,14 +35,25 @@ const app = new Hono()
 			return c.json({ error: "Organization not found" }, 404);
 		}
 
-		// Get users for this org from database
-		const orgUsers = await db.getUsersByOrg(org.id);
+		// Get users and tips for this org
+		const [orgUsers, orgTips] = await Promise.all([
+			db.getUsersByOrg(org.id),
+			db.getTipsByOrg(org.id, 1000),
+		]);
+
+		// Calculate balance for each user (sum of tips received)
+		const balanceMap = new Map<string, bigint>();
+		for (const tip of orgTips) {
+			const current = balanceMap.get(tip.toUser?.id ?? "") ?? BigInt(0);
+			balanceMap.set(tip.toUser?.id ?? "", current + tip.amount);
+		}
 
 		return c.json(
 			orgUsers.map((user) => ({
 				nickname: user.nickname,
 				id: user.id,
 				account: user.address,
+				balance: (balanceMap.get(user.id) ?? BigInt(0)).toString(),
 			})),
 		);
 	})
