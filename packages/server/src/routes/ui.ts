@@ -49,12 +49,15 @@ const app = new Hono()
 		}
 
 		return c.json(
-			orgUsers.map((user) => ({
-				nickname: user.nickname,
-				id: user.id,
-				account: user.address,
-				balance: (balanceMap.get(user.id) ?? BigInt(0)).toString(),
-			})),
+			orgUsers
+				.map((user) => ({
+					nickname: user.nickname,
+					id: user.id,
+					account: user.address,
+					balance: balanceMap.get(user.id) ?? BigInt(0),
+				}))
+				.sort((a, b) => (b.balance > a.balance ? 1 : b.balance < a.balance ? -1 : 0))
+				.map((user) => ({ ...user, balance: user.balance.toString() })),
 		);
 	})
 	.get("/:org/activity", async (c) => {
