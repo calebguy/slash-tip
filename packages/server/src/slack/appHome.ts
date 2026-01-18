@@ -98,7 +98,7 @@ export async function publishAppHome(
 ): Promise<void> {
 	const isConfigured = org.actionType !== null;
 	const view = isConfigured
-		? await getConfiguredHomeView(org)
+		? await getConfiguredHomeView(org, userId)
 		: getUnconfiguredHomeView(org);
 
 	await slackApi("views.publish", org.slackBotToken, {
@@ -159,8 +159,9 @@ function getUnconfiguredHomeView(org: Organization) {
 /**
  * App Home view for configured orgs
  */
-async function getConfiguredHomeView(org: Organization) {
+async function getConfiguredHomeView(org: Organization, userId: string) {
 	const config = org.actionConfig as Record<string, unknown>;
+	const isAdmin = org.adminUserId === userId;
 
 	let configDetails = "";
 	let contractSection: object[] = [];
@@ -190,24 +191,29 @@ async function getConfiguredHomeView(org: Organization) {
 						},
 					],
 				},
-				{
-					type: "divider",
-				},
-				{
-					type: "section",
-					text: {
-						type: "mrkdwn",
-						text: "*Token Metadata*\nCustomize the name, description, and image for your tip tokens.",
-					},
-					accessory: {
-						type: "button",
-						text: {
-							type: "plain_text",
-							text: "Edit Metadata",
-						},
-						action_id: "edit_metadata",
-					},
-				},
+				// Only show metadata editing section to admins
+				...(isAdmin
+					? [
+							{
+								type: "divider",
+							},
+							{
+								type: "section",
+								text: {
+									type: "mrkdwn",
+									text: "*Token Metadata*\nCustomize the name, description, and image for your tip tokens.",
+								},
+								accessory: {
+									type: "button",
+									text: {
+										type: "plain_text",
+										text: "Edit Metadata",
+									},
+									action_id: "edit_metadata",
+								},
+							},
+						]
+					: []),
 			];
 		}
 	} else if (org.actionType === "erc20_mint") {
@@ -293,6 +299,19 @@ async function getConfiguredHomeView(org: Organization) {
 					text: "Your workspace is configured and ready to tip!",
 				},
 			},
+			...(isAdmin
+				? [
+						{
+							type: "context",
+							elements: [
+								{
+									type: "mrkdwn",
+									text: ":star: *You are the workspace admin* - You can edit token metadata and manage settings.",
+								},
+							],
+						},
+					]
+				: []),
 			{
 				type: "divider",
 			},
