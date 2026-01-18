@@ -10,10 +10,12 @@ import {
 	type OrgActionConfig,
 } from "../chain";
 import { SITE_URL } from "../constants";
+import { mustBeAdmin } from "../middleware/mustBeAdmin";
 import { mustBeRegistered } from "../middleware/mustBeRegistered";
 import { slackAuth } from "../middleware/slackAuth";
 import { withOrg } from "../middleware/withOrg";
 import { db } from "../server";
+import { getMetadataEditView } from "../slack/appHome";
 import { Commands, type SlackSlashCommandPayload } from "../types";
 import {
 	abbreviate,
@@ -278,6 +280,38 @@ const app = new Hono<Env>()
 			response_type: "in_channel",
 			blocks,
 		});
+	})
+	.post(Commands.Metadata, mustBeAdmin, async (c) => {
+		const org = c.get("org");
+		const body = await c.req.parseBody<SlackSlashCommandPayload>();
+
+		// Only allow for ERC1155 orgs
+		if (org.actionType !== "erc1155_mint") {
+			return c.json({
+				response_type: "ephemeral",
+				text: "Token metadata editing is only available for ERC1155 tip tokens.",
+			});
+		}
+
+		// Get current metadata
+		const config = org.actionConfig as { tokenId?: number } | null;
+		const tokenId = config?.tokenId ?? 0;
+		const [currentMetadata] = await db.getTokenMetadata(org.id, tokenId);
+
+		// Open metadata edit modal
+		await fetch("https://slack.com/api/views.open", {
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${org.slackBotToken}`,
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				trigger_id: body.trigger_id,
+				view: getMetadataEditView(tokenId, currentMetadata || undefined),
+			}),
+		});
+
+		return c.body(null, 200);
 	});
 
 app.use(slackAuth);

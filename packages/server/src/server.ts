@@ -6,6 +6,7 @@ import "./actions";
 import { env } from "./env";
 import cronRoutes from "./routes/cron";
 import eventsRoutes from "./routes/events";
+import metadataRoutes from "./routes/metadata";
 import oauthRoutes from "./routes/oauth";
 import commandRoutes from "./routes/slack";
 import uiRoutes from "./routes/ui";
@@ -20,6 +21,9 @@ app.get("/", (c) => c.text("slack.tips"));
 
 // Health check at root level for Render
 app.get("/health", (c) => c.json({ status: "ok" }));
+
+// Public metadata endpoint for ERC1155 tokens (accessed by wallets/marketplaces)
+app.route("/metadata", metadataRoutes);
 
 const api = app
 	.basePath("/slash")

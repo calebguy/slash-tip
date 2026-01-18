@@ -1,6 +1,6 @@
-import type { Organization } from "db";
-import { baseClient } from "../viem";
+import type { Organization, TokenMetadata } from "db";
 import { erc20Abi, formatUnits, type Hex } from "viem";
+import { baseClient } from "../viem";
 
 const SLACK_API = "https://slack.com/api";
 
@@ -189,6 +189,24 @@ async function getConfiguredHomeView(org: Organization) {
 							text: `<https://basescan.org/address/${tipTokenAddress}|View on BaseScan> | Tips are minted as NFTs when sent.`,
 						},
 					],
+				},
+				{
+					type: "divider",
+				},
+				{
+					type: "section",
+					text: {
+						type: "mrkdwn",
+						text: "*Token Metadata*\nCustomize the name, description, and image for your tip tokens.",
+					},
+					accessory: {
+						type: "button",
+						text: {
+							type: "plain_text",
+							text: "Edit Metadata",
+						},
+						action_id: "edit_metadata",
+					},
 				},
 			];
 		}
@@ -411,41 +429,7 @@ export function getERC1155ConfigView() {
 				type: "section",
 				text: {
 					type: "mrkdwn",
-					text: "Configure your ERC1155 tip token. We'll deploy the contracts for you.",
-				},
-			},
-			{
-				type: "input",
-				block_id: "base_uri",
-				optional: true,
-				element: {
-					type: "plain_text_input",
-					action_id: "base_uri_input",
-					placeholder: {
-						type: "plain_text",
-						text: "https://example.com/metadata/",
-					},
-				},
-				label: {
-					type: "plain_text",
-					text: "Base URI (for token metadata)",
-				},
-			},
-			{
-				type: "input",
-				block_id: "contract_uri",
-				optional: true,
-				element: {
-					type: "plain_text_input",
-					action_id: "contract_uri_input",
-					placeholder: {
-						type: "plain_text",
-						text: "https://example.com/collection.json",
-					},
-				},
-				label: {
-					type: "plain_text",
-					text: "Contract URI (collection metadata)",
+					text: "Configure your ERC1155 tip token. We'll deploy the contracts for you.\n\nAfter setup, you can customize the token metadata (name, description, image) from the App Home.",
 				},
 			},
 			{
@@ -672,6 +656,106 @@ export function getERC20VaultConfigView() {
 					},
 				],
 			},
+		],
+	};
+}
+
+/**
+ * Get the metadata edit modal view
+ */
+export function getMetadataEditView(tokenId: number, currentMetadata?: TokenMetadata) {
+	return {
+		type: "modal",
+		callback_id: "metadata_edit",
+		private_metadata: JSON.stringify({ tokenId }),
+		title: {
+			type: "plain_text",
+			text: "Edit Token Metadata",
+		},
+		submit: {
+			type: "plain_text",
+			text: "Save",
+		},
+		close: {
+			type: "plain_text",
+			text: "Cancel",
+		},
+		blocks: [
+			{
+				type: "section",
+				text: {
+					type: "mrkdwn",
+					text: "Customize how your tip token appears on wallets and marketplaces.",
+				},
+			},
+			{
+				type: "input",
+				block_id: "name_block",
+				element: {
+					type: "plain_text_input",
+					action_id: "name_input",
+					initial_value: currentMetadata?.name || "",
+					placeholder: {
+						type: "plain_text",
+						text: "My Awesome Tip Token",
+					},
+				},
+				label: {
+					type: "plain_text",
+					text: "Token Name",
+				},
+			},
+			{
+				type: "input",
+				block_id: "description_block",
+				optional: true,
+				element: {
+					type: "plain_text_input",
+					action_id: "description_input",
+					multiline: true,
+					initial_value: currentMetadata?.description || "",
+					placeholder: {
+						type: "plain_text",
+						text: "A tip token for recognizing great work",
+					},
+				},
+				label: {
+					type: "plain_text",
+					text: "Description",
+				},
+			},
+			{
+				type: "input",
+				block_id: "image_block",
+				optional: true,
+				element: {
+					type: "file_input",
+					action_id: "image_input",
+					filetypes: ["jpg", "jpeg", "png", "gif", "webp"],
+					max_files: 1,
+				},
+				label: {
+					type: "plain_text",
+					text: "Token Image",
+				},
+				hint: {
+					type: "plain_text",
+					text: "Upload a new image to replace the current one. Leave empty to keep existing.",
+				},
+			},
+			...(currentMetadata?.image
+				? [
+						{
+							type: "context",
+							elements: [
+								{
+									type: "mrkdwn",
+									text: `Current image: ${currentMetadata.image}`,
+								},
+							],
+						},
+					]
+				: []),
 		],
 	};
 }

@@ -2,7 +2,13 @@ import { and, desc, eq } from "drizzle-orm";
 import { drizzle as drizzleNeon } from "drizzle-orm/neon-http";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { alias } from "drizzle-orm/pg-core";
-import { orgContracts, organizations, tips, users } from "./src/schema";
+import {
+	orgContracts,
+	organizations,
+	tips,
+	tokenMetadata,
+	users,
+} from "./src/schema";
 
 class Db {
 	private pg;
@@ -19,6 +25,7 @@ class Db {
 				users,
 				tips,
 				orgContracts,
+				tokenMetadata,
 			},
 		};
 		//@ts-expect-error
@@ -209,6 +216,41 @@ class Db {
 	getAllOrgs() {
 		return this.pg.select().from(organizations);
 	}
+
+	// Token metadata methods
+	getTokenMetadata(orgId: string, tokenId: number) {
+		return this.pg
+			.select()
+			.from(tokenMetadata)
+			.where(
+				and(eq(tokenMetadata.orgId, orgId), eq(tokenMetadata.tokenId, tokenId)),
+			)
+			.limit(1);
+	}
+
+	upsertTokenMetadata(
+		orgId: string,
+		tokenId: number,
+		metadata: Partial<InsertTokenMetadata>,
+	) {
+		return this.pg
+			.insert(tokenMetadata)
+			.values({
+				orgId,
+				tokenId,
+				name: metadata.name ?? "",
+				...metadata,
+				updatedAt: new Date(),
+			})
+			.onConflictDoUpdate({
+				target: [tokenMetadata.orgId, tokenMetadata.tokenId],
+				set: {
+					...metadata,
+					updatedAt: new Date(),
+				},
+			})
+			.returning();
+	}
 }
 
 export function tipToJsonSafe(tip: Tip) {
@@ -238,5 +280,7 @@ export type InsertTip = typeof tips.$inferInsert;
 export type Tip = typeof tips.$inferSelect;
 export type InsertOrgContract = typeof orgContracts.$inferInsert;
 export type OrgContract = typeof orgContracts.$inferSelect;
+export type InsertTokenMetadata = typeof tokenMetadata.$inferInsert;
+export type TokenMetadata = typeof tokenMetadata.$inferSelect;
 
 export { Db };

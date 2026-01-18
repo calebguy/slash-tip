@@ -6,6 +6,13 @@ import {
 	deployERC20Vault,
 	getOrgAddressesFromTx,
 } from "../deploy/factory";
+import { env } from "../env";
+import {
+	downloadFromSlack,
+	getContentType,
+	getFileExtension,
+	uploadToS3,
+} from "../s3";
 import { db } from "../server";
 import {
 	publishAppHome,
@@ -13,6 +20,7 @@ import {
 	getERC1155ConfigView,
 	getERC20ConfigView,
 	getERC20VaultConfigView,
+	getMetadataEditView,
 } from "../slack/appHome";
 import { baseClient } from "../viem";
 
@@ -47,6 +55,14 @@ interface SlackEventPayload {
 	event?: SlackEvent;
 }
 
+interface SlackFileObject {
+	id: string;
+	name: string;
+	url_private: string;
+	url_private_download: string;
+	mimetype: string;
+}
+
 interface SlackInteractionPayload {
 	type: string;
 	user: { id: string };
@@ -56,7 +72,17 @@ interface SlackInteractionPayload {
 	view?: {
 		callback_id: string;
 		state: {
-			values: Record<string, Record<string, { value?: string; selected_option?: { value: string } }>>;
+			values: Record<
+				string,
+				Record<
+					string,
+					{
+						value?: string;
+						selected_option?: { value: string };
+						files?: SlackFileObject[];
+					}
+				>
+			>;
 		};
 		private_metadata?: string;
 	};
@@ -150,10 +176,12 @@ const app = new Hono()
 
 			// ERC1155 config submission
 			if (callbackId === "erc1155_config") {
-				const baseUri = values.base_uri?.base_uri_input?.value || "";
-				const contractUri = values.contract_uri?.contract_uri_input?.value || "";
 				const tokenId = values.token_id?.token_id_input?.value || "0";
 				const dailyAllowance = values.daily_allowance?.daily_allowance_input?.value || "3";
+
+				// Use server metadata endpoint as baseUri
+				const baseUri = `${env.PUBLIC_URL}/metadata/${org.slug}/`;
+				const contractUri = `${env.PUBLIC_URL}/metadata/${org.slug}/contract`;
 
 				console.log("Deploying ERC1155 setup:", { baseUri, contractUri, tokenId, dailyAllowance });
 
@@ -179,8 +207,9 @@ const app = new Hono()
 						}
 					}
 
-					// Update org config with addresses
+					// Update org config with addresses and set admin
 					const [updatedOrg] = await db.updateOrg(org.id, {
+						adminUserId: payload.user.id,
 						actionType: "erc1155_mint",
 						actionConfig: {
 							baseUri,
@@ -194,6 +223,13 @@ const app = new Hono()
 							tipTokenAddress: addresses?.tipTokenAddress,
 						},
 						dailyAllowance: Number(dailyAllowance),
+					});
+
+					// Create default token metadata
+					await db.upsertTokenMetadata(org.id, Number(tokenId), {
+						name: `${org.name} Tip`,
+						description: `A tip token for ${org.name}`,
+						image: org.logoUrl || "",
 					});
 
 					// Refresh app home with updated org
@@ -235,8 +271,9 @@ const app = new Hono()
 						}
 					}
 
-					// Update org config with addresses
+					// Update org config with addresses and set admin
 					const [updatedOrg] = await db.updateOrg(org.id, {
+						adminUserId: payload.user.id,
 						actionType: "erc20_mint",
 						actionConfig: {
 							tokenName,
@@ -311,8 +348,9 @@ const app = new Hono()
 						}
 					}
 
-					// Update org config with addresses
+					// Update org config with addresses and set admin
 					const [updatedOrg] = await db.updateOrg(org.id, {
+						adminUserId: payload.user.id,
 						actionType: "erc20_vault",
 						actionConfig: {
 							tokenAddress,
@@ -334,6 +372,101 @@ const app = new Hono()
 
 				// Clear entire modal stack (not just top modal)
 				return c.json({ response_action: "clear" });
+			}
+
+			// Metadata edit submission
+			if (callbackId === "metadata_edit") {
+				const privateMetadata = payload.view.private_metadata
+					? JSON.parse(payload.view.private_metadata)
+					: {};
+				const tokenId = privateMetadata.tokenId ?? 0;
+
+				// Verify user is admin
+				if (org.adminUserId !== payload.user.id) {
+					return c.json({
+						response_action: "errors",
+						errors: {
+							name_block: "Only the workspace admin can edit metadata.",
+						},
+					});
+				}
+
+				const name = values.name_block?.name_input?.value || "";
+				const description = values.description_block?.description_input?.value || "";
+				const files = values.image_block?.image_input?.files;
+
+				// Process asynchronously to handle image upload
+				(async () => {
+					let imageUrl = "";
+
+					// If a file was uploaded, download from Slack and upload to S3
+					if (files && files.length > 0) {
+						const file = files[0];
+						try {
+							const fileBuffer = await downloadFromSlack(file.url_private, org.slackBotToken);
+							const extension = getFileExtension(file.name);
+							const contentType = getContentType(extension);
+							const s3Key = `${org.slug}/token-${tokenId}.${extension}`;
+							imageUrl = await uploadToS3(s3Key, fileBuffer, contentType);
+							console.log(`Uploaded image to S3: ${imageUrl}`);
+						} catch (e) {
+							console.error("Failed to upload image to S3:", e);
+						}
+					}
+
+					// Update metadata in database
+					const metadataUpdate: {
+						name: string;
+						description: string;
+						image?: string;
+					} = {
+						name,
+						description,
+					};
+
+					// Only update image if a new one was uploaded
+					if (imageUrl) {
+						metadataUpdate.image = imageUrl;
+					}
+
+					await db.upsertTokenMetadata(org.id, tokenId, metadataUpdate);
+					console.log(`Updated metadata for org ${org.slug} token ${tokenId}`);
+
+					// Refresh app home
+					await publishAppHome(org, payload.user.id);
+				})();
+
+				return c.json({ response_action: "clear" });
+			}
+		}
+
+		// Handle metadata edit button click
+		if (payload.type === "block_actions" && payload.actions) {
+			const action = payload.actions[0];
+
+			if (action.action_id === "edit_metadata") {
+				// Only allow admin to edit metadata
+				if (org.adminUserId !== payload.user.id) {
+					return c.json({ ok: true });
+				}
+
+				// Get current metadata
+				const config = org.actionConfig as { tokenId?: number } | null;
+				const tokenId = config?.tokenId ?? 0;
+				const [currentMetadata] = await db.getTokenMetadata(org.id, tokenId);
+
+				// Open metadata edit modal
+				await fetch("https://slack.com/api/views.open", {
+					method: "POST",
+					headers: {
+						Authorization: `Bearer ${org.slackBotToken}`,
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({
+						trigger_id: payload.trigger_id,
+						view: getMetadataEditView(tokenId, currentMetadata || undefined),
+					}),
+				});
 			}
 		}
 

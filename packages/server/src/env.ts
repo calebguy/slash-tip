@@ -11,6 +11,13 @@ export const env = {
 	SLASH_TIP_ADMIN_ADDRESS: process.env.SLASH_TIP_ADMIN_ADDRESS as string,
 	CRON_SECRET: process.env.CRON_SECRET as string,
 	PORT: process.env.PORT || "4000",
+	// S3 configuration for token metadata images
+	AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID as string,
+	AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY as string,
+	AWS_S3_BUCKET: process.env.AWS_S3_BUCKET as string,
+	AWS_REGION: process.env.AWS_REGION || "us-east-1",
+	// Public URL for metadata endpoint
+	PUBLIC_URL: process.env.PUBLIC_URL as string,
 };
 
 for (const key in env) {

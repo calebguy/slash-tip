@@ -6,6 +6,7 @@ import {
 	serial,
 	text,
 	timestamp,
+	unique,
 	uuid,
 } from "drizzle-orm/pg-core";
 
@@ -16,6 +17,7 @@ export const organizations = pgTable("organizations", {
 	logoUrl: text("logo_url"),
 	slackTeamId: text("slack_team_id").unique(),
 	slackBotToken: text("slack_bot_token").notNull(),
+	adminUserId: text("admin_user_id"),
 	paidAt: timestamp("paid_at"),
 	dailyAllowance: integer("daily_allowance").notNull().default(3),
 	// Action configuration (null = not yet configured)
@@ -58,3 +60,22 @@ export const tips = pgTable("tips", {
 	blockCreatedAt: timestamp("block_created_at").notNull(),
 	createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+export const tokenMetadata = pgTable(
+	"token_metadata",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		orgId: uuid("org_id")
+			.references(() => organizations.id)
+			.notNull(),
+		tokenId: integer("token_id").notNull().default(0),
+		name: text("name").notNull(),
+		description: text("description"),
+		image: text("image"),
+		decimals: integer("decimals").default(0),
+		properties: jsonb("properties"),
+		createdAt: timestamp("created_at").notNull().defaultNow(),
+		updatedAt: timestamp("updated_at").notNull().defaultNow(),
+	},
+	(table) => [unique().on(table.orgId, table.tokenId)],
+);
