@@ -1,5 +1,6 @@
 import type { Organization, TokenMetadata } from "db";
 import { erc20Abi, formatUnits, type Hex } from "viem";
+import { db } from "../server";
 import { baseClient } from "../viem";
 
 const SLACK_API = "https://slack.com/api";
@@ -168,9 +169,16 @@ async function getConfiguredHomeView(org: Organization, userId: string) {
 
 	if (org.actionType === "erc1155_mint") {
 		const tipTokenAddress = config.tipTokenAddress as Hex | undefined;
-		configDetails = `*Type:* ERC1155 (NFT-style tips)\n*Token ID:* ${config.tokenId || 0}`;
+		const tokenId = (config.tokenId as number) || 0;
+		configDetails = `*Type:* ERC1155 (NFT-style tips)\n*Token ID:* ${tokenId}`;
 
 		if (tipTokenAddress) {
+			// Fetch current token metadata
+			const [tokenMetadata] = await db.getTokenMetadata(org.id, tokenId);
+			const metadataName = tokenMetadata?.name || `${org.name} Tip`;
+			const metadataDescription = tokenMetadata?.description || "No description set";
+			const metadataImage = tokenMetadata?.image;
+
 			contractSection = [
 				{
 					type: "divider",
@@ -191,18 +199,17 @@ async function getConfiguredHomeView(org: Organization, userId: string) {
 						},
 					],
 				},
-				// Only show metadata editing section to admins
-				...(isAdmin
-					? [
-							{
-								type: "divider",
-							},
-							{
-								type: "section",
-								text: {
-									type: "mrkdwn",
-									text: "*Token Metadata*\nCustomize the name, description, and image for your tip tokens.",
-								},
+				{
+					type: "divider",
+				},
+				{
+					type: "section",
+					text: {
+						type: "mrkdwn",
+						text: `*Token Metadata*\n*Name:* ${metadataName}\n*Description:* ${metadataDescription}${metadataImage ? `\n*Image:* <${metadataImage}|View Image>` : "\n*Image:* Not set"}`,
+					},
+					...(isAdmin
+						? {
 								accessory: {
 									type: "button",
 									text: {
@@ -211,9 +218,9 @@ async function getConfiguredHomeView(org: Organization, userId: string) {
 									},
 									action_id: "edit_metadata",
 								},
-							},
-						]
-					: []),
+							}
+						: {}),
+				},
 			];
 		}
 	} else if (org.actionType === "erc20_mint") {
