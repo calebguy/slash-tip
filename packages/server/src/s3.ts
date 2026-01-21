@@ -31,6 +31,8 @@ export async function downloadFromSlack(
 	url: string,
 	botToken: string,
 ): Promise<Buffer> {
+	console.log(`Downloading from Slack: ${url.substring(0, 80)}...`);
+
 	const response = await fetch(url, {
 		headers: {
 			Authorization: `Bearer ${botToken}`,
@@ -38,11 +40,22 @@ export async function downloadFromSlack(
 	});
 
 	if (!response.ok) {
-		throw new Error(`Failed to download from Slack: ${response.statusText}`);
+		throw new Error(`Failed to download from Slack: ${response.status} ${response.statusText}`);
 	}
 
+	const contentType = response.headers.get("content-type");
+	console.log(`Response content-type: ${contentType}`);
+
 	const arrayBuffer = await response.arrayBuffer();
-	return Buffer.from(arrayBuffer);
+	const buffer = Buffer.from(arrayBuffer);
+
+	// Check if we got HTML instead of an image (auth redirect)
+	if (contentType?.includes("text/html") || buffer.toString("utf8", 0, 15).includes("<!DOCTYPE")) {
+		throw new Error(`Received HTML instead of image - possible auth issue. Content-type: ${contentType}`);
+	}
+
+	console.log(`Downloaded ${buffer.length} bytes`);
+	return buffer;
 }
 
 export function getFileExtension(filename: string): string {

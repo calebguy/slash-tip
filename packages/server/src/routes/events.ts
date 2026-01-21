@@ -425,10 +425,20 @@ const app = new Hono()
 					// If a file was uploaded, download from Slack and upload to S3
 					if (files && files.length > 0) {
 						const file = files[0];
+						console.log(`Processing file upload:`, {
+							name: file.name,
+							mimetype: file.mimetype,
+							url_private: file.url_private?.substring(0, 50) + "...",
+							url_private_download: file.url_private_download?.substring(0, 50) + "...",
+						});
 						try {
-							const fileBuffer = await downloadFromSlack(file.url_private, org.slackBotToken);
+							// Prefer url_private_download for actual file downloads
+							const downloadUrl = file.url_private_download || file.url_private;
+							const fileBuffer = await downloadFromSlack(downloadUrl, org.slackBotToken);
+							console.log(`Downloaded file, size: ${fileBuffer.length} bytes`);
+
 							const extension = getFileExtension(file.name);
-							const contentType = getContentType(extension);
+							const contentType = file.mimetype || getContentType(extension);
 							const s3Key = `${org.slug}/token-${tokenId}.${extension}`;
 							imageUrl = await uploadToS3(s3Key, fileBuffer, contentType);
 							console.log(`Uploaded image to S3: ${imageUrl}`);
