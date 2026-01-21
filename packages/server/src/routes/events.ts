@@ -434,7 +434,7 @@ const app = new Hono()
 						try {
 							// Prefer url_private_download for actual file downloads
 							const downloadUrl = file.url_private_download || file.url_private;
-							const fileBuffer = await downloadFromSlack(downloadUrl, org.slackBotToken);
+							const fileBuffer = await downloadFromSlack(downloadUrl, org.slackBotToken, file.id);
 							console.log(`Downloaded file, size: ${fileBuffer.length} bytes`);
 
 							const extension = getFileExtension(file.name);

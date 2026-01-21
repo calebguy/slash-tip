@@ -30,13 +30,51 @@ export async function uploadToS3(
 export async function downloadFromSlack(
 	url: string,
 	botToken: string,
+	fileId?: string,
 ): Promise<Buffer> {
 	console.log(`Downloading from Slack: ${url.substring(0, 80)}...`);
+	console.log(`Bot token prefix: ${botToken.substring(0, 10)}...`);
+
+	// If we have a file ID, try to get fresh file info from Slack API first
+	if (fileId) {
+		console.log(`Fetching fresh file info for file ID: ${fileId}`);
+		const fileInfoResponse = await fetch(
+			`https://slack.com/api/files.info?file=${fileId}`,
+			{
+				headers: {
+					Authorization: `Bearer ${botToken}`,
+				},
+			},
+		);
+		const fileInfo = (await fileInfoResponse.json()) as {
+			ok: boolean;
+			error?: string;
+			file?: {
+				url_private_download?: string;
+				url_private?: string;
+			};
+		};
+
+		console.log(`files.info response:`, JSON.stringify(fileInfo, null, 2));
+		if (fileInfo.ok && fileInfo.file) {
+			const freshUrl =
+				fileInfo.file.url_private_download || fileInfo.file.url_private;
+			if (freshUrl && freshUrl !== url) {
+				console.log(`Using fresh URL from files.info: ${freshUrl.substring(0, 80)}...`);
+				url = freshUrl;
+			}
+		} else {
+			console.log(`files.info failed: ${fileInfo.error || "unknown error"}`);
+			console.log(`This likely means the app is missing the 'files:read' scope. Please add it in your Slack app settings under OAuth & Permissions > Bot Token Scopes.`);
+		}
+	}
 
 	const response = await fetch(url, {
 		headers: {
 			Authorization: `Bearer ${botToken}`,
+			Accept: "application/octet-stream, image/*, */*",
 		},
+		redirect: "follow",
 	});
 
 	if (!response.ok) {
@@ -51,6 +89,9 @@ export async function downloadFromSlack(
 
 	// Check if we got HTML instead of an image (auth redirect)
 	if (contentType?.includes("text/html") || buffer.toString("utf8", 0, 15).includes("<!DOCTYPE")) {
+		// Log some of the HTML to help debug
+		const htmlPreview = buffer.toString("utf8", 0, 500);
+		console.log(`HTML response preview: ${htmlPreview}`);
 		throw new Error(`Received HTML instead of image - possible auth issue. Content-type: ${contentType}`);
 	}
 
