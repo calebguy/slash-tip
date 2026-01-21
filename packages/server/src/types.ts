@@ -20,6 +20,5 @@ export enum Commands {
 	Activity = "/activity",
 	Register = "/register",
 	Info = "/info",
-	Metadata = "/metadata",
 	SlackAuth = "/slack-auth",
 }

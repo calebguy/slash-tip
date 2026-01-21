@@ -1,6 +1,10 @@
 import { Hono } from "hono";
 import { erc20Abi, type Hex } from "viem";
 import {
+	setBaseURIViaSyndicate,
+	setContractURIViaSyndicate,
+} from "../chain";
+import {
 	deployERC1155,
 	deployERC20,
 	deployERC20Vault,
@@ -106,13 +110,28 @@ const app = new Hono()
 			const event = body.event;
 			const teamId = body.team_id;
 
-			if (event.type === "app_home_opened" && event.tab === "home" && teamId) {
-				console.log(`App home opened by ${event.user} in team ${teamId}`);
-
-				// Get org by team ID
+			if (event.type === "app_home_opened" && teamId) {
 				const [org] = await db.getOrgBySlackTeamId(teamId);
-				if (org?.slackBotToken) {
+
+				if (event.tab === "home" && org?.slackBotToken) {
+					console.log(`App home opened by ${event.user} in team ${teamId}`);
 					await publishAppHome(org, event.user);
+				}
+
+				if (event.tab === "messages" && org?.slackBotToken) {
+					console.log(`Messages tab opened by ${event.user} in team ${teamId}`);
+					// Send welcome message pointing to Home tab
+					await fetch("https://slack.com/api/chat.postMessage", {
+						method: "POST",
+						headers: {
+							Authorization: `Bearer ${org.slackBotToken}`,
+							"Content-Type": "application/json",
+						},
+						body: JSON.stringify({
+							channel: event.user,
+							text: "Welcome to /tip! Head over to the *Home* tab above to configure tipping for your workspace, or use `/tip @user` in any channel to send tips.",
+						}),
+					});
 				}
 			}
 		}
@@ -395,7 +414,11 @@ const app = new Hono()
 				const description = values.description_block?.description_input?.value || "";
 				const files = values.image_block?.image_input?.files;
 
-				// Process asynchronously to handle image upload
+				// Get token address from config
+				const config = org.actionConfig as { tipTokenAddress?: string } | null;
+				const tipTokenAddress = config?.tipTokenAddress;
+
+				// Process asynchronously to handle image upload and on-chain updates
 				(async () => {
 					let imageUrl = "";
 
@@ -431,6 +454,22 @@ const app = new Hono()
 
 					await db.upsertTokenMetadata(org.id, tokenId, metadataUpdate);
 					console.log(`Updated metadata for org ${org.slug} token ${tokenId}`);
+
+					// Update on-chain URIs to ensure they point to our metadata endpoint
+					if (tipTokenAddress) {
+						const baseUri = `${env.PUBLIC_URL}/metadata/${org.slug}/`;
+						const contractUri = `${env.PUBLIC_URL}/metadata/${org.slug}/contract`;
+
+						try {
+							const baseUriTx = await setBaseURIViaSyndicate(tipTokenAddress, baseUri);
+							console.log(`Updated baseURI on-chain: ${baseUriTx}`);
+
+							const contractUriTx = await setContractURIViaSyndicate(tipTokenAddress, contractUri);
+							console.log(`Updated contractURI on-chain: ${contractUriTx}`);
+						} catch (e) {
+							console.error("Failed to update on-chain URIs:", e);
+						}
+					}
 
 					// Refresh app home
 					await publishAppHome(org, payload.user.id);

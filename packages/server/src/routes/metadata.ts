@@ -2,6 +2,27 @@ import { Hono } from "hono";
 import { db } from "../server";
 
 const app = new Hono()
+	// Collection-level metadata (contractURI)
+	.get("/:orgSlug/contract", async (c) => {
+		const orgSlug = c.req.param("orgSlug");
+
+		const [org] = await db.getOrgBySlug(orgSlug);
+		if (!org) {
+			return c.json({ error: "Organization not found" }, 404);
+		}
+
+		// Get token 0 metadata for collection info (or use org defaults)
+		const [metadata] = await db.getTokenMetadata(org.id, 0);
+
+		// Return OpenSea-compatible collection metadata
+		return c.json({
+			name: metadata?.name || `${org.name} Tips`,
+			description: metadata?.description || `Tip tokens for ${org.name}`,
+			image: metadata?.image || org.logoUrl || "",
+			external_link: `https://slack.tips/${org.slug}`,
+		});
+	})
+	// Token-level metadata (baseURI + tokenId)
 	.get("/:orgSlug/:tokenId", async (c) => {
 		const orgSlug = c.req.param("orgSlug");
 		const tokenIdParam = c.req.param("tokenId");

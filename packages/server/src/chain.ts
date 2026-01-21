@@ -176,3 +176,60 @@ export async function registerViaSyndicate({
 		return null;
 	}
 }
+
+// Syndicate-based ERC1155 metadata functions
+export async function setBaseURIViaSyndicate(
+	tipTokenAddress: string,
+	baseURI: string,
+) {
+	const { transactionId } = await syndicate.transact.sendTransaction({
+		chainId,
+		projectId,
+		contractAddress: tipTokenAddress,
+		functionSignature: "setBaseURI(string _baseURI)",
+		args: {
+			_baseURI: baseURI,
+		},
+	});
+	try {
+		return await waitForHash(syndicate, {
+			projectId,
+			transactionId,
+			every: 250,
+			maxAttempts: 4,
+		});
+	} catch (e) {
+		console.error(
+			`[set-base-uri] could not get transaction hash for ${transactionId}`,
+		);
+		return null;
+	}
+}
+
+export async function setContractURIViaSyndicate(
+	tipTokenAddress: string,
+	contractURI: string,
+) {
+	const { transactionId } = await syndicate.transact.sendTransaction({
+		chainId,
+		projectId,
+		contractAddress: tipTokenAddress,
+		functionSignature: "setContractURI(string _contractURI)",
+		args: {
+			_contractURI: contractURI,
+		},
+	});
+	try {
+		return await waitForHash(syndicate, {
+			projectId,
+			transactionId,
+			every: 250,
+			maxAttempts: 4,
+		});
+	} catch (e) {
+		console.error(
+			`[set-contract-uri] could not get transaction hash for ${transactionId}`,
+		);
+		return null;
+	}
+}
