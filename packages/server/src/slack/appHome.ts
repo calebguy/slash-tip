@@ -206,40 +206,35 @@ async function getConfiguredHomeView(org: Organization, userId: string) {
 					type: "section",
 					text: {
 						type: "mrkdwn",
-						text: `*Token Metadata*\n*Name:* ${metadataName}\n*Description:* ${metadataDescription}`,
+						text: `*Token Metadata*\n*Name:* ${metadataName}\n*Description:* ${metadataDescription}${!metadataImage ? "\n_No image set_" : ""}`,
 					},
-					...(isAdmin
+					...(metadataImage
 						? {
 								accessory: {
-									type: "button",
-									text: {
-										type: "plain_text",
-										text: "Edit Metadata",
-									},
-									action_id: "edit_metadata",
+									type: "image",
+									image_url: metadataImage,
+									alt_text: metadataName,
 								},
 							}
 						: {}),
 				},
-				...(metadataImage
+				...(isAdmin
 					? [
 							{
-								type: "image",
-								image_url: metadataImage,
-								alt_text: metadataName,
-							},
-						]
-					: [
-							{
-								type: "context",
+								type: "actions",
 								elements: [
 									{
-										type: "mrkdwn",
-										text: "_No image set_",
+										type: "button",
+										text: {
+											type: "plain_text",
+											text: "Edit Metadata",
+										},
+										action_id: "edit_metadata",
 									},
 								],
 							},
-						]),
+						]
+					: []),
 			];
 		}
 	} else if (org.actionType === "erc20_mint") {
