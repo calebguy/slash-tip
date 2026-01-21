@@ -206,7 +206,7 @@ async function getConfiguredHomeView(org: Organization, userId: string) {
 					type: "section",
 					text: {
 						type: "mrkdwn",
-						text: `*Token Metadata*\n*Name:* ${metadataName}\n*Description:* ${metadataDescription}${metadataImage ? `\n*Image:* <${metadataImage}|View Image>` : "\n*Image:* Not set"}`,
+						text: `*Token Metadata*\n*Name:* ${metadataName}\n*Description:* ${metadataDescription}`,
 					},
 					...(isAdmin
 						? {
@@ -221,6 +221,25 @@ async function getConfiguredHomeView(org: Organization, userId: string) {
 							}
 						: {}),
 				},
+				...(metadataImage
+					? [
+							{
+								type: "image",
+								image_url: metadataImage,
+								alt_text: metadataName,
+							},
+						]
+					: [
+							{
+								type: "context",
+								elements: [
+									{
+										type: "mrkdwn",
+										text: "_No image set_",
+									},
+								],
+							},
+						]),
 			];
 		}
 	} else if (org.actionType === "erc20_mint") {
