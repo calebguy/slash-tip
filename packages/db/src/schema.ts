@@ -3,6 +3,7 @@ import {
 	integer,
 	jsonb,
 	pgTable,
+	primaryKey,
 	serial,
 	text,
 	timestamp,
@@ -78,4 +79,17 @@ export const tokenMetadata = pgTable(
 		updatedAt: timestamp("updated_at").notNull().defaultNow(),
 	},
 	(table) => [unique().on(table.orgId, table.tokenId)],
+);
+
+// Track which users have received the welcome message in the Messages tab
+export const welcomeMessagesSent = pgTable(
+	"welcome_messages_sent",
+	{
+		slackUserId: text("slack_user_id").notNull(),
+		orgId: uuid("org_id")
+			.references(() => organizations.id)
+			.notNull(),
+		sentAt: timestamp("sent_at").notNull().defaultNow(),
+	},
+	(table) => [primaryKey({ columns: [table.slackUserId, table.orgId] })],
 );

@@ -8,6 +8,7 @@ import {
 	tips,
 	tokenMetadata,
 	users,
+	welcomeMessagesSent,
 } from "./src/schema";
 
 class Db {
@@ -250,6 +251,31 @@ class Db {
 				},
 			})
 			.returning();
+	}
+
+	// Welcome message tracking
+	async hasReceivedWelcomeMessage(
+		slackUserId: string,
+		orgId: string,
+	): Promise<boolean> {
+		const result = await this.pg
+			.select()
+			.from(welcomeMessagesSent)
+			.where(
+				and(
+					eq(welcomeMessagesSent.slackUserId, slackUserId),
+					eq(welcomeMessagesSent.orgId, orgId),
+				),
+			)
+			.limit(1);
+		return result.length > 0;
+	}
+
+	markWelcomeMessageSent(slackUserId: string, orgId: string) {
+		return this.pg
+			.insert(welcomeMessagesSent)
+			.values({ slackUserId, orgId })
+			.onConflictDoNothing();
 	}
 }
 

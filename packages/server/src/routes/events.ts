@@ -119,19 +119,26 @@ const app = new Hono()
 				}
 
 				if (event.tab === "messages" && org?.slackBotToken) {
-					console.log(`Messages tab opened by ${event.user} in team ${teamId}`);
-					// Send welcome message pointing to Home tab
-					await fetch("https://slack.com/api/chat.postMessage", {
-						method: "POST",
-						headers: {
-							Authorization: `Bearer ${org.slackBotToken}`,
-							"Content-Type": "application/json",
-						},
-						body: JSON.stringify({
-							channel: event.user,
-							text: "Welcome to /tip! Head over to the *Home* tab above to configure tipping for your workspace, or use `/tip @user` in any channel to send tips.",
-						}),
-					});
+					// Check if user has already received welcome message
+					const alreadySent = await db.hasReceivedWelcomeMessage(event.user, org.id);
+
+					if (!alreadySent) {
+						console.log(`Sending welcome message to ${event.user} in team ${teamId}`);
+						await fetch("https://slack.com/api/chat.postMessage", {
+							method: "POST",
+							headers: {
+								Authorization: `Bearer ${org.slackBotToken}`,
+								"Content-Type": "application/json",
+							},
+							body: JSON.stringify({
+								channel: event.user,
+								text: "Welcome to /tip! Head over to the *Home* tab above to configure tipping for your workspace, or use `/tip @user` in any channel to send tips.",
+							}),
+						});
+
+						// Mark as sent so we don't send again
+						await db.markWelcomeMessageSent(event.user, org.id);
+					}
 				}
 			}
 		}
