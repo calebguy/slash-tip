@@ -4,6 +4,7 @@ import {
 	setBaseURIViaSyndicate,
 	setContractURIViaSyndicate,
 } from "../chain";
+import { handleChatMessage } from "../chat";
 import {
 	deployERC1155,
 	deployERC20,
@@ -49,6 +50,10 @@ interface SlackEvent {
 	channel?: string;
 	tab?: string;
 	event_ts?: string;
+	text?: string;
+	channel_type?: string;
+	bot_id?: string;
+	subtype?: string;
 }
 
 interface SlackEventPayload {
@@ -132,13 +137,62 @@ const app = new Hono()
 							},
 							body: JSON.stringify({
 								channel: event.user,
-								text: "Welcome to /tip! Head over to the *Home* tab above to configure tipping for your workspace, or use `/tip @user` in any channel to send tips.",
+								text: "Welcome to /tip! Head over to the *Home* tab above to configure tipping for your workspace, or use `/tip @user` in any channel to send tips.\n\nYou can also ask me questions about how to use /tip - just type a message here!",
 							}),
 						});
 
 						// Mark as sent so we don't send again
 						await db.markWelcomeMessageSent(event.user, org.id);
 					}
+				}
+			}
+
+			// Handle DM messages (chat assistant)
+			if (event.type === "message" && event.channel_type === "im" && teamId) {
+				// Ignore bot messages and message subtypes (edits, deletes, etc.)
+				if (event.bot_id || event.subtype) {
+					return c.json({ ok: true });
+				}
+
+				const [org] = await db.getOrgBySlackTeamId(teamId);
+
+				if (org?.slackBotToken && event.text && event.channel) {
+					console.log(`DM received from ${event.user}: ${event.text.substring(0, 50)}...`);
+
+					// Process chat asynchronously to avoid Slack 3s timeout
+					(async () => {
+						try {
+							const response = await handleChatMessage(event.text!, {
+								org,
+								userId: event.user,
+							});
+
+							await fetch("https://slack.com/api/chat.postMessage", {
+								method: "POST",
+								headers: {
+									Authorization: `Bearer ${org.slackBotToken}`,
+									"Content-Type": "application/json",
+								},
+								body: JSON.stringify({
+									channel: event.channel,
+									text: response,
+								}),
+							});
+						} catch (error) {
+							console.error("Error handling chat message:", error);
+							await fetch("https://slack.com/api/chat.postMessage", {
+								method: "POST",
+								headers: {
+									Authorization: `Bearer ${org.slackBotToken}`,
+									"Content-Type": "application/json",
+								},
+								body: JSON.stringify({
+									channel: event.channel,
+									text: "Sorry, I encountered an error processing your message. Please try again.",
+								}),
+							});
+						}
+					})();
 				}
 			}
 		}
