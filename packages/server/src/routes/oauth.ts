@@ -29,7 +29,7 @@ const app = new Hono()
 	 * Redirects to Slack's OAuth authorization page
 	 */
 	.get("/install", (c) => {
-		const scopes = ["commands", "chat:write", "app_mentions:read"].join(",");
+		const scopes = ["commands", "chat:write", "app_mentions:read", "im:history", "im:read"].join(",");
 		const redirectUri = `${API_URL}/slash/oauth/callback`;
 
 		const slackAuthUrl = new URL("https://slack.com/oauth/v2/authorize");
