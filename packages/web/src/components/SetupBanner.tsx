@@ -13,10 +13,10 @@ export function SetupBanner() {
 	}
 
 	return (
-		<div className="bg-slime/10 border border-slime/30 rounded-lg p-4 mb-6">
-			<div className="flex justify-between items-start">
+		<div className="fixed bottom-4 right-4 z-50 max-w-sm bg-black/90 border border-slime/30 rounded-lg p-4 shadow-lg">
+			<div className="flex justify-between items-start gap-3">
 				<div>
-					<h3 className="text-slime font-medium text-lg">
+					<h3 className="text-slime font-medium text-base">
 						App installed successfully!
 					</h3>
 					<p className="text-paper/70 mt-2 text-sm">
@@ -37,7 +37,7 @@ export function SetupBanner() {
 				</div>
 				<button
 					onClick={() => setDismissed(true)}
-					className="text-paper/40 hover:text-paper/60 text-xl leading-none"
+					className="text-paper/40 hover:text-paper/60 text-xl leading-none shrink-0"
 					aria-label="Dismiss"
 				>
 					&times;
