@@ -18,7 +18,7 @@ export function SetupBanner() {
 		: null;
 
 	return (
-		<div className="fixed bottom-4 right-4 z-50 max-w-sm bg-slime rounded-lg p-4 pl-5 shadow-lg">
+		<div className="fixed bottom-4 right-4 z-50 max-w-sm bg-slime p-4 pl-5 shadow-lg">
 			<div className="flex justify-between items-start gap-3">
 				<div>
 					<h3 className="text-black font-medium text-base">
@@ -53,7 +53,7 @@ export function SetupBanner() {
 				</div>
 				<button
 					onClick={() => setDismissed(true)}
-					className="text-black/40 hover:text-black/60 text-xl leading-none shrink-0"
+					className="text-black/40 hover:text-black/60 hover:cursor-pointer text-xl leading-none shrink-0"
 					aria-label="Dismiss"
 				>
 					&times;
