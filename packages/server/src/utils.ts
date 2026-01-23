@@ -47,3 +47,44 @@ export function isEthAddress(input: string) {
 		return false;
 	}
 }
+
+const USER_COMMANDS = ['/tip', '/balance', '/activity', '/register', '/info'];
+
+export function isPureCommand(text: string): boolean {
+	const trimmed = text.trim();
+	const lowerTrimmed = trimmed.toLowerCase();
+
+	// Find if message starts with a known command
+	const startsWithCommand = USER_COMMANDS.find(cmd =>
+		lowerTrimmed.startsWith(cmd)
+	);
+
+	if (!startsWithCommand) {
+		return false;
+	}
+
+	// Get text after the command
+	const afterCommand = trimmed.slice(startsWithCommand.length).trim();
+
+	// If there's a question mark, it's likely conversational
+	if (afterCommand.includes('?')) {
+		return false;
+	}
+
+	// Check for conversational keywords that indicate a question
+	const conversationalPatterns = [
+		/\bwhat\b/i, /\bhow\b/i, /\bwhy\b/i, /\bdoes\b/i,
+		/\bcan\b/i, /\bwork\b/i, /\bmean\b/i, /\bhelp\b/i,
+		/\bexplain\b/i, /\bshow\b/i, /\btell\b/i
+	];
+
+	for (const pattern of conversationalPatterns) {
+		if (pattern.test(afterCommand)) {
+			return false;
+		}
+	}
+
+	// Short messages starting with a command are likely pure commands
+	// (handles "/balance", "/balance please", "/tip @user 10 great job", etc.)
+	return true;
+}

@@ -27,6 +27,7 @@ import {
 	getERC20VaultConfigView,
 	getMetadataEditView,
 } from "../slack/appHome";
+import { isPureCommand } from "../utils";
 import { baseClient } from "../viem";
 
 /**
@@ -158,6 +159,12 @@ const app = new Hono()
 
 				if (org?.slackBotToken && event.text && event.channel) {
 					console.log(`DM received from ${event.user}: ${event.text.substring(0, 50)}...`);
+
+					// Skip processing if message is a pure command (e.g., "/balance", "/tip @user 10")
+					if (isPureCommand(event.text)) {
+						console.log(`Ignoring pure command in DM: ${event.text}`);
+						return c.json({ ok: true });
+					}
 
 					// Process chat asynchronously to avoid Slack 3s timeout
 					(async () => {
