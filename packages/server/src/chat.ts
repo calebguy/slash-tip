@@ -48,7 +48,7 @@ Common reasons:
 - The workspace isn't configured yet (ask an admin)
 
 **"Where do I see my tips?"**
-Tips appear on the workspace's dashboard at [workspace].slack.tips. You can also see them in your wallet on Base.
+Tips appear on the workspace's dashboard at slack.tips/[workspace]. You can also see them in your wallet on Base.
 
 **"What is Base?"**
 Base is a secure, low-cost Ethereum Layer 2 network built by Coinbase. All /tip transactions happen on Base.
@@ -184,7 +184,7 @@ async function executeFunction(
 				configured,
 				tokenType,
 				dailyAllowance: org.dailyAllowance,
-				dashboardUrl: `https://${org.slug}.slack.tips`,
+				dashboardUrl: `https://slack.tips/${org.slug}`,
 				...tokenInfo,
 			});
 		}

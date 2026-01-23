@@ -119,7 +119,7 @@ const app = new Hono<Env>()
 						type: "mrkdwn",
 						text: `<@${user_id}> registered with <https://basescan.org/address/${address}|${abbreviate(
 							address,
-						)}>. <${SITE_URL}/${org.slug}|${org.slug}.slack.tips>`,
+						)}>. <${SITE_URL}/${org.slug}|slack.tips/${org.slug}>`,
 					},
 				},
 			],
@@ -237,7 +237,7 @@ const app = new Hono<Env>()
 						type: "section",
 						text: {
 							type: "mrkdwn",
-							text: `No users registered yet. Use /register to get started!\n<${SITE_URL}/${org.slug}|${org.slug}.slack.tips>`,
+							text: `No users registered yet. Use /register to get started!\n<${SITE_URL}/${org.slug}|slack.tips/${org.slug}>`,
 						},
 					},
 				],
@@ -262,7 +262,7 @@ const app = new Hono<Env>()
 					type: "section",
 					text: {
 						type: "mrkdwn",
-						text: `<${SITE_URL}/${org.slug}|${org.slug}.slack.tips>`,
+						text: `<${SITE_URL}/${org.slug}|slack.tips/${org.slug}>`,
 					},
 				},
 			],
