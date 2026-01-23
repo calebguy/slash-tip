@@ -96,7 +96,7 @@ const app = new Hono()
 					slackBotToken: data.access_token,
 				});
 				console.log(`Updated existing org: ${existingOrg.slug}`);
-				return c.redirect(`${SITE_URL}/${existingOrg.slug}?installed=true&app_id=${data.app_id}`);
+				return c.redirect(`${SITE_URL}/${existingOrg.slug}?installed=true&app_id=${data.app_id}&team_id=${data.team.id}`);
 			}
 
 			// Create new org
@@ -115,7 +115,7 @@ const app = new Hono()
 			console.log(`Created new org: ${newOrg.slug}`);
 
 			// Redirect to setup page (they need to configure action)
-			return c.redirect(`${SITE_URL}/${newOrg.slug}?installed=true&setup=true&app_id=${data.app_id}`);
+			return c.redirect(`${SITE_URL}/${newOrg.slug}?installed=true&setup=true&app_id=${data.app_id}&team_id=${data.team.id}`);
 		} catch (err) {
 			console.error("OAuth callback error:", err);
 			return c.redirect(`${SITE_URL}?error=server_error`);
