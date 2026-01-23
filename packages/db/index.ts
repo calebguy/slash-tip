@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql, sum } from "drizzle-orm";
 import { drizzle as drizzleNeon } from "drizzle-orm/neon-http";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { alias } from "drizzle-orm/pg-core";
@@ -141,6 +141,20 @@ class Db {
 
 	getUsersByOrg(orgId: string) {
 		return this.pg.select().from(users).where(eq(users.orgId, orgId));
+	}
+
+	getLeaderboard(orgId: string) {
+		return this.pg
+			.select({
+				id: users.id,
+				nickname: users.nickname,
+				tipsReceived: sum(tips.amount).mapWith(Number),
+			})
+			.from(users)
+			.leftJoin(tips, eq(users.id, tips.toUserId))
+			.where(eq(users.orgId, orgId))
+			.groupBy(users.id, users.nickname)
+			.orderBy(desc(sum(tips.amount)));
 	}
 
 	upsertTip(tip: InsertTip) {

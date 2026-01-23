@@ -226,10 +226,10 @@ const app = new Hono<Env>()
 	.post(Commands.Balance, async (c) => {
 		const org = c.get("org");
 
-		// Get balance info from the database (synced by ponder)
-		const orgUsers = await db.getUsersByOrg(org.id);
+		// Get leaderboard with tips received per user
+		const leaderboard = await db.getLeaderboard(org.id);
 
-		if (orgUsers.length === 0) {
+		if (leaderboard.length === 0) {
 			return c.json({
 				response_type: "in_channel",
 				blocks: [
@@ -244,23 +244,28 @@ const app = new Hono<Env>()
 			});
 		}
 
+		const leaderboardText = leaderboard
+			.map((user) => `${user.tipsReceived || 0}/${user.nickname}`)
+			.join("\n");
+
 		return c.json({
 			response_type: "in_channel",
-			blocks: orgUsers
-				.map((user) => ({
+			blocks: [
+				{
 					type: "section",
 					text: {
 						type: "mrkdwn",
-						text: `${user.nickname}: registered`,
+						text: leaderboardText,
 					},
-				}))
-				.concat({
+				},
+				{
 					type: "section",
 					text: {
 						type: "mrkdwn",
 						text: `<${SITE_URL}/${org.slug}|${org.slug}.slack.tips>`,
 					},
-				}),
+				},
+			],
 		});
 	})
 	.post(Commands.Activity, async (c) => {
