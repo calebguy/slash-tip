@@ -301,6 +301,48 @@ async function getConfiguredHomeView(org: Organization, userId: string) {
 		} else {
 			configDetails = `*Type:* ERC20 Vault\n*Token:* ${tokenAddress || "Not configured"}`;
 		}
+	} else if (org.actionType === "eth_vault") {
+		const vaultAddress = config.tipActionAddress as Hex | undefined;
+		const vaultManagerAddress = config.vaultManagerAddress as string | undefined;
+
+		configDetails = "*Type:* ETH Vault";
+
+		if (vaultAddress) {
+			// Fetch ETH balance of the vault
+			let ethBalance = "0";
+			try {
+				const balance = await baseClient.getBalance({ address: vaultAddress });
+				ethBalance = formatUnits(balance, 18);
+			} catch (error) {
+				console.error("Failed to fetch ETH vault balance:", error);
+			}
+
+			const vaultManagerInfo = vaultManagerAddress
+				? `\n*Vault Manager:* \`${vaultManagerAddress.slice(0, 6)}...${vaultManagerAddress.slice(-4)}\``
+				: "";
+
+			contractSection = [
+				{
+					type: "divider",
+				},
+				{
+					type: "section",
+					text: {
+						type: "mrkdwn",
+						text: `*Vault Details*\n*Vault Address:* \`${vaultAddress}\`\n*Balance:* ${ethBalance} ETH${vaultManagerInfo}`,
+					},
+				},
+				{
+					type: "context",
+					elements: [
+						{
+							type: "mrkdwn",
+							text: `<https://basescan.org/address/${vaultAddress}|View on BaseScan> | To deposit, send ETH to the vault address on Base.`,
+						},
+					],
+				},
+			];
+		}
 	}
 
 	return {
@@ -428,6 +470,13 @@ export async function openTokenTypeModal(
 								text: "Existing ERC20 (Use your own token)",
 							},
 							value: "erc20_vault",
+						},
+						{
+							text: {
+								type: "plain_text",
+								text: "Native ETH (Tip from a vault)",
+							},
+							value: "eth_vault",
 						},
 					],
 				},
@@ -693,6 +742,83 @@ export function getERC20VaultConfigView() {
 					{
 						type: "mrkdwn",
 						text: "After setup, you'll need to deposit tokens into the vault contract.",
+					},
+				],
+			},
+		],
+	};
+}
+
+/**
+ * Get the ETH Vault configuration modal view
+ */
+export function getETHVaultConfigView() {
+	return {
+		type: "modal",
+		callback_id: "eth_vault_config",
+		title: {
+			type: "plain_text",
+			text: "ETH Vault Setup",
+		},
+		submit: {
+			type: "plain_text",
+			text: "Deploy",
+		},
+		close: {
+			type: "plain_text",
+			text: "Cancel",
+		},
+		blocks: [
+			{
+				type: "section",
+				text: {
+					type: "mrkdwn",
+					text: "Tip your teammates in native ETH. You'll need to deposit ETH into the vault after setup.",
+				},
+			},
+			{
+				type: "input",
+				block_id: "admin_wallet",
+				element: {
+					type: "plain_text_input",
+					action_id: "admin_wallet_input",
+					placeholder: {
+						type: "plain_text",
+						text: "0x...",
+					},
+				},
+				label: {
+					type: "plain_text",
+					text: "Vault Manager Wallet",
+				},
+				hint: {
+					type: "plain_text",
+					text: "This wallet can withdraw funds from the vault for fund recovery.",
+				},
+			},
+			{
+				type: "input",
+				block_id: "daily_allowance",
+				element: {
+					type: "plain_text_input",
+					action_id: "daily_allowance_input",
+					initial_value: "3",
+					placeholder: {
+						type: "plain_text",
+						text: "3",
+					},
+				},
+				label: {
+					type: "plain_text",
+					text: "Daily Allowance (tips per user per day)",
+				},
+			},
+			{
+				type: "context",
+				elements: [
+					{
+						type: "mrkdwn",
+						text: "After setup, you'll need to deposit ETH into the vault contract on Base.",
 					},
 				],
 			},

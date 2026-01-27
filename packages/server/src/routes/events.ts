@@ -9,6 +9,7 @@ import {
 	deployERC1155,
 	deployERC20,
 	deployERC20Vault,
+	deployETHVault,
 	getOrgAddressesFromTx,
 } from "../deploy/factory";
 import { env } from "../env";
@@ -25,6 +26,7 @@ import {
 	getERC1155ConfigView,
 	getERC20ConfigView,
 	getERC20VaultConfigView,
+	getETHVaultConfigView,
 	getMetadataEditView,
 } from "../slack/appHome";
 import { isPureCommand } from "../utils";
@@ -251,6 +253,8 @@ const app = new Hono()
 					nextView = getERC20ConfigView();
 				} else if (tokenType === "erc20_vault") {
 					nextView = getERC20VaultConfigView();
+				} else if (tokenType === "eth_vault") {
+					nextView = getETHVaultConfigView();
 				}
 
 				if (nextView) {
@@ -449,6 +453,66 @@ const app = new Hono()
 							userRegistryAddress: addresses?.userRegistryAddress,
 							tipActionAddress: addresses?.tipActionAddress,
 							tipTokenAddress: addresses?.tipTokenAddress,
+						},
+						dailyAllowance: Number(dailyAllowance),
+					});
+
+					// Refresh app home with updated org
+					await publishAppHome(updatedOrg || org, payload.user.id);
+				})();
+
+				// Clear entire modal stack (not just top modal)
+				return c.json({ response_action: "clear" });
+			}
+
+			// ETH Vault config submission
+			if (callbackId === "eth_vault_config") {
+				const vaultManagerWallet = values.admin_wallet?.admin_wallet_input?.value || "";
+				const dailyAllowance = values.daily_allowance?.daily_allowance_input?.value || "3";
+
+				// Validate vault manager address is provided
+				if (!vaultManagerWallet) {
+					return c.json({
+						response_action: "errors",
+						errors: {
+							admin_wallet: "A vault manager wallet address is required for fund recovery",
+						},
+					});
+				}
+
+				console.log("Deploying ETH Vault setup:", { vaultManagerWallet, dailyAllowance });
+
+				// Process deployment asynchronously to avoid Slack 3s timeout
+				(async () => {
+					const deployResult = await deployETHVault({
+						orgId: org.id,
+						vaultManagerAddress: vaultManagerWallet,
+					});
+
+					if (!deployResult.success) {
+						console.error("ETH Vault deployment failed:", deployResult.error);
+					}
+
+					// Fetch deployed addresses from transaction receipt
+					let addresses = null;
+					if (deployResult.success && deployResult.transactionHash) {
+						addresses = await fetchOrgAddressesWithRetry(deployResult.transactionHash);
+						if (!addresses) {
+							console.error("Failed to fetch deployed addresses from tx:", deployResult.transactionHash);
+						}
+					}
+
+					// Update org config with addresses and set admin
+					const [updatedOrg] = await db.updateOrg(org.id, {
+						adminUserId: payload.user.id,
+						actionType: "eth_vault",
+						actionConfig: {
+							vaultManagerAddress: vaultManagerWallet,
+							deploymentTxHash: deployResult.transactionHash,
+							deploymentStatus: addresses ? "deployed" : "pending",
+							slashTipAddress: addresses?.slashTipAddress,
+							userRegistryAddress: addresses?.userRegistryAddress,
+							tipActionAddress: addresses?.tipActionAddress,
 						},
 						dailyAllowance: Number(dailyAllowance),
 					});

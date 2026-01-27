@@ -1,5 +1,6 @@
 import { SyndicateClient } from "@syndicateio/syndicate-node";
 import { waitForHash } from "@syndicateio/syndicate-node/utils";
+import { parseUnits } from "viem";
 import { type OrgActionConfig } from "../chain";
 import { env } from "../env";
 import { registerAction } from "./registry";
@@ -17,8 +18,13 @@ const PROJECT_ID = "570119ce-a49c-4245-8851-11c9d1ad74c7";
 /**
  * SlashTip Action Handler - calls SlashTip.tip() via Syndicate
  *
- * This handler works for all action types (erc1155_mint, erc20_mint, erc20_vault)
+ * This handler works for all action types (erc1155_mint, erc20_mint, erc20_vault, eth_vault)
  * because the SlashTip contract already knows which action contract to call.
+ *
+ * The server handles amount scaling to base units (wei) before sending to contracts:
+ * - ERC1155: Integer quantity (no scaling)
+ * - ERC20: Scaled by token decimals from config
+ * - ETH: Scaled by 18 decimals (wei)
  */
 class SlashTipAction implements TipAction {
 	constructor(public readonly type: string) {}
@@ -77,12 +83,26 @@ class SlashTipAction implements TipAction {
 		const { org, fromUserId, toUserId, amount, message } = params;
 		const config = org.actionConfig as OrgActionConfig;
 
-		// All action contracts handle scaling internally
-		// Server always passes unscaled amounts (e.g., 1 = 1 token)
-		const tipAmount = BigInt(amount);
+		// Determine decimals based on action type
+		// - ERC1155: No scaling (NFT quantity, integer)
+		// - ERC20 mint/vault: Use config.decimals (from token)
+		// - ETH vault: Always 18 decimals
+		let tipAmount: bigint;
+		if (org.actionType === "erc1155_mint") {
+			// ERC1155 amounts are integer quantities, no scaling needed
+			tipAmount = BigInt(Math.floor(Number(amount)));
+		} else if (org.actionType === "eth_vault") {
+			// ETH always has 18 decimals
+			tipAmount = parseUnits(amount.toString(), 18);
+		} else {
+			// ERC20 mint and vault use token decimals from config
+			const decimals = config.decimals ?? 18;
+			tipAmount = parseUnits(amount.toString(), decimals);
+		}
 
 		console.log("SlashTip execution:", {
 			orgId: org.id,
+			actionType: org.actionType,
 			slashTipAddress: config.slashTipAddress,
 			fromUserId,
 			toUserId,
@@ -155,3 +175,4 @@ class SlashTipAction implements TipAction {
 registerAction(new SlashTipAction("erc1155_mint"));
 registerAction(new SlashTipAction("erc20_mint"));
 registerAction(new SlashTipAction("erc20_vault"));
+registerAction(new SlashTipAction("eth_vault"));

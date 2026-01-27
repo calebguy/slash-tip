@@ -10,7 +10,7 @@ const syndicate = new SyndicateClient({
 });
 
 // Factory constants
-const FACTORY_ADDRESS = env.SLASH_TIP_FACTORY_ADDRESS || "";
+const FACTORY_ADDRESS = "0x20ca42bEDE1a937F020d348eEd5939a8A953294c";
 const CHAIN_ID = 8453; // Base mainnet
 const PROJECT_ID = "570119ce-a49c-4245-8851-11c9d1ad74c7";
 
@@ -98,6 +98,11 @@ export interface ERC20VaultDeploymentConfig {
 	vaultManagerAddress: string; // Required: address that can withdraw funds from the vault
 }
 
+export interface ETHVaultDeploymentConfig {
+	orgId: string;
+	vaultManagerAddress: string; // Required: address that can withdraw funds from the vault
+}
+
 /**
  * Deploy a new ERC1155 tip setup for an organization
  */
@@ -107,11 +112,6 @@ export async function deployERC1155(
 	if (!FACTORY_ADDRESS) {
 		console.error("SLASH_TIP_FACTORY_ADDRESS not set");
 		return { success: false, error: "Factory not configured" };
-	}
-
-	if (!ADMIN_ADDRESS) {
-		console.error("SLASH_TIP_ADMIN_ADDRESS not set");
-		return { success: false, error: "Admin address not configured" };
 	}
 
 	console.log("Deploying ERC1155 setup:", config);
@@ -166,11 +166,6 @@ export async function deployERC20(
 		return { success: false, error: "Factory not configured" };
 	}
 
-	if (!ADMIN_ADDRESS) {
-		console.error("SLASH_TIP_ADMIN_ADDRESS not set");
-		return { success: false, error: "Admin address not configured" };
-	}
-
 	console.log("Deploying ERC20 setup:", config);
 
 	try {
@@ -223,11 +218,6 @@ export async function deployERC20Vault(
 		return { success: false, error: "Factory not configured" };
 	}
 
-	if (!ADMIN_ADDRESS) {
-		console.error("SLASH_TIP_ADMIN_ADDRESS not set");
-		return { success: false, error: "Admin address not configured" };
-	}
-
 	console.log("Deploying ERC20 Vault setup:", {
 		orgId: config.orgId,
 		admin: ADMIN_ADDRESS,
@@ -266,6 +256,60 @@ export async function deployERC20Vault(
 		};
 	} catch (error) {
 		console.error("ERC20 Vault deployment failed:", error);
+		return {
+			success: false,
+			error: error instanceof Error ? error.message : "Deployment failed",
+		};
+	}
+}
+
+/**
+ * Deploy an ETH vault tip setup for an organization (uses native ETH)
+ */
+export async function deployETHVault(
+	config: ETHVaultDeploymentConfig,
+): Promise<DeploymentResult> {
+	if (!FACTORY_ADDRESS) {
+		console.error("SLASH_TIP_FACTORY_ADDRESS not set");
+		return { success: false, error: "Factory not configured" };
+	}
+
+	console.log("Deploying ETH Vault setup:", {
+		orgId: config.orgId,
+		admin: ADMIN_ADDRESS,
+		vaultManager: config.vaultManagerAddress,
+	});
+
+	try {
+		const { transactionId } = await syndicate.transact.sendTransaction({
+			chainId: CHAIN_ID,
+			projectId: PROJECT_ID,
+			contractAddress: FACTORY_ADDRESS,
+			functionSignature:
+				"deployWithETHVault(string _orgId, address _admin, address[] _operators, address _vaultManager)",
+			args: {
+				_orgId: config.orgId,
+				_admin: ADMIN_ADDRESS,
+				_operators: OPERATOR_ADDRESSES,
+				_vaultManager: config.vaultManagerAddress,
+			},
+		});
+
+		const hash = await waitForHash(syndicate, {
+			projectId: PROJECT_ID,
+			transactionId,
+			every: 500,
+			maxAttempts: 60,
+		});
+
+		console.log(`ETH Vault deployment transaction: ${hash}`);
+
+		return {
+			success: true,
+			transactionHash: hash,
+		};
+	} catch (error) {
+		console.error("ETH Vault deployment failed:", error);
 		return {
 			success: false,
 			error: error instanceof Error ? error.message : "Deployment failed",

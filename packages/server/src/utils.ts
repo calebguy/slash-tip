@@ -3,8 +3,8 @@ import { type Hex, getAddress } from "viem";
 export function parseTipCommandArgs(input: string) {
 	console.log("input", input);
 
-	// Match the user mention, amount, and optional message
-	const pattern = /^<@([A-Z0-9]+)\|[^>]+>\s+(\d+)(?:\s+(.*))?$/;
+	// Match the user mention, amount (integer or decimal), and optional message
+	const pattern = /^<@([A-Z0-9]+)\|[^>]+>\s+(\d+(?:\.\d+)?)(?:\s+(.*))?$/;
 	const match = input.match(pattern);
 
 	if (!match) {
