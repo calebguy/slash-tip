@@ -2,7 +2,7 @@ import { createConfig, factory } from "ponder";
 import { SlashTipAbi } from "utils/src/abis/SlashTipAbi";
 import { SlashTipFactoryAbi } from "utils/src/abis/SlashTipFactoryAbi";
 import { UserRegistryAbi } from "utils/src/abis/UserRegistryAbi";
-import { http, parseAbiItem } from "viem";
+import { parseAbiItem } from "viem";
 
 export const SLASH_TIP_FACTORY_START_BLOCK = 40850000;
 
@@ -19,23 +19,24 @@ const ORG_DEPLOYED_EVENT = parseAbiItem(
 );
 
 export default createConfig({
-	networks: {
+	chains: {
 		base: {
-			chainId: 8453,
-			transport: http(process.env.PONDER_RPC_URL_BASE),
+			id: 8453,
+			rpc: process.env.RPC_URL_BASE,
+			ws: process.env.WS_RPC_URL_BASE,
 		},
 	},
 	contracts: {
 		// Index factory itself to capture OrgDeployed events
 		SlashTipFactory: {
-			network: "base",
+			chain: "base",
 			abi: SlashTipFactoryAbi,
 			address: FACTORY_ADDRESS,
 			startBlock: SLASH_TIP_FACTORY_START_BLOCK,
 		},
 		// Dynamically index all SlashTip instances deployed by factory
 		SlashTip: {
-			network: "base",
+			chain: "base",
 			abi: SlashTipAbi,
 			address: factory({
 				address: FACTORY_ADDRESS,
@@ -46,7 +47,7 @@ export default createConfig({
 		},
 		// Dynamically index all UserRegistry instances deployed by factory
 		UserRegistry: {
-			network: "base",
+			chain: "base",
 			abi: UserRegistryAbi,
 			address: factory({
 				address: FACTORY_ADDRESS,
