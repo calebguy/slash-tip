@@ -10,6 +10,7 @@ import {BeaconProxy} from "openzeppelin/proxy/beacon/BeaconProxy.sol";
 import {UpgradeableBeacon} from "openzeppelin/proxy/beacon/UpgradeableBeacon.sol";
 
 /// @notice Tests for the V2 SlashTip orchestrator contract
+/// @dev Allowance management has been moved off-chain to the server/database
 contract V2SlashTipTest is Test {
     SlashTip public slashTip;
     UserRegistry public userRegistry;
@@ -27,15 +28,13 @@ contract V2SlashTipTest is Test {
     UserRegistry.User public fromUser = UserRegistry.User({
         id: "U123ABC",
         nickname: "alice",
-        account: address(0x1111),
-        allowance: 10
+        account: address(0x1111)
     });
 
     UserRegistry.User public toUser = UserRegistry.User({
         id: "U456DEF",
         nickname: "bob",
-        account: address(0x2222),
-        allowance: 5
+        account: address(0x2222)
     });
 
     function setUp() public {
@@ -93,14 +92,9 @@ contract V2SlashTipTest is Test {
         // Grant TIP_EXECUTOR role to slashTip so it can call the action
         tipAction.grantRole(tipAction.EXECUTOR(), address(slashTip));
 
-        // Grant OPERATOR to slashTip so it can call subUserAllowance
-        userRegistry.grantRole(userRegistry.ALLOWANCE_MANAGER(), address(slashTip));
-
         // Grant operational roles to admin for testing
         slashTip.grantRole(slashTip.TIPPER(), admin);
         userRegistry.grantRole(userRegistry.USER_MANAGER(), admin);
-        userRegistry.grantRole(userRegistry.ALLOWANCE_MANAGER(), admin);
-        userRegistry.grantRole(userRegistry.ALLOWANCE_ADMIN(), admin);
 
         // Add test users
         userRegistry.addUser(fromUserId, fromUser);
@@ -118,12 +112,7 @@ contract V2SlashTipTest is Test {
         uint256 amount = 3;
         string memory message = "great work!";
 
-        uint256 initialAllowance = userRegistry.getUserAllowance(fromUserId);
-
         slashTip.tip(fromUserId, toUserId, amount, message);
-
-        // Check allowance was deducted
-        assertEq(userRegistry.getUserAllowance(fromUserId), initialAllowance - amount);
 
         // Check tokens were minted to recipient
         assertEq(tipToken.balanceOf(toUser.account, tokenId), amount);
@@ -148,44 +137,14 @@ contract V2SlashTipTest is Test {
         slashTip.tip(fromUserId, toUserId, amount, message);
     }
 
-    function test_tip_revertIfInsufficientAllowance() public {
-        uint256 amount = fromUser.allowance + 1;
-
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                SlashTip.InsufficientAllowance.selector,
-                fromUserId,
-                fromUser.allowance,
-                amount
-            )
-        );
-        slashTip.tip(fromUserId, toUserId, amount, "");
-    }
-
     function test_tip_revertIfUserNotFound() public {
         vm.expectRevert(abi.encodeWithSelector(UserRegistry.UserNotFound.selector, "nonexistent"));
         slashTip.tip("nonexistent", toUserId, 1, "");
     }
 
-    function test_allowanceOf() public view {
-        assertEq(slashTip.allowanceOf(fromUserId), fromUser.allowance);
-        assertEq(slashTip.allowanceOf(toUserId), toUser.allowance);
-    }
-
-    function test_setAllowanceForAllUsers() public {
-        uint256 newAllowance = 20;
-        userRegistry.setAllowanceForAllUsers(newAllowance);
-
-        assertEq(userRegistry.getUserAllowance(fromUserId), newAllowance);
-        assertEq(userRegistry.getUserAllowance(toUserId), newAllowance);
-    }
-
-    function test_addAllowanceForAllUsers() public {
-        uint256 addAmount = 5;
-        userRegistry.addAllowanceForAllUsers(addAmount);
-
-        assertEq(userRegistry.getUserAllowance(fromUserId), fromUser.allowance + addAmount);
-        assertEq(userRegistry.getUserAllowance(toUserId), toUser.allowance + addAmount);
+    function test_tip_revertIfRecipientNotFound() public {
+        vm.expectRevert(abi.encodeWithSelector(UserRegistry.UserNotFound.selector, "nonexistent"));
+        slashTip.tip(fromUserId, "nonexistent", 1, "");
     }
 
     function test_setTipAction() public {
@@ -244,5 +203,24 @@ contract V2SlashTipTest is Test {
         vm.prank(nonAdmin);
         vm.expectRevert();
         slashTip.setTipAction(address(0x1234));
+    }
+
+    function test_pause_unpause() public {
+        // Grant pauser role
+        slashTip.grantRole(slashTip.PAUSER(), admin);
+
+        // Pause
+        slashTip.pause();
+
+        // Should revert when paused
+        vm.expectRevert();
+        slashTip.tip(fromUserId, toUserId, 1, "");
+
+        // Unpause
+        slashTip.unpause();
+
+        // Should work again
+        slashTip.tip(fromUserId, toUserId, 1, "");
+        assertEq(tipToken.balanceOf(toUser.account, tokenId), 1);
     }
 }

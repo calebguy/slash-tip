@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { erc20Abi, type Hex } from "viem";
+import { erc20Abi, parseUnits, type Hex } from "viem";
 import {
 	setBaseURIViaSyndicate,
 	setContractURIViaSyndicate,
@@ -31,6 +31,64 @@ import {
 } from "../slack/appHome";
 import { isPureCommand } from "../utils";
 import { baseClient } from "../viem";
+
+/**
+ * Validates daily allowance based on action type
+ * @param allowance - The allowance string to validate
+ * @param actionType - The action type (erc1155_mint, erc20_mint, erc20_vault, eth_vault)
+ * @param decimals - Token decimals (only used for ERC20 types)
+ * @returns null if valid, error message string if invalid
+ */
+function validateDailyAllowance(
+	allowance: string,
+	actionType: "erc1155_mint" | "erc20_mint" | "erc20_vault" | "eth_vault",
+	decimals?: number,
+): string | null {
+	// Check it's a valid number
+	const num = parseFloat(allowance);
+	if (isNaN(num)) {
+		return "Daily allowance must be a valid number";
+	}
+
+	if (num <= 0) {
+		return "Daily allowance must be greater than 0";
+	}
+
+	// For ERC1155, must be a whole integer
+	if (actionType === "erc1155_mint") {
+		if (!Number.isInteger(num)) {
+			return "Daily allowance must be a whole number for NFT tips (e.g., 3, not 3.5)";
+		}
+		// Check it doesn't exceed uint256 max (no decimals for ERC1155)
+		try {
+			BigInt(allowance);
+		} catch {
+			return "Daily allowance is too large";
+		}
+		return null;
+	}
+
+	// For ERC20 and ETH, validate decimal places and max value
+	const tokenDecimals = actionType === "eth_vault" ? 18 : (decimals ?? 18);
+
+	// Count decimal places in the input
+	const parts = allowance.split(".");
+	if (parts.length === 2) {
+		const decimalPlaces = parts[1].length;
+		if (decimalPlaces > tokenDecimals) {
+			return `Daily allowance cannot have more than ${tokenDecimals} decimal places for this token`;
+		}
+	}
+
+	// Check that when scaled to base units, it doesn't exceed uint256 max
+	try {
+		parseUnits(allowance, tokenDecimals);
+	} catch {
+		return "Daily allowance is too large for this token's precision";
+	}
+
+	return null;
+}
 
 /**
  * Helper to fetch org addresses from tx with retries (for propagation delay)
@@ -270,6 +328,17 @@ const app = new Hono()
 				const tokenId = values.token_id?.token_id_input?.value || "0";
 				const dailyAllowance = values.daily_allowance?.daily_allowance_input?.value || "3";
 
+				// Validate daily allowance - must be whole integer for ERC1155
+				const allowanceError = validateDailyAllowance(dailyAllowance, "erc1155_mint");
+				if (allowanceError) {
+					return c.json({
+						response_action: "errors",
+						errors: {
+							daily_allowance: allowanceError,
+						},
+					});
+				}
+
 				// Use server metadata endpoint as baseUri
 				const baseUri = `${env.PUBLIC_URL}/metadata/${org.slug}/`;
 				const contractUri = `${env.PUBLIC_URL}/metadata/${org.slug}/contract`;
@@ -313,7 +382,7 @@ const app = new Hono()
 							tipActionAddress: addresses?.tipActionAddress,
 							tipTokenAddress: addresses?.tipTokenAddress,
 						},
-						dailyAllowance: Number(dailyAllowance),
+						dailyAllowance,
 					});
 
 					// Create default token metadata
@@ -337,6 +406,17 @@ const app = new Hono()
 				const tokenSymbol = values.token_symbol?.token_symbol_input?.value || "";
 				const decimals = values.decimals?.decimals_input?.value || "18";
 				const dailyAllowance = values.daily_allowance?.daily_allowance_input?.value || "3";
+
+				// Validate daily allowance based on token decimals
+				const allowanceError = validateDailyAllowance(dailyAllowance, "erc20_mint", Number(decimals));
+				if (allowanceError) {
+					return c.json({
+						response_action: "errors",
+						errors: {
+							daily_allowance: allowanceError,
+						},
+					});
+				}
 
 				console.log("Deploying ERC20 setup:", { tokenName, tokenSymbol, decimals, dailyAllowance });
 
@@ -377,7 +457,7 @@ const app = new Hono()
 							tipActionAddress: addresses?.tipActionAddress,
 							tipTokenAddress: addresses?.tipTokenAddress,
 						},
-						dailyAllowance: Number(dailyAllowance),
+						dailyAllowance,
 					});
 
 					// Refresh app home with updated org
@@ -404,22 +484,33 @@ const app = new Hono()
 					});
 				}
 
-				console.log("Deploying ERC20 Vault setup:", { tokenAddress, vaultManagerWallet, dailyAllowance });
+				// Fetch token decimals from the ERC20 contract for validation
+				let decimals = 18;
+				try {
+					decimals = await baseClient.readContract({
+						address: tokenAddress as Hex,
+						abi: erc20Abi,
+						functionName: "decimals",
+					});
+				} catch (e) {
+					console.error("Failed to fetch token decimals, defaulting to 18:", e);
+				}
+
+				// Validate daily allowance based on token decimals
+				const allowanceError = validateDailyAllowance(dailyAllowance, "erc20_vault", decimals);
+				if (allowanceError) {
+					return c.json({
+						response_action: "errors",
+						errors: {
+							daily_allowance: allowanceError,
+						},
+					});
+				}
+
+				console.log("Deploying ERC20 Vault setup:", { tokenAddress, vaultManagerWallet, dailyAllowance, decimals });
 
 				// Process deployment asynchronously to avoid Slack 3s timeout
 				(async () => {
-					// Fetch token decimals from the ERC20 contract
-					let decimals = 18;
-					try {
-						decimals = await baseClient.readContract({
-							address: tokenAddress as Hex,
-							abi: erc20Abi,
-							functionName: "decimals",
-						});
-					} catch (e) {
-						console.error("Failed to fetch token decimals, defaulting to 18:", e);
-					}
-
 					const deployResult = await deployERC20Vault({
 						orgId: org.id,
 						tokenAddress,
@@ -454,7 +545,7 @@ const app = new Hono()
 							tipActionAddress: addresses?.tipActionAddress,
 							tipTokenAddress: addresses?.tipTokenAddress,
 						},
-						dailyAllowance: Number(dailyAllowance),
+						dailyAllowance,
 					});
 
 					// Refresh app home with updated org
@@ -476,6 +567,17 @@ const app = new Hono()
 						response_action: "errors",
 						errors: {
 							admin_wallet: "A vault manager wallet address is required for fund recovery",
+						},
+					});
+				}
+
+				// Validate daily allowance (ETH has 18 decimals)
+				const allowanceError = validateDailyAllowance(dailyAllowance, "eth_vault");
+				if (allowanceError) {
+					return c.json({
+						response_action: "errors",
+						errors: {
+							daily_allowance: allowanceError,
 						},
 					});
 				}
@@ -514,7 +616,7 @@ const app = new Hono()
 							userRegistryAddress: addresses?.userRegistryAddress,
 							tipActionAddress: addresses?.tipActionAddress,
 						},
-						dailyAllowance: Number(dailyAllowance),
+						dailyAllowance,
 					});
 
 					// Refresh app home with updated org

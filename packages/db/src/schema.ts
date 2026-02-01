@@ -2,6 +2,7 @@ import {
 	bigint,
 	integer,
 	jsonb,
+	numeric,
 	pgTable,
 	primaryKey,
 	serial,
@@ -20,7 +21,7 @@ export const organizations = pgTable("organizations", {
 	slackBotToken: text("slack_bot_token").notNull(),
 	adminUserId: text("admin_user_id"),
 	paidAt: timestamp("paid_at"),
-	dailyAllowance: integer("daily_allowance").notNull().default(3),
+	dailyAllowance: numeric("daily_allowance", { precision: 36, scale: 18 }).notNull().default("3"),
 	// Action configuration (null = not yet configured)
 	actionType: text("action_type"),
 	actionConfig: jsonb("action_config"),
@@ -34,6 +35,7 @@ export const users = pgTable("users", {
 		.notNull(),
 	nickname: text("nickname").notNull(),
 	address: text("address").notNull(),
+	allowance: numeric("allowance", { precision: 36, scale: 18 }).notNull().default("0"),
 });
 
 // Contract deployments from factory - maps contract addresses to orgs

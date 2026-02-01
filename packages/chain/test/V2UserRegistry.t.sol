@@ -7,6 +7,7 @@ import {BeaconProxy} from "openzeppelin/proxy/beacon/BeaconProxy.sol";
 import {UpgradeableBeacon} from "openzeppelin/proxy/beacon/UpgradeableBeacon.sol";
 
 /// @notice Tests for the V2 UserRegistry contract with beacon proxy pattern
+/// @dev Allowance management has been moved off-chain to the server/database
 contract V2UserRegistryTest is Test {
     UserRegistry public registry;
     UserRegistry public implementation;
@@ -21,15 +22,13 @@ contract V2UserRegistryTest is Test {
     UserRegistry.User public user1 = UserRegistry.User({
         id: "U123ABC",
         nickname: "alice",
-        account: address(0x1111),
-        allowance: 10
+        account: address(0x1111)
     });
 
     UserRegistry.User public user2 = UserRegistry.User({
         id: "U456DEF",
         nickname: "bob",
-        account: address(0x2222),
-        allowance: 5
+        account: address(0x2222)
     });
 
     function setUp() public {
@@ -50,7 +49,6 @@ contract V2UserRegistryTest is Test {
 
         // Grant operational roles to admin for testing
         registry.grantRole(registry.USER_MANAGER(), admin);
-        registry.grantRole(registry.ALLOWANCE_MANAGER(), admin);
     }
 
     function test_initialize() public view {
@@ -65,7 +63,6 @@ contract V2UserRegistryTest is Test {
         assertEq(retrieved.id, user1.id);
         assertEq(retrieved.nickname, user1.nickname);
         assertEq(retrieved.account, user1.account);
-        assertEq(retrieved.allowance, user1.allowance);
     }
 
     function test_addUser_emitsEvent() public {
@@ -85,8 +82,7 @@ contract V2UserRegistryTest is Test {
         UserRegistry.User memory invalidUser = UserRegistry.User({
             id: "invalid",
             nickname: "invalid",
-            account: address(0),
-            allowance: 10
+            account: address(0)
         });
 
         vm.expectRevert(UserRegistry.InvalidUser.selector);
@@ -97,8 +93,7 @@ contract V2UserRegistryTest is Test {
         UserRegistry.User memory invalidUser = UserRegistry.User({
             id: "invalid",
             nickname: "",
-            account: address(0x1111),
-            allowance: 10
+            account: address(0x1111)
         });
 
         vm.expectRevert(UserRegistry.InvalidUser.selector);
@@ -137,51 +132,6 @@ contract V2UserRegistryTest is Test {
     function test_getUserAddress() public {
         registry.addUser(userId1, user1);
         assertEq(registry.getUserAddress(userId1), user1.account);
-    }
-
-    function test_getUserAllowance() public {
-        registry.addUser(userId1, user1);
-        assertEq(registry.getUserAllowance(userId1), user1.allowance);
-    }
-
-    function test_setUserAllowance() public {
-        registry.addUser(userId1, user1);
-
-        uint256 newAllowance = 20;
-        registry.setUserAllowance(userId1, newAllowance);
-        assertEq(registry.getUserAllowance(userId1), newAllowance);
-    }
-
-    function test_setUserAllowance_emitsEvent() public {
-        registry.addUser(userId1, user1);
-
-        uint256 newAllowance = 20;
-        vm.expectEmit(true, true, true, true);
-        emit UserRegistry.AllowanceUpdated(userId1, userId1, user1.allowance, newAllowance);
-        registry.setUserAllowance(userId1, newAllowance);
-    }
-
-    function test_addUserAllowance() public {
-        registry.addUser(userId1, user1);
-
-        uint256 addAmount = 5;
-        registry.addUserAllowance(userId1, addAmount);
-        assertEq(registry.getUserAllowance(userId1), user1.allowance + addAmount);
-    }
-
-    function test_subUserAllowance() public {
-        registry.addUser(userId1, user1);
-
-        uint256 subAmount = 3;
-        registry.subUserAllowance(userId1, subAmount);
-        assertEq(registry.getUserAllowance(userId1), user1.allowance - subAmount);
-    }
-
-    function test_subUserAllowance_revertIfInsufficient() public {
-        registry.addUser(userId1, user1);
-
-        vm.expectRevert("Insufficient allowance");
-        registry.subUserAllowance(userId1, user1.allowance + 1);
     }
 
     function test_listUsers() public {

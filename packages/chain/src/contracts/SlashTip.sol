@@ -8,8 +8,9 @@ import {UserRegistry} from "./UserRegistry.sol";
 import {ITipAction} from "./ITipAction.sol";
 
 /// @title SlashTip
-/// @notice Orchestrates tipping by validating allowances and executing tip actions
+/// @notice Orchestrates tipping by validating users and executing tip actions
 /// @dev Uses Initializable for beacon proxy pattern
+/// @dev Allowance checking has been moved off-chain to the server
 contract SlashTip is Initializable, AccessControl, Pausable {
     // ============ OPERATIONAL ROLES ============
     /// @notice Role for executing tips (granted to backend service)
@@ -38,7 +39,6 @@ contract SlashTip is Initializable, AccessControl, Pausable {
     event TipActionUpdated(address indexed oldAction, address indexed newAction);
     event UserRegistryUpdated(address indexed oldRegistry, address indexed newRegistry);
 
-    error InsufficientAllowance(string userId, uint256 allowance, uint256 required);
     error UserNotFound(string userId);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -65,9 +65,10 @@ contract SlashTip is Initializable, AccessControl, Pausable {
     }
 
     /// @notice Send a tip from one user to another
+    /// @dev Allowance is checked off-chain by the server before calling this function
     /// @param _fromId The sender's external ID (e.g., Slack ID)
     /// @param _toId The recipient's external ID
-    /// @param _amount The tip amount
+    /// @param _amount The tip amount (in base units, e.g., wei)
     /// @param _data Additional data (e.g., tip message)
     function tip(
         string memory _fromId,
@@ -75,16 +76,10 @@ contract SlashTip is Initializable, AccessControl, Pausable {
         uint256 _amount,
         string memory _data
     ) external onlyRole(TIPPER) whenNotPaused {
-        // Validate sender exists and has sufficient allowance
+        // Get sender (validates they exist)
         UserRegistry.User memory fromUser = userRegistry.getUser(_fromId);
-        if (fromUser.allowance < _amount) {
-            revert InsufficientAllowance(_fromId, fromUser.allowance, _amount);
-        }
 
-        // Deduct allowance
-        userRegistry.subUserAllowance(_fromId, _amount);
-
-        // Get recipient
+        // Get recipient (validates they exist)
         UserRegistry.User memory toUser = userRegistry.getUser(_toId);
 
         // Execute the tip action
@@ -101,13 +96,6 @@ contract SlashTip is Initializable, AccessControl, Pausable {
             _data,
             address(tipAction)
         );
-    }
-
-    /// @notice Get a user's remaining allowance
-    /// @param _userId The external user ID
-    /// @return The user's allowance
-    function allowanceOf(string memory _userId) external view returns (uint256) {
-        return userRegistry.getUser(_userId).allowance;
     }
 
     /// @notice Update the tip action contract

@@ -1,12 +1,11 @@
 import { SyndicateClient } from "@syndicateio/syndicate-node";
 import { waitForHash } from "@syndicateio/syndicate-node/utils";
-import { parseUnits } from "viem";
+import { formatUnits, parseUnits } from "viem";
 import { type OrgActionConfig } from "../chain";
 import { env } from "../env";
+import { db } from "../server";
 import { registerAction } from "./registry";
 import type { TipAction, TipParams, TipResult, ValidationResult } from "./types";
-import { baseClient } from "../viem";
-import { UserRegistryAbi } from "utils/src/abis/UserRegistryAbi";
 
 const syndicate = new SyndicateClient({
 	token: env.SYNDICATE_API_KEY,
@@ -56,23 +55,19 @@ class SlashTipAction implements TipAction {
 			return { valid: false, error: "Recipient not specified" };
 		}
 
-		// Check sender's on-chain allowance
+		// Check sender's allowance from database (off-chain)
 		try {
-			const allowance = await baseClient.readContract({
-				address: config.userRegistryAddress as `0x${string}`,
-				abi: UserRegistryAbi,
-				functionName: "getUserAllowance",
-				args: [fromUserId],
-			});
+			const allowanceStr = await db.getUserAllowance(fromUserId);
+			const allowance = parseFloat(allowanceStr);
 
-			if (allowance < BigInt(amount)) {
+			if (Number(amount) > allowance) {
 				return {
 					valid: false,
-					error: `Insufficient allowance. You have ${allowance} tips remaining, but tried to send ${amount}.`,
+					error: `Insufficient allowance. You have ${allowanceStr} remaining, but tried to send ${amount}.`,
 				};
 			}
 		} catch (error) {
-			// User might not exist in registry yet - let the contract handle it
+			// User might not exist in database yet
 			console.log(`Could not check allowance for ${fromUserId}:`, error);
 		}
 
@@ -139,6 +134,14 @@ class SlashTipAction implements TipAction {
 			}
 
 			console.log(`SlashTip transaction sent: ${hash || transactionId}`);
+
+			// Deduct allowance from database after successful tip
+			try {
+				await db.deductUserAllowance(fromUserId, amount.toString());
+				console.log(`Deducted ${amount} from ${fromUserId}'s allowance`);
+			} catch (e) {
+				console.error(`Failed to deduct allowance for ${fromUserId}:`, e);
+			}
 
 			const txLink = hash ? `<https://basescan.org/tx/${hash}|view>` : "";
 

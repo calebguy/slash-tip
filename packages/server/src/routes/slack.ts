@@ -3,7 +3,6 @@ import { Hono } from "hono";
 import type { Hex } from "viem";
 import { getAction } from "../actions";
 import {
-	getAllowance,
 	getUserAddress,
 	getUserExists,
 	registerViaSyndicate,
@@ -96,15 +95,15 @@ const app = new Hono<Env>()
 			id: user_id,
 			nickname: user_name,
 			address,
-			allowance: org.dailyAllowance,
 		});
 
-		// Save user to database with org_id
+		// Save user to database with org_id and set initial allowance
 		await db.upsertUser({
 			id: user_id,
 			nickname: user_name,
 			address,
 			orgId: org.id,
+			allowance: org.dailyAllowance, // Set initial allowance from org config
 		});
 
 		console.log(
@@ -207,7 +206,8 @@ const app = new Hono<Env>()
 			});
 		}
 		const address = await getUserAddress(config.userRegistryAddress as Hex, user_id);
-		const allowance = await getAllowance(config.slashTipAddress as Hex, user_id);
+		// Get allowance from database (off-chain)
+		const allowance = await db.getUserAllowance(user_id);
 		return c.json({
 			response_type: "ephemeral",
 			blocks: [
@@ -215,9 +215,7 @@ const app = new Hono<Env>()
 					type: "section",
 					text: {
 						type: "mrkdwn",
-						text: `Your registered address is <https://basescan.org/address/${address}|${address}>.\n You have ${
-							allowance === BigInt(0) ? "0" : `${allowance}`
-						} tips left to give.`,
+						text: `Your registered address is <https://basescan.org/address/${address}|${address}>.\n You have ${allowance} tips left to give.`,
 					},
 				},
 			],

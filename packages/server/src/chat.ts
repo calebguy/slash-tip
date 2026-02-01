@@ -2,7 +2,7 @@ import type { Organization } from "db";
 import OpenAI from "openai/index.mjs";
 import type { ChatCompletionMessageParam, ChatCompletionTool } from "openai/resources/chat/completions.mjs";
 import type { Hex } from "viem";
-import { getAllowance, getUserExists, type OrgActionConfig } from "./chain";
+import { getUserExists, type OrgActionConfig } from "./chain";
 import { db } from "./server";
 
 const openai = new OpenAI();
@@ -136,14 +136,12 @@ async function executeFunction(
 				});
 			}
 
-			const allowance = await getAllowance(
-				config.slashTipAddress as Hex,
-				userId,
-			).catch(() => BigInt(0));
+			// Get allowance from database (off-chain)
+			const allowance = await db.getUserAllowance(userId);
 
 			return JSON.stringify({
 				registered: true,
-				remainingAllowance: allowance.toString(),
+				remainingAllowance: allowance,
 				dailyAllowance: org.dailyAllowance,
 			});
 		}
