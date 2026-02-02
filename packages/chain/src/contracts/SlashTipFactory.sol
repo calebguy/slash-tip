@@ -151,7 +151,6 @@ contract SlashTipFactory is AccessControl {
 
         // 5. Grant cross-contract permissions (internal roles)
         TipERC1155(tipToken).grantRole(TipERC1155(tipToken).MINTER(), tipAction);
-        UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).ALLOWANCE_MANAGER(), slashTip); // SlashTip needs to call subUserAllowance
         ERC1155MintAction(tipAction).grantRole(ERC1155MintAction(tipAction).EXECUTOR(), slashTip);
 
         // 6. Grant admin roles to _admin
@@ -166,8 +165,6 @@ contract SlashTipFactory is AccessControl {
             if (_operators[i] == address(0)) revert InvalidAddress();
             // UserRegistry roles
             UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).USER_MANAGER(), _operators[i]);
-            UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).ALLOWANCE_MANAGER(), _operators[i]);
-            UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).ALLOWANCE_ADMIN(), _operators[i]);
             // Token roles
             TipERC1155(tipToken).grantRole(TipERC1155(tipToken).METADATA_MANAGER(), _operators[i]);
             // Action roles
@@ -241,7 +238,6 @@ contract SlashTipFactory is AccessControl {
 
         // 5. Grant cross-contract permissions (internal roles)
         TipERC20(tipToken).grantRole(TipERC20(tipToken).MINTER(), tipAction);
-        UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).ALLOWANCE_MANAGER(), slashTip); // SlashTip needs to call subUserAllowance
         ERC20MintAction(tipAction).grantRole(ERC20MintAction(tipAction).EXECUTOR(), slashTip);
 
         // 6. Grant admin roles to _admin
@@ -256,8 +252,6 @@ contract SlashTipFactory is AccessControl {
             if (_operators[i] == address(0)) revert InvalidAddress();
             // UserRegistry roles
             UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).USER_MANAGER(), _operators[i]);
-            UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).ALLOWANCE_MANAGER(), _operators[i]);
-            UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).ALLOWANCE_ADMIN(), _operators[i]);
             // Action roles
             ERC20MintAction(tipAction).grantRole(ERC20MintAction(tipAction).CONFIG_MANAGER(), _operators[i]);
             // SlashTip roles
@@ -321,7 +315,6 @@ contract SlashTipFactory is AccessControl {
         ));
 
         // 4. Grant cross-contract permissions (internal roles)
-        UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).ALLOWANCE_MANAGER(), slashTip); // SlashTip needs to call subUserAllowance
         ERC20VaultAction(tipAction).grantRole(ERC20VaultAction(tipAction).EXECUTOR(), slashTip);
 
         // 5. Grant admin roles to _admin, vault manager role to _vaultManager
@@ -336,8 +329,6 @@ contract SlashTipFactory is AccessControl {
             if (_operators[i] == address(0)) revert InvalidAddress();
             // UserRegistry roles
             UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).USER_MANAGER(), _operators[i]);
-            UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).ALLOWANCE_MANAGER(), _operators[i]);
-            UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).ALLOWANCE_ADMIN(), _operators[i]);
             // SlashTip roles
             SlashTip(slashTip).grantRole(SlashTip(slashTip).TIPPER(), _operators[i]);
         }
@@ -395,7 +386,6 @@ contract SlashTipFactory is AccessControl {
         ));
 
         // 4. Grant cross-contract permissions (internal roles)
-        UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).ALLOWANCE_MANAGER(), slashTip); // SlashTip needs to call subUserAllowance
         ETHVaultAction(payable(tipAction)).grantRole(ETHVaultAction(payable(tipAction)).EXECUTOR(), slashTip);
 
         // 5. Grant admin roles to _admin, vault manager role to _vaultManager
@@ -410,8 +400,6 @@ contract SlashTipFactory is AccessControl {
             if (_operators[i] == address(0)) revert InvalidAddress();
             // UserRegistry roles
             UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).USER_MANAGER(), _operators[i]);
-            UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).ALLOWANCE_MANAGER(), _operators[i]);
-            UserRegistry(userRegistry).grantRole(UserRegistry(userRegistry).ALLOWANCE_ADMIN(), _operators[i]);
             // SlashTip roles
             SlashTip(slashTip).grantRole(SlashTip(slashTip).TIPPER(), _operators[i]);
         }

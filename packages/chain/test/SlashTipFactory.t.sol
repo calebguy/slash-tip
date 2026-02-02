@@ -537,14 +537,12 @@ contract SlashTipFactoryTest is Test {
         UserRegistry.User memory user1 = UserRegistry.User({
             id: "user1",
             nickname: "alice",
-            account: address(0xE001),
-            allowance: 10
+            account: address(0xE001)
         });
         UserRegistry.User memory user2 = UserRegistry.User({
             id: "user2",
             nickname: "bob",
-            account: address(0xE002),
-            allowance: 5
+            account: address(0xE002)
         });
 
         userRegistry.addUser("user1", user1);
@@ -555,8 +553,7 @@ contract SlashTipFactoryTest is Test {
 
         vm.stopPrank();
 
-        // Verify results
-        assertEq(userRegistry.getUserAllowance("user1"), 7); // 10 - 3
+        // Verify results (allowance now managed off-chain)
         assertEq(tipToken.balanceOf(address(0xE002), 1), 3);
     }
 

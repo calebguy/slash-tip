@@ -232,12 +232,11 @@ contract MigrateUsers is Script {
                 continue;
             }
 
-            // Create new user struct
+            // Create new user struct (allowance now managed off-chain)
             UserRegistry.User memory newUser = UserRegistry.User({
                 id: oldUser.id,
                 nickname: oldUser.nickname,
-                account: oldUser.account,
-                allowance: oldUser.allowance
+                account: oldUser.account
             });
 
             newRegistry.addUser(oldUser.id, newUser);

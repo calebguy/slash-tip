@@ -181,6 +181,54 @@ class Db {
 		return this.pg.delete(users).where(eq(users.id, id));
 	}
 
+	// Allowance methods (off-chain allowance management)
+	async getUserAllowance(userId: string): Promise<string> {
+		const result = await this.pg
+			.select({ allowance: users.allowance })
+			.from(users)
+			.where(eq(users.id, userId))
+			.limit(1);
+		return result[0]?.allowance ?? "0";
+	}
+
+	setUserAllowance(userId: string, allowance: string) {
+		return this.pg
+			.update(users)
+			.set({ allowance })
+			.where(eq(users.id, userId))
+			.returning();
+	}
+
+	addUserAllowance(userId: string, amount: string) {
+		return this.pg
+			.update(users)
+			.set({
+				allowance: sql`${users.allowance} + ${amount}::numeric`,
+			})
+			.where(eq(users.id, userId))
+			.returning();
+	}
+
+	deductUserAllowance(userId: string, amount: string) {
+		return this.pg
+			.update(users)
+			.set({
+				allowance: sql`GREATEST(0, ${users.allowance} - ${amount}::numeric)`,
+			})
+			.where(eq(users.id, userId))
+			.returning();
+	}
+
+	addAllowanceForAllUsers(orgId: string, amount: string) {
+		return this.pg
+			.update(users)
+			.set({
+				allowance: sql`${users.allowance} + ${amount}::numeric`,
+			})
+			.where(eq(users.orgId, orgId))
+			.returning();
+	}
+
 	// Org contracts methods (for factory pattern)
 	upsertOrgContracts(contract: InsertOrgContract) {
 		return this.pg

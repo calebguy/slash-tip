@@ -5,25 +5,18 @@ import {AccessControl} from "openzeppelin/access/AccessControl.sol";
 import {Initializable} from "openzeppelin/proxy/utils/Initializable.sol";
 
 /// @title UserRegistry
-/// @notice Maps external user IDs (e.g., Slack IDs) to wallet addresses and manages allowances
+/// @notice Maps external user IDs (e.g., Slack IDs) to wallet addresses
 /// @dev Uses Initializable for beacon proxy pattern
+/// @dev Allowance management has been moved off-chain to the server/database
 contract UserRegistry is Initializable, AccessControl {
     // ============ OPERATIONAL ROLES ============
     /// @notice Role for adding/removing users (granted to backend service)
     bytes32 public constant USER_MANAGER = keccak256("USER_MANAGER");
 
-    /// @notice Role for managing individual user allowances (granted to backend service and SlashTip)
-    bytes32 public constant ALLOWANCE_MANAGER = keccak256("ALLOWANCE_MANAGER");
-
-    // ============ MANAGEMENT ROLES ============
-    /// @notice Role for bulk allowance operations (granted to cron service, separate from backend)
-    bytes32 public constant ALLOWANCE_ADMIN = keccak256("ALLOWANCE_ADMIN");
-
     struct User {
         string id;
         string nickname;
         address account;
-        uint256 allowance;
     }
 
     string public orgId;
@@ -32,7 +25,6 @@ contract UserRegistry is Initializable, AccessControl {
 
     event UserAdded(string indexed idHash, string id, string nickname, address indexed account);
     event UserRemoved(string indexed idHash, string id);
-    event AllowanceUpdated(string indexed idHash, string id, uint256 oldAllowance, uint256 newAllowance);
 
     error UserNotFound(string id);
     error UserAlreadyExists(string id);
@@ -125,78 +117,5 @@ contract UserRegistry is Initializable, AccessControl {
         User storage user = users[_id];
         if (user.account == address(0)) revert UserNotFound(_id);
         return user.account;
-    }
-
-    /// @notice Get a user's allowance
-    /// @param _id The external user ID
-    /// @return The user's allowance
-    function getUserAllowance(string memory _id) external view returns (uint256) {
-        User storage user = users[_id];
-        if (user.account == address(0)) revert UserNotFound(_id);
-        return user.allowance;
-    }
-
-    /// @notice Set a user's allowance
-    /// @param _id The external user ID
-    /// @param _allowance The new allowance
-    function setUserAllowance(string memory _id, uint256 _allowance) external onlyRole(ALLOWANCE_MANAGER) {
-        User storage user = users[_id];
-        if (user.account == address(0)) revert UserNotFound(_id);
-
-        uint256 oldAllowance = user.allowance;
-        user.allowance = _allowance;
-
-        emit AllowanceUpdated(_id, _id, oldAllowance, _allowance);
-    }
-
-    /// @notice Add to a user's allowance
-    /// @param _id The external user ID
-    /// @param _amount The amount to add
-    function addUserAllowance(string memory _id, uint256 _amount) external onlyRole(ALLOWANCE_MANAGER) {
-        User storage user = users[_id];
-        if (user.account == address(0)) revert UserNotFound(_id);
-
-        uint256 oldAllowance = user.allowance;
-        user.allowance += _amount;
-
-        emit AllowanceUpdated(_id, _id, oldAllowance, user.allowance);
-    }
-
-    /// @notice Subtract from a user's allowance
-    /// @param _id The external user ID
-    /// @param _amount The amount to subtract
-    function subUserAllowance(string memory _id, uint256 _amount) external onlyRole(ALLOWANCE_MANAGER) {
-        User storage user = users[_id];
-        if (user.account == address(0)) revert UserNotFound(_id);
-
-        uint256 oldAllowance = user.allowance;
-        require(user.allowance >= _amount, "Insufficient allowance");
-        user.allowance -= _amount;
-
-        emit AllowanceUpdated(_id, _id, oldAllowance, user.allowance);
-    }
-
-    /// @notice Set allowance for all users
-    /// @param _amount The allowance amount to set
-    /// @dev Warning: O(n) gas cost, may hit block gas limit with many users
-    function setAllowanceForAllUsers(uint256 _amount) external onlyRole(ALLOWANCE_ADMIN) {
-        for (uint256 i = 0; i < userIds.length; i++) {
-            User storage user = users[userIds[i]];
-            uint256 oldAllowance = user.allowance;
-            user.allowance = _amount;
-            emit AllowanceUpdated(userIds[i], userIds[i], oldAllowance, _amount);
-        }
-    }
-
-    /// @notice Add allowance for all users
-    /// @param _amount The allowance amount to add
-    /// @dev Warning: O(n) gas cost, may hit block gas limit with many users
-    function addAllowanceForAllUsers(uint256 _amount) external onlyRole(ALLOWANCE_ADMIN) {
-        for (uint256 i = 0; i < userIds.length; i++) {
-            User storage user = users[userIds[i]];
-            uint256 oldAllowance = user.allowance;
-            user.allowance += _amount;
-            emit AllowanceUpdated(userIds[i], userIds[i], oldAllowance, user.allowance);
-        }
     }
 }

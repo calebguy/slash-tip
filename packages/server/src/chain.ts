@@ -33,11 +33,7 @@ export interface OrgActionConfig {
 }
 
 // Per-org contract functions
-
-export function getAllowance(slashTipAddress: Hex, userId: string) {
-	const contract = getSlashTipContract(slashTipAddress);
-	return contract.read.allowanceOf([userId]);
-}
+// Note: Allowance functions have been moved off-chain to the database
 
 export function getUserAddress(userRegistryAddress: Hex, userId: string) {
 	const contract = getUserRegistryContract(userRegistryAddress);
@@ -62,103 +58,31 @@ export async function getUserExists(userRegistryAddress: Hex, userId: string) {
 	}
 }
 
-export async function addAllowanceForAllUsers(
-	userRegistryAddress: Hex,
-	amount: number,
-) {
-	const contract = getUserRegistryContract(userRegistryAddress);
-	return contract.write.addAllowanceForAllUsers([BigInt(amount)]);
-}
-
-export async function setAllowanceForAllUsers(
-	userRegistryAddress: Hex,
-	amount: number,
-) {
-	const contract = getUserRegistryContract(userRegistryAddress);
-	return contract.write.setAllowanceForAllUsers([BigInt(amount)]);
-}
-
-export async function register({
-	userRegistryAddress,
-	id,
-	nickname,
-	address,
-	allowance,
-}: {
-	userRegistryAddress: Hex;
-	id: string;
-	nickname: string;
-	address: Hex;
-	allowance: number;
-}) {
-	const contract = getUserRegistryContract(userRegistryAddress);
-	return contract.write.addUser([
-		id,
-		{
-			id,
-			nickname,
-			account: address,
-			allowance: BigInt(allowance),
-		},
-	]);
-}
-
-// Syndicate-based allowance functions (for non-wallet transactions)
-export async function addAllowanceForAllUsersViaSyndicate(
-	userRegistryAddress: string,
-	amount: number,
-) {
-	const { transactionId } = await syndicate.transact.sendTransaction({
-		chainId,
-		projectId,
-		contractAddress: userRegistryAddress,
-		functionSignature: "addAllowanceForAllUsers(uint256 _amount)",
-		args: {
-			_amount: amount,
-		},
-	});
-	try {
-		return await waitForHash(syndicate, {
-			projectId,
-			transactionId,
-			every: 250,
-			maxAttempts: 4,
-		});
-	} catch (e) {
-		console.error(
-			`[add-allowance] could not get transaction hash for ${transactionId} in reasonable amount of time`,
-		);
-		return null;
-	}
-}
-
 // Syndicate-based registration (for non-wallet transactions)
+// Note: Allowance is now managed off-chain in the database
 export async function registerViaSyndicate({
 	userRegistryAddress,
 	id,
 	nickname,
 	address,
-	allowance,
 }: {
 	userRegistryAddress: string;
 	id: string;
 	nickname: string;
 	address: string;
-	allowance: number;
 }) {
 	const { transactionId } = await syndicate.transact.sendTransaction({
 		chainId,
 		projectId,
 		contractAddress: userRegistryAddress,
 		functionSignature:
-			"addUser(string _id, (string id, string nickname, address account, uint256 allowance) _user)",
+			"addUser(string _id, (string id, string nickname, address account) _user)",
 		args: {
 			_id: id,
 			_user: {
 				id,
 				nickname,
 				account: address,
-				allowance,
 			},
 		},
 	});

@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { addAllowanceForAllUsersViaSyndicate, type OrgActionConfig } from "../chain";
+import type { OrgActionConfig } from "../chain";
 import { env } from "../env";
 import { db } from "../server";
 
@@ -18,7 +18,7 @@ app.post("/allowance", async (c) => {
 	const results: Array<{
 		slug: string;
 		status: "success" | "skipped" | "error";
-		txHash?: string | null;
+		usersUpdated?: number;
 		error?: string;
 	}> = [];
 
@@ -36,16 +36,10 @@ app.post("/allowance", async (c) => {
 		);
 
 		try {
-			const txHash = await addAllowanceForAllUsersViaSyndicate(
-				config.userRegistryAddress,
-				org.dailyAllowance,
-			);
-			if (txHash) {
-				console.log(`[${org.slug}] Successfully added allowance (tx: ${txHash})`);
-			} else {
-				console.log(`[${org.slug}] Allowance transaction submitted (hash not yet available)`);
-			}
-			results.push({ slug: org.slug, status: "success", txHash });
+			// Update allowance in database (off-chain)
+			const updated = await db.addAllowanceForAllUsers(org.id, org.dailyAllowance);
+			console.log(`[${org.slug}] Successfully added allowance for ${updated.length} users`);
+			results.push({ slug: org.slug, status: "success", usersUpdated: updated.length });
 		} catch (e) {
 			const errorMessage = e instanceof Error ? e.message : String(e);
 			console.error(`[${org.slug}] Failed to add allowance:`, e);
