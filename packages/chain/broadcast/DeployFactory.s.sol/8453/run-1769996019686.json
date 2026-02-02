@@ -1,7 +1,7 @@
 {
   "transactions": [
     {
-      "hash": null,
+      "hash": "0xa2d1e4fa2b37dd2ae862875978c18177757c9589d5a9fa9b1aa24e352b61bd80",
       "transactionType": "CREATE",
       "contractName": "SlashTip",
       "contractAddress": "0x86d9a7dcaae5eac0e097f63f1b8658ed96c19977",
@@ -19,7 +19,7 @@
       "isFixedGasLimit": false
     },
     {
-      "hash": null,
+      "hash": "0x87ed41293cfecd5c8084c1d64b921850007889a7122821ea9df1336310a2723d",
       "transactionType": "CREATE",
       "contractName": "UserRegistry",
       "contractAddress": "0xb9cd82fdcac4866095bd91179b6c439391ef376e",
@@ -37,7 +37,7 @@
       "isFixedGasLimit": false
     },
     {
-      "hash": null,
+      "hash": "0x39394f1bfcabe6a985d160d4c733712416934e48bc1fbf4a5e2e6f06771adddb",
       "transactionType": "CREATE",
       "contractName": "TipERC1155",
       "contractAddress": "0x3a4e319dea2a55dee01f2377d7a52683798b733d",
@@ -55,7 +55,7 @@
       "isFixedGasLimit": false
     },
     {
-      "hash": null,
+      "hash": "0x6c1fddcd5933e3a6b4db9d726c321137a115d1b11b300233979158da3068ecfe",
       "transactionType": "CREATE",
       "contractName": "TipERC20",
       "contractAddress": "0x8cdc96f4a7a3b5d15be54b02a7d164397573cb05",
@@ -73,7 +73,7 @@
       "isFixedGasLimit": false
     },
     {
-      "hash": null,
+      "hash": "0xf9300bb6bc0a86463aadaaf76cf6f39506c32cc4f4eaf1c2d90e43622b220864",
       "transactionType": "CREATE",
       "contractName": "ERC1155MintAction",
       "contractAddress": "0xdc2820e207f3ef1516bb9915111fac756776ecd4",
@@ -91,7 +91,7 @@
       "isFixedGasLimit": false
     },
     {
-      "hash": null,
+      "hash": "0x1b7c07f5deaed31084fc8be917a41252cbf7c9e66d124a7213ebe4b3c6090ea0",
       "transactionType": "CREATE",
       "contractName": "ERC20MintAction",
       "contractAddress": "0xc4970772cc0919f472859f8eca274e8e1c615564",
@@ -109,7 +109,7 @@
       "isFixedGasLimit": false
     },
     {
-      "hash": null,
+      "hash": "0x894301da3256f5a5e18635999376243daf8f7a02d45ebb330dcff556ae8ee51f",
       "transactionType": "CREATE",
       "contractName": "ERC20VaultAction",
       "contractAddress": "0x86c3451c8a039fa940b8e516eeed51438538cd3c",
@@ -225,9 +225,17 @@
   ],
   "receipts": [],
   "libraries": [],
-  "pending": [],
+  "pending": [
+    "0xa2d1e4fa2b37dd2ae862875978c18177757c9589d5a9fa9b1aa24e352b61bd80",
+    "0x87ed41293cfecd5c8084c1d64b921850007889a7122821ea9df1336310a2723d",
+    "0x39394f1bfcabe6a985d160d4c733712416934e48bc1fbf4a5e2e6f06771adddb",
+    "0x6c1fddcd5933e3a6b4db9d726c321137a115d1b11b300233979158da3068ecfe",
+    "0xf9300bb6bc0a86463aadaaf76cf6f39506c32cc4f4eaf1c2d90e43622b220864",
+    "0x1b7c07f5deaed31084fc8be917a41252cbf7c9e66d124a7213ebe4b3c6090ea0",
+    "0x894301da3256f5a5e18635999376243daf8f7a02d45ebb330dcff556ae8ee51f"
+  ],
   "returns": {},
-  "timestamp": 1769995785448,
+  "timestamp": 1769996019686,
   "chain": 8453,
   "commit": "602d6fd"
 }

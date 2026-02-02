@@ -10,11 +10,10 @@ const syndicate = new SyndicateClient({
 });
 
 // Factory constants
-const FACTORY_ADDRESS = "0x20ca42bEDE1a937F020d348eEd5939a8A953294c";
+const FACTORY_ADDRESS = env.SLASH_TIP_FACTORY_ADDRESS;
+const ADMIN_ADDRESS = env.ADMIN_ADDRESS;
 const CHAIN_ID = 8453; // Base mainnet
 const PROJECT_ID = "570119ce-a49c-4245-8851-11c9d1ad74c7";
-
-const ADMIN_ADDRESS = "0x18F33CEf45817C428d98C4E188A770191fDD4B79";
 
 // Operator addresses (Syndicate relayers that can execute tips, manage users, etc.)
 const OPERATOR_ADDRESSES = [

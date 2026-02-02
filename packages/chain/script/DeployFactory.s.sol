@@ -103,14 +103,14 @@ contract DeploySlashTip is Script {
 /// @dev Run with: forge script script/DeployFactory.s.sol:RedeployFactory --rpc-url $RPC_URL --broadcast --verify
 contract DeployFactory is Script {
     // Existing implementation addresses on Base Mainnet
-    address constant SLASH_TIP_IMPL = 0x8c92aD60EF9e8f3E6DaF8b4649b310ca09d26A5d;
-    address constant USER_REGISTRY_IMPL = 0x4035d0E432bfD35a603c296F2052a42044e2306c;
-    address constant TIP_ERC1155_IMPL = 0x8E53CE2fC7Ae2053b5c2Aa8A09E3645F61f689d5;
-    address constant TIP_ERC20_IMPL = 0xB523B0C2547A982D770fE6c4c7F22A016921ADe2;
-    address constant ERC1155_MINT_ACTION_IMPL = 0x5cF2b7Db45634643160EA8cc74Ce5023826FbB63;
-    address constant ERC20_MINT_ACTION_IMPL = 0x89d0A0c19CFc0089320cA53DeA85df9Bd0DAA8d6;
-    address constant ERC20_VAULT_ACTION_IMPL = 0x64AeCC54738159fee816390b011eCb4c54461528;
-    address constant ETH_VAULT_ACTION_IMPL = 0xdE7fdADc2a1409a32e95521D611C86F607405f2D;
+    address constant SLASH_TIP_IMPL = 0x792d5ABC842defCE8cd801C0Bf8bE61b1fCc184D;
+    address constant USER_REGISTRY_IMPL = 0xf2CBfCc12c5044773C6CF3a959583Cb2405915b8;
+    address constant TIP_ERC1155_IMPL = 0x3C4F256cFf5C14244d34E37Dcf6283a6a046d561;
+    address constant TIP_ERC20_IMPL = 0xE020648C3b53782f0b0B3F55ad3B4656e1A6824C;
+    address constant ERC1155_MINT_ACTION_IMPL = 0x1839BDA9E36B77D9702F0e1Ba6A662ebcfC4D93C;
+    address constant ERC20_MINT_ACTION_IMPL = 0x528C42566C29D193365dC89d4d2A7334e4daDd19;
+    address constant ERC20_VAULT_ACTION_IMPL = 0x9d756DcE9eeED629aA0498031C22411729908b7c;
+    address constant ETH_VAULT_ACTION_IMPL = 0x9213E2bE82Fa0017595d194Fbbcf984633494477;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PRIVATE_KEY");
@@ -176,7 +176,7 @@ contract DeployFactory is Script {
 /// @dev Run with: forge script script/DeployFactory.s.sol:UpgradeActions --rpc-url base --broadcast --verify
 contract UpgradeActions is Script {
     // Factory address on Base Mainnet
-    address constant FACTORY_ADDRESS = 0x20ca42bEDE1a937F020d348eEd5939a8A953294c;
+    address FACTORY_ADDRESS = vm.envAddress("FACTORY_ADDRESS");
 
     function run() external {
         uint256 adminPrivateKey = vm.envUint("ADMIN_PRIVATE_KEY");
