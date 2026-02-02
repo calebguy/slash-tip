@@ -7,7 +7,7 @@ const schema = z.object({
 
 const env = schema.parse(process.env);
 
-async function main() {
+export async function syncAllowance() {
 	console.log("Calling allowance sync...");
 	const response = await fetch(`${env.BASE_URL}/slash/cron/allowance`, {
 		method: "POST",
@@ -20,11 +20,5 @@ async function main() {
 	}
 	const data = await response.json();
 	console.log("Allowance response:", data);
+	return data;
 }
-
-main()
-	.then(() => process.exit(0))
-	.catch((e) => {
-		console.error(e);
-		process.exit(1);
-	});

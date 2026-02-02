@@ -1,0 +1,14 @@
+{
+	"compilerOptions": {
+		"strict": true,
+		"resolveJsonModule": true,
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"moduleResolution": "bundler",
+		"module": "ESNext",
+		"target": "ESNext",
+		"noEmit": true
+	},
+	"include": ["index.ts", "src/**/*.ts"],
+	"exclude": ["node_modules"]
+}
