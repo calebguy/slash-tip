@@ -4,7 +4,6 @@
 		"dev": "bun run --hot src/server.ts",
 		"start": "bun run src/server.ts",
 		"format": "bunx @biomejs/biome format . --write",
-		"cron-allowance": "bun run src/cron-allowance.ts",
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {

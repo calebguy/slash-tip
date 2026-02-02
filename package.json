@@ -18,7 +18,7 @@
 		"server:install": "bun --filter 'server' install",
 		"server:start": "bun --filter 'server' start",
 		"start": "bun --filter 'server' start",
-		"cron-allowance": "bun --filter 'server' cron-allowance",
+		"cron-allowance": "bun --filter 'cron' cron",
 		"typecheck": "bun --filter 'web' typecheck && bun --filter 'server' typecheck && bun --filter 'db' typecheck && bun --filter 'ponder' typecheck"
 	}
 }
