@@ -200,33 +200,30 @@ class Db {
 	}
 
 	addUserAllowance(userId: string, amount: string) {
-		// Use SQL to add to existing allowance (avoids float precision issues)
 		return this.pg
 			.update(users)
 			.set({
-				allowance: sql`(CAST(${users.allowance} AS DECIMAL(36,18)) + CAST(${amount} AS DECIMAL(36,18)))::TEXT`,
+				allowance: sql`${users.allowance} + ${amount}::numeric`,
 			})
 			.where(eq(users.id, userId))
 			.returning();
 	}
 
 	deductUserAllowance(userId: string, amount: string) {
-		// Use SQL to deduct from existing allowance (avoids float precision issues)
 		return this.pg
 			.update(users)
 			.set({
-				allowance: sql`GREATEST(0, CAST(${users.allowance} AS DECIMAL(36,18)) - CAST(${amount} AS DECIMAL(36,18)))::TEXT`,
+				allowance: sql`GREATEST(0, ${users.allowance} - ${amount}::numeric)`,
 			})
 			.where(eq(users.id, userId))
 			.returning();
 	}
 
 	addAllowanceForAllUsers(orgId: string, amount: string) {
-		// Add allowance to all users in an organization
 		return this.pg
 			.update(users)
 			.set({
-				allowance: sql`(CAST(${users.allowance} AS DECIMAL(36,18)) + CAST(${amount} AS DECIMAL(36,18)))::TEXT`,
+				allowance: sql`${users.allowance} + ${amount}::numeric`,
 			})
 			.where(eq(users.orgId, orgId))
 			.returning();
