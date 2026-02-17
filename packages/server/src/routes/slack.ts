@@ -13,6 +13,7 @@ import { mustBeRegistered } from "../middleware/mustBeRegistered";
 import { slackAuth } from "../middleware/slackAuth";
 import { withOrg } from "../middleware/withOrg";
 import { db } from "../server";
+import { stripTrailingZeros } from "../utils";
 import { Commands, type SlackSlashCommandPayload } from "../types";
 import {
 	abbreviate,
@@ -90,11 +91,16 @@ const app = new Hono<Env>()
 			`registering ${user_id} with address ${address} and nickname ${user_name} for org ${org.slug}`,
 		);
 
-		const hash = await registerViaSyndicate({
+		// Fire-and-forget onchain registration to avoid Slack response timeout
+		registerViaSyndicate({
 			userRegistryAddress: config.userRegistryAddress,
 			id: user_id,
 			nickname: user_name,
 			address,
+		}).then((hash) => {
+			console.log(`registered ${user_id} onchain with hash ${hash}`);
+		}).catch((err) => {
+			console.error(`failed to register ${user_id} onchain:`, err);
 		});
 
 		// Save user to database with org_id and set initial allowance
@@ -107,7 +113,7 @@ const app = new Hono<Env>()
 		});
 
 		console.log(
-			`registered ${user_id} with address ${address} and nickname ${user_name} with hash ${hash}`,
+			`registered ${user_id} with address ${address} and nickname ${user_name}`,
 		);
 		return c.json({
 			response_type: "in_channel",
@@ -215,7 +221,7 @@ const app = new Hono<Env>()
 					type: "section",
 					text: {
 						type: "mrkdwn",
-						text: `Your registered address is <https://basescan.org/address/${address}|${address}>.\n You have ${allowance} tips left to give.`,
+						text: `Your registered address is <https://basescan.org/address/${address}|${address}>.\n You have ${stripTrailingZeros(allowance)} tips left to give.`,
 					},
 				},
 			],

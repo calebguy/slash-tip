@@ -4,6 +4,7 @@ import type { ChatCompletionMessageParam, ChatCompletionTool } from "openai/reso
 import type { Hex } from "viem";
 import { getUserExists, type OrgActionConfig } from "./chain";
 import { db } from "./server";
+import { stripTrailingZeros } from "./utils";
 
 const openai = new OpenAI();
 
@@ -141,8 +142,8 @@ async function executeFunction(
 
 			return JSON.stringify({
 				registered: true,
-				remainingAllowance: allowance,
-				dailyAllowance: org.dailyAllowance,
+				remainingAllowance: stripTrailingZeros(allowance),
+				dailyAllowance: stripTrailingZeros(org.dailyAllowance),
 			});
 		}
 
@@ -181,7 +182,7 @@ async function executeFunction(
 			return JSON.stringify({
 				configured,
 				tokenType,
-				dailyAllowance: org.dailyAllowance,
+				dailyAllowance: stripTrailingZeros(org.dailyAllowance),
 				dashboardUrl: `https://slack.tips/${org.slug}`,
 				...tokenInfo,
 			});

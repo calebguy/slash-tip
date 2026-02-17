@@ -1,6 +1,7 @@
 import type { Organization, TokenMetadata } from "db";
 import { erc20Abi, formatUnits, type Hex } from "viem";
 import { db } from "../server";
+import { stripTrailingZeros } from "../utils";
 import { baseClient } from "../viem";
 
 const SLACK_API = "https://slack.com/api";
@@ -382,7 +383,7 @@ async function getConfiguredHomeView(org: Organization, userId: string) {
 				type: "section",
 				text: {
 					type: "mrkdwn",
-					text: `*Configuration*\n${configDetails}\n*Daily Allowance:* ${org.dailyAllowance} tips per user`,
+					text: `*Configuration*\n${configDetails}\n*Daily Allowance:* ${stripTrailingZeros(org.dailyAllowance)} tips per user`,
 				},
 			},
 			...contractSection,

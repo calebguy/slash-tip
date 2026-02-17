@@ -39,6 +39,14 @@ export function abbreviate(input: string) {
 	return `${input.slice(0, 6)}***${input.slice(-4)}`;
 }
 
+/**
+ * Strip trailing zeros from a numeric string (e.g. "3.000000000000000000" -> "3")
+ */
+export function stripTrailingZeros(value: string): string {
+	if (!value.includes(".")) return value;
+	return value.replace(/\.?0+$/, "");
+}
+
 export function isEthAddress(input: string) {
 	try {
 		getAddress(input);

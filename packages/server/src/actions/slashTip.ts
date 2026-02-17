@@ -2,6 +2,7 @@ import { SyndicateClient } from "@syndicateio/syndicate-node";
 import { waitForHash } from "@syndicateio/syndicate-node/utils";
 import { formatUnits, parseUnits } from "viem";
 import { type OrgActionConfig } from "../chain";
+import { stripTrailingZeros } from "../utils";
 import { env } from "../env";
 import { db } from "../server";
 import { registerAction } from "./registry";
@@ -63,7 +64,7 @@ class SlashTipAction implements TipAction {
 			if (Number(amount) > allowance) {
 				return {
 					valid: false,
-					error: `Insufficient allowance. You have ${allowanceStr} remaining, but tried to send ${amount}.`,
+					error: `Insufficient allowance. You have ${stripTrailingZeros(allowanceStr)} remaining, but tried to send ${amount}.`,
 				};
 			}
 		} catch (error) {
