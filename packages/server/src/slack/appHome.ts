@@ -1,5 +1,5 @@
 import type { Organization, TokenMetadata } from "db";
-import { erc20Abi, formatUnits, type Hex } from "viem";
+import { type Hex, erc20Abi, formatUnits } from "viem";
 import { db } from "../server";
 import { stripTrailingZeros } from "../utils";
 import { baseClient } from "../viem";
@@ -177,7 +177,8 @@ async function getConfiguredHomeView(org: Organization, userId: string) {
 			// Fetch current token metadata
 			const [tokenMetadata] = await db.getTokenMetadata(org.id, tokenId);
 			const metadataName = tokenMetadata?.name || `${org.name} Tip`;
-			const metadataDescription = tokenMetadata?.description || "No description set";
+			const metadataDescription =
+				tokenMetadata?.description || "No description set";
 			const metadataImage = tokenMetadata?.image;
 
 			contractSection = [
@@ -268,7 +269,9 @@ async function getConfiguredHomeView(org: Organization, userId: string) {
 	} else if (org.actionType === "erc20_vault") {
 		const tokenAddress = config.tokenAddress as Hex | undefined;
 		const vaultAddress = config.tipActionAddress as Hex | undefined;
-		const vaultManagerAddress = config.vaultManagerAddress as string | undefined;
+		const vaultManagerAddress = config.vaultManagerAddress as
+			| string
+			| undefined;
 
 		if (tokenAddress && vaultAddress) {
 			const tokenInfo = await getVaultTokenInfo(tokenAddress, vaultAddress);
@@ -304,7 +307,9 @@ async function getConfiguredHomeView(org: Organization, userId: string) {
 		}
 	} else if (org.actionType === "eth_vault") {
 		const vaultAddress = config.tipActionAddress as Hex | undefined;
-		const vaultManagerAddress = config.vaultManagerAddress as string | undefined;
+		const vaultManagerAddress = config.vaultManagerAddress as
+			| string
+			| undefined;
 
 		configDetails = "*Type:* ETH Vault";
 
@@ -530,12 +535,12 @@ export function getERC1155ConfigView() {
 					action_id: "token_name_input",
 					placeholder: {
 						type: "plain_text",
-						text: "Acme Tip",
+						text: "Slack Tip",
 					},
 				},
 				label: {
 					type: "plain_text",
-					text: "Token Name",
+					text: "Name",
 				},
 			},
 			{
@@ -568,7 +573,7 @@ export function getERC1155ConfigView() {
 				},
 				label: {
 					type: "plain_text",
-					text: "Token Image",
+					text: "Image",
 				},
 			},
 			{
@@ -601,7 +606,7 @@ export function getERC20ConfigView() {
 		callback_id: "erc20_config",
 		title: {
 			type: "plain_text",
-			text: "ERC20 Setup",
+			text: "Token Setup",
 		},
 		submit: {
 			type: "plain_text",
@@ -627,12 +632,12 @@ export function getERC20ConfigView() {
 					action_id: "token_name_input",
 					placeholder: {
 						type: "plain_text",
-						text: "Acme Tips",
+						text: "Slack Tips",
 					},
 				},
 				label: {
 					type: "plain_text",
-					text: "Token Name",
+					text: "Name",
 				},
 			},
 			{
@@ -643,29 +648,12 @@ export function getERC20ConfigView() {
 					action_id: "token_symbol_input",
 					placeholder: {
 						type: "plain_text",
-						text: "ACME",
+						text: "TIPS",
 					},
 				},
 				label: {
 					type: "plain_text",
 					text: "Token Symbol",
-				},
-			},
-			{
-				type: "input",
-				block_id: "decimals",
-				element: {
-					type: "plain_text_input",
-					action_id: "decimals_input",
-					initial_value: "18",
-					placeholder: {
-						type: "plain_text",
-						text: "18",
-					},
-				},
-				label: {
-					type: "plain_text",
-					text: "Decimals",
 				},
 			},
 			{
@@ -862,7 +850,10 @@ export function getETHVaultConfigView() {
 /**
  * Get the metadata edit modal view
  */
-export function getMetadataEditView(tokenId: number, currentMetadata?: TokenMetadata) {
+export function getMetadataEditView(
+	tokenId: number,
+	currentMetadata?: TokenMetadata,
+) {
 	return {
 		type: "modal",
 		callback_id: "metadata_edit",
@@ -901,7 +892,7 @@ export function getMetadataEditView(tokenId: number, currentMetadata?: TokenMeta
 				},
 				label: {
 					type: "plain_text",
-					text: "Token Name",
+					text: "Name",
 				},
 			},
 			{

@@ -427,6 +427,15 @@ const app = new Hono()
 				const decimals = values.decimals?.decimals_input?.value || "18";
 				const dailyAllowance = values.daily_allowance?.daily_allowance_input?.value || "3";
 
+				if (tokenSymbol.length > 6) {
+					return c.json({
+						response_action: "errors",
+						errors: {
+							token_symbol: "Token symbol must be 6 characters or less.",
+						},
+					});
+				}
+
 				// Validate daily allowance based on token decimals
 				const allowanceError = validateDailyAllowance(dailyAllowance, "erc20_mint", Number(decimals));
 				if (allowanceError) {
