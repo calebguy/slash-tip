@@ -171,7 +171,7 @@ async function getConfiguredHomeView(org: Organization, userId: string) {
 	if (org.actionType === "erc1155_mint") {
 		const tipTokenAddress = config.tipTokenAddress as Hex | undefined;
 		const tokenId = (config.tokenId as number) || 0;
-		configDetails = `*Type:* ERC1155 (NFT-style tips)\n*Token ID:* ${tokenId}`;
+		configDetails = "*Type:* NFT";
 
 		if (tipTokenAddress) {
 			// Fetch current token metadata
@@ -189,7 +189,7 @@ async function getConfiguredHomeView(org: Organization, userId: string) {
 					type: "section",
 					text: {
 						type: "mrkdwn",
-						text: `*Contract Details*\n*Token Address:* \`${tipTokenAddress}\``,
+						text: `*Contract*\n*Token Address:* \`${tipTokenAddress}\``,
 					},
 				},
 				{
@@ -208,7 +208,7 @@ async function getConfiguredHomeView(org: Organization, userId: string) {
 					type: "section",
 					text: {
 						type: "mrkdwn",
-						text: `*Token Metadata*\n*Name:* ${metadataName}\n*Description:* ${metadataDescription}${!metadataImage ? "\n_No image set_" : ""}`,
+						text: `*Details*\n*Name:* ${metadataName}\n*Description:* ${metadataDescription}${!metadataImage ? "\n_No image set_" : ""}`,
 					},
 					...(metadataImage
 						? {
@@ -229,7 +229,7 @@ async function getConfiguredHomeView(org: Organization, userId: string) {
 										type: "button",
 										text: {
 											type: "plain_text",
-											text: "Edit Metadata",
+											text: "Edit",
 										},
 										action_id: "edit_metadata",
 									},
@@ -241,7 +241,7 @@ async function getConfiguredHomeView(org: Organization, userId: string) {
 		}
 	} else if (org.actionType === "erc20_mint") {
 		const tipTokenAddress = config.tipTokenAddress as Hex | undefined;
-		configDetails = `*Type:* ERC20\n*Token:* ${config.tokenName || ""} (${config.tokenSymbol || ""})`;
+		configDetails = `*Type:* Token\n*Token:* ${config.tokenName || ""} (${config.tokenSymbol || ""})`;
 
 		if (tipTokenAddress) {
 			contractSection = [
@@ -252,7 +252,7 @@ async function getConfiguredHomeView(org: Organization, userId: string) {
 					type: "section",
 					text: {
 						type: "mrkdwn",
-						text: `*Contract Details*\n*Token Address:* \`${tipTokenAddress}\``,
+						text: `*Contract*\n*Token Address:* \`${tipTokenAddress}\``,
 					},
 				},
 				{
@@ -289,7 +289,7 @@ async function getConfiguredHomeView(org: Organization, userId: string) {
 					type: "section",
 					text: {
 						type: "mrkdwn",
-						text: `*Vault Details*\n*Vault Address:* \`${vaultAddress}\`\n*Balance:* ${tokenInfo.balance} ${tokenInfo.symbol}${vaultManagerInfo}`,
+						text: `*Vault*\n*Address:* \`${vaultAddress}\`\n*Balance:* ${tokenInfo.balance} ${tokenInfo.symbol}${vaultManagerInfo}`,
 					},
 				},
 				{
@@ -335,7 +335,7 @@ async function getConfiguredHomeView(org: Organization, userId: string) {
 					type: "section",
 					text: {
 						type: "mrkdwn",
-						text: `*Vault Details*\n*Vault Address:* \`${vaultAddress}\`\n*Balance:* ${ethBalance} ETH${vaultManagerInfo}`,
+						text: `*Vault*\n*Address:* \`${vaultAddress}\`\n*Balance:* ${ethBalance} ETH${vaultManagerInfo}`,
 					},
 				},
 				{
