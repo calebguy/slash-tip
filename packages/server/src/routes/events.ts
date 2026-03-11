@@ -325,7 +325,10 @@ const app = new Hono()
 
 			// ERC1155 config submission
 			if (callbackId === "erc1155_config") {
-				const tokenId = values.token_id?.token_id_input?.value || "0";
+				const tokenId = 0;
+				const tokenName = values.token_name?.token_name_input?.value || `${org.name} Tip`;
+				const tokenDescription = values.token_description?.token_description_input?.value || "";
+				const tokenImageFiles = values.token_image?.token_image_input?.files;
 				const dailyAllowance = values.daily_allowance?.daily_allowance_input?.value || "3";
 
 				// Validate daily allowance - must be whole integer for ERC1155
@@ -351,7 +354,7 @@ const app = new Hono()
 						orgId: org.id,
 						baseUri,
 						contractUri,
-						tokenId: Number(tokenId),
+						tokenId,
 					});
 
 					if (!deployResult.success) {
@@ -374,7 +377,7 @@ const app = new Hono()
 						actionConfig: {
 							baseUri,
 							contractUri,
-							tokenId: Number(tokenId),
+							tokenId,
 							deploymentTxHash: deployResult.transactionHash,
 							deploymentStatus: addresses ? "deployed" : "pending",
 							slashTipAddress: addresses?.slashTipAddress,
@@ -385,11 +388,28 @@ const app = new Hono()
 						dailyAllowance,
 					});
 
-					// Create default token metadata
-					await db.upsertTokenMetadata(org.id, Number(tokenId), {
-						name: `${org.name} Tip`,
-						description: `A tip token for ${org.name}`,
-						image: org.logoUrl || "",
+					// Upload image if provided
+					let imageUrl = "";
+					if (tokenImageFiles && tokenImageFiles.length > 0) {
+						const file = tokenImageFiles[0];
+						try {
+							const downloadUrl = file.url_private_download || file.url_private;
+							const fileBuffer = await downloadFromSlack(downloadUrl, org.slackBotToken, file.id);
+							const extension = getFileExtension(file.name);
+							const contentType = file.mimetype || getContentType(extension);
+							const s3Key = `${org.slug}/token-${tokenId}.${extension}`;
+							imageUrl = await uploadToS3(s3Key, fileBuffer, contentType);
+							console.log(`Uploaded token image to S3: ${imageUrl}`);
+						} catch (e) {
+							console.error("Failed to upload token image to S3:", e);
+						}
+					}
+
+					// Save token metadata
+					await db.upsertTokenMetadata(org.id, tokenId, {
+						name: tokenName,
+						description: tokenDescription,
+						...(imageUrl ? { image: imageUrl } : {}),
 					});
 
 					// Refresh app home with updated org

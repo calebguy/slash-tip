@@ -504,7 +504,7 @@ export function getERC1155ConfigView() {
 		callback_id: "erc1155_config",
 		title: {
 			type: "plain_text",
-			text: "ERC1155 Setup",
+			text: "NFT Setup",
 		},
 		submit: {
 			type: "plain_text",
@@ -519,24 +519,56 @@ export function getERC1155ConfigView() {
 				type: "section",
 				text: {
 					type: "mrkdwn",
-					text: "Configure your ERC1155 tip token. We'll deploy the contracts for you.\n\nAfter setup, you can customize the token metadata (name, description, image) from the App Home.",
+					text: "Configure your NFT tip token. We'll deploy the contracts for you.",
 				},
 			},
 			{
 				type: "input",
-				block_id: "token_id",
+				block_id: "token_name",
 				element: {
 					type: "plain_text_input",
-					action_id: "token_id_input",
-					initial_value: "0",
+					action_id: "token_name_input",
 					placeholder: {
 						type: "plain_text",
-						text: "0",
+						text: "Acme Tip",
 					},
 				},
 				label: {
 					type: "plain_text",
-					text: "Token ID",
+					text: "Token Name",
+				},
+			},
+			{
+				type: "input",
+				block_id: "token_description",
+				optional: true,
+				element: {
+					type: "plain_text_input",
+					action_id: "token_description_input",
+					multiline: true,
+					placeholder: {
+						type: "plain_text",
+						text: "A tip token for recognizing great work",
+					},
+				},
+				label: {
+					type: "plain_text",
+					text: "Description",
+				},
+			},
+			{
+				type: "input",
+				block_id: "token_image",
+				optional: true,
+				element: {
+					type: "file_input",
+					action_id: "token_image_input",
+					filetypes: ["jpg", "jpeg", "png", "gif", "webp"],
+					max_files: 1,
+				},
+				label: {
+					type: "plain_text",
+					text: "Token Image",
 				},
 			},
 			{
