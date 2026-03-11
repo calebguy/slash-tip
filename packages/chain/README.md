@@ -114,8 +114,6 @@ SlashTip Contract (Internal)
 
 ## Deployed Addresses (Base Mainnet)
 
-**Admin:** `0x18F33CEf45817C428d98C4E188A770191fDD4B79`
-
 **Deployers (Syndicate relayers):**
 - `0xE7129298AE18FD2f4862E9a25D40CE333b11c583`
 - `0x8f9B71d1a895e4Fb4906D3e01F3B39FB983E33e0`
@@ -125,27 +123,20 @@ SlashTip Contract (Internal)
 
 | Contract | Address |
 |----------|---------|
-| SlashTipFactory | `0x20ca42bEDE1a937F020d348eEd5939a8A953294c` |
+| SlashTipFactory | `0x8a36142F7faC74C700C6Bd88152A16B1dC7811c7` |
 
 ### Implementations
 
 | Contract | Address |
 |----------|---------|
-| SlashTip | `0x8c92aD60EF9e8f3E6DaF8b4649b310ca09d26A5d` |
-| UserRegistry | `0x4035d0E432bfD35a603c296F2052a42044e2306c` |
-| TipERC1155 | `0x8E53CE2fC7Ae2053b5c2Aa8A09E3645F61f689d5` |
-| TipERC20 | `0xB523B0C2547A982D770fE6c4c7F22A016921ADe2` |
-| ERC1155MintAction | `0x5cF2b7Db45634643160EA8cc74Ce5023826FbB63` |
-| ERC20MintAction | `0x3459f82231743B4426d6758b1199021294E35FCc` |
-| ERC20VaultAction | `0xFCAC3fFEA9f75Fe0C0c319124E2668d14b3120BE` |
-| ETHVaultAction | `0xCA572C3BF6AfE7D3ce2152D7924eac8c5c514771` |
-
-## Security Features
-
-- **Pausability**: SlashTip can be paused in emergencies
-- **Reentrancy Protection**: Vault actions use OpenZeppelin's ReentrancyGuard
-- **Role Separation**: Operational roles are separated from admin roles
-- **Upgradeable**: Beacon proxy pattern allows safe upgrades
+| SlashTip | `0xEa10ce33825c62834563ABdA7DD725607d08b0ee` |
+| UserRegistry | `0x7abFF9a08D5A089D10edc83DB34aBa3b636aF180` |
+| TipERC1155 | `0x9887Ac7aa36B8E10268ef1749afA7736F5B170AC` |
+| TipERC20 | `0x99956DF088B58f3342C145F42B971af25acC93aE` |
+| ERC1155MintAction | `0x079D8Ce4f52d0776f885a7907d9a091EcB67B539` |
+| ERC20MintAction | `0x00Ad950ca103ba7462d1A786d5CB15E578BE82b7` |
+| ERC20VaultAction | `0x8d008204b0dBAD0F20aee936DA3dD4ca4e07A5A2` |
+| ETHVaultAction | `0x3bec59B4ac01271441B742b24EcB2331de32Dd3C` |
 
 ## Development
 

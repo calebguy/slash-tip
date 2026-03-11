@@ -454,28 +454,28 @@ export async function openTokenTypeModal(
 						{
 							text: {
 								type: "plain_text",
-								text: "New ERC1155 (NFT-style)",
+								text: "New NFT",
 							},
 							value: "erc1155",
 						},
 						{
 							text: {
 								type: "plain_text",
-								text: "New ERC20 (Fungible token)",
+								text: "New Token",
 							},
 							value: "erc20",
 						},
 						{
 							text: {
 								type: "plain_text",
-								text: "Existing ERC20 (Use your own token)",
+								text: "Existing Token",
 							},
 							value: "erc20_vault",
 						},
 						{
 							text: {
 								type: "plain_text",
-								text: "Native ETH (Tip from a vault)",
+								text: "ETH",
 							},
 							value: "eth_vault",
 						},
