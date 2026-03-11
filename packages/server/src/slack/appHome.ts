@@ -717,7 +717,11 @@ export function getERC20VaultConfigView() {
 				},
 				label: {
 					type: "plain_text",
-					text: "Token Contract Address",
+					text: "Token Address",
+				},
+				hint: {
+					type: "plain_text",
+					text: "The address of the token on Base you want to use for tipping. You will need to deposit tokens to the vault from which tips will be sent from.",
 				},
 			},
 			{
@@ -733,7 +737,7 @@ export function getERC20VaultConfigView() {
 				},
 				label: {
 					type: "plain_text",
-					text: "Vault Manager Wallet",
+					text: "Manager Wallet",
 				},
 				hint: {
 					type: "plain_text",
@@ -810,7 +814,7 @@ export function getETHVaultConfigView() {
 				},
 				label: {
 					type: "plain_text",
-					text: "Vault Manager Wallet",
+					text: "Manager Wallet",
 				},
 				hint: {
 					type: "plain_text",
